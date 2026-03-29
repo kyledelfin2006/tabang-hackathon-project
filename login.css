@@ -1,0 +1,88 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Inter', sans-serif;
+    background: #0a1f4e;
+    display: flex; justify-content: center; align-items: center; min-height: 100vh;
+}
+.phone {
+    width: 390px; height: 844px;
+    background: linear-gradient(175deg, #1a4599 0%, #0a2470 60%, #071852 100%);
+    border-radius: 44px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 0 32px 48px;
+    overflow: hidden;
+}
+.status-bar {
+    width: 100%; display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 8px 0; color: white; font-size: 13px; font-weight: 700;
+    flex-shrink: 0;
+}
+.status-icons { display: flex; gap: 6px; align-items: center; }
+
+.page-title {
+    color: white; font-size: 32px; font-weight: 800;
+    margin-top: 32px; text-align: center;
+}
+.page-subtitle {
+    color: rgba(255,255,255,0.7); font-size: 14px;
+    font-weight: 500; margin-top: 8px; text-align: center;
+}
+
+.form-card {
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 24px;
+    padding: 28px 20px;
+    margin-top: 40px;
+    border: 1px solid rgba(255,255,255,0.15);
+}
+
+.input-field {
+    width: 100%; height: 54px;
+    background: rgba(255,255,255,0.95);
+    border: none; border-radius: 14px;
+    padding: 0 18px;
+    font-size: 15px; font-family: 'Inter', sans-serif;
+    color: #333; outline: none;
+    margin-bottom: 14px;
+}
+.input-field::placeholder { color: #aaa; }
+.input-field:last-of-type { margin-bottom: 0; }
+
+.forgot-pw {
+    text-align: right; margin-top: 12px;
+    color: #f5900a; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+}
+
+.login-btn {
+    width: 100%; height: 56px;
+    background: linear-gradient(135deg, #f5900a, #e07d00);
+    border: none; border-radius: 50px;
+    color: white; font-size: 20px; font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer; margin-top: 40px;
+    box-shadow: 0 6px 20px rgba(245,144,10,0.4);
+    transition: all 0.2s;
+}
+.login-btn:active { transform: scale(0.97); }
+
+.home-indicator {
+    width: 120px; height: 4px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 2px; margin-top: auto; padding-top: 16px;
+}
+
+.toast {
+    position: absolute; bottom: 100px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(200,50,40,0.9); color: white;
+    padding: 10px 20px; border-radius: 50px;
+    font-size: 13px; white-space: nowrap;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s; z-index: 99;
+    font-family: 'Inter', sans-serif;
+}

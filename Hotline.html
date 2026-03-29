@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Emergency Hotlines</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="Hotline.css">
+</head>
+<body>
+<div class="phone">
+
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-icons">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <div class="view active" id="hotlinesView">
+        <div class="header">
+            <div class="back-btn" id="backBtn">&#8249;</div>
+            <div class="header-title">Emergency Hotlines</div>
+            <div class="header-subtitle">Review and rate Emergency Hotlines in Aklan</div>
+        </div>
+
+        <div class="content">
+
+            <div class="card" data-id="bfp">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+                            <circle cx="16" cy="16" r="14" fill="#4A7FD4" opacity="0.4"/>
+                            <path d="M16 6c0 0-2 3-2 6 0 1.1.9 2 2 2s2-.9 2-2c0-1-.4-2-.4-2S20 12 20 16c0 2.2-1.8 4-4 4s-4-1.8-4-4c0-3 2-6 2-6s-3 2-3 5c0 3.3 2.7 6 6 6s6-2.7 6-6c0-5-5-9-7-10z" fill="white"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">BFP Aklan Provincial Fire Office</div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg></div>
+                        <span>0909 925 6000</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><svg viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+                        <span>Mon - Fri, 8:00 AM – 5:00 PM</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="bfp">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">12</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="bfp">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">2</span>
+                        </button>
+                        <button class="comment-btn" data-card="bfp" data-name="BFP Aklan Provincial Fire Office">
+                            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                            Comment / Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" data-id="kalibo">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
+                            <circle cx="16" cy="16" r="14" fill="#4A7FD4" opacity="0.4"/>
+                            <path d="M16 5l-8 3v7c0 4.4 3.4 8.5 8 9.5 4.6-1 8-5.1 8-9.5V8l-8-3z" fill="white" opacity="0.9"/>
+                            <path d="M13 15l2 2 4-4" stroke="#3060C0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">Kalibo Police Station</div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg></div>
+                        <span>0909 925 6000</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><svg viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+                        <span>Mon - Fri, 8:00 AM – 5:00 PM</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="kalibo">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">12</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="kalibo">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">2</span>
+                        </button>
+                        <button class="comment-btn" data-card="kalibo" data-name="Kalibo Police Station">
+                            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                            Comment / Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card" data-id="mdrrmo">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <svg viewBox="0 0 32 32" fill="none" width="28" height="28">
+                            <circle cx="16" cy="16" r="14" fill="#4A7FD4" opacity="0.4"/>
+                            <rect x="13" y="8" width="6" height="16" rx="1.5" fill="white"/>
+                            <rect x="8" y="13" width="16" height="6" rx="1.5" fill="white"/>
+                        </svg>
+                    </div>
+                    <div class="card-title">MDRRMO Numancia</div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/></svg></div>
+                        <span>0909 925 6000</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><svg viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="10" stroke="white" stroke-width="2" fill="none"/><path d="M12 6v6l4 2" stroke="white" stroke-width="2" stroke-linecap="round"/></svg></div>
+                        <span>Mon - Fri, 8:00 AM – 5:00 PM</span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="mdrrmo">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">12</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="mdrrmo">
+                            <svg viewBox="0 0 24 24" fill="white"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">2</span>
+                        </button>
+                        <button class="comment-btn" data-card="mdrrmo" data-name="MDRRMO Numancia">
+                            <svg viewBox="0 0 24 24" fill="white" width="16" height="16"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+                            Comment / Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="bottom-nav">
+            <button class="nav-item" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
+            <button class="nav-item active" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
+            <button class="nav-item" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
+            <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+            <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
+        </div>
+    </div>
+
+    <div class="view" id="commentView">
+        <div class="comment-header">
+            <div class="comment-header-top">
+                <button class="comment-back-btn" id="commentBackBtn">&#8249;</button>
+                <div class="comment-header-info">
+                    <div class="comment-header-title" id="commentTitle">Comments</div>
+                    <div class="comment-header-sub" id="commentSub">Share your review</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="comments-list" id="commentsList">
+        </div>
+
+        <div class="comment-input-bar">
+            <div class="comment-input-wrap">
+                <textarea class="comment-input" id="commentInput" placeholder="Write a comment or review..." rows="1"></textarea>
+            </div>
+            <button class="comment-send-btn" id="commentSendBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const votes = {
+        bfp:    { up: 12, down: 2, userVote: null },
+        kalibo: { up: 12, down: 2, userVote: null },
+        mdrrmo: { up: 12, down: 2, userVote: null }
+    };
+
+    const comments = {
+        bfp:    [],
+        kalibo: [],
+        mdrrmo: []
+    };
+
+    let currentCard = null;
+
+    document.querySelectorAll('.reaction-btn.upvote').forEach(btn => {
+        btn.addEventListener('click', () => handleVote(btn.dataset.card, 'up'));
+    });
+
+    document.querySelectorAll('.reaction-btn.downvote').forEach(btn => {
+        btn.addEventListener('click', () => handleVote(btn.dataset.card, 'down'));
+    });
+
+    function handleVote(cardId, type) {
+        const v = votes[cardId];
+        const upBtn = document.querySelector(`.reaction-btn.upvote[data-card="${cardId}"]`);
+        const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${cardId}"]`);
+
+        if (v.userVote === type) {
+            if (type === 'up') v.up--;
+            else v.down--;
+            v.userVote = null;
+            upBtn.classList.remove('voted');
+            downBtn.classList.remove('voted');
+        } else {
+            if (v.userVote === 'up') { v.up--; upBtn.classList.remove('voted'); }
+            if (v.userVote === 'down') { v.down--; downBtn.classList.remove('voted'); }
+
+            if (type === 'up') { v.up++; upBtn.classList.add('voted'); pulseBtn(upBtn); }
+            else { v.down++; downBtn.classList.add('voted'); pulseBtn(downBtn); }
+
+            v.userVote = type;
+        }
+
+        upBtn.querySelector('.upvote-count').textContent = v.up;
+        downBtn.querySelector('.downvote-count').textContent = v.down;
+    }
+
+    function pulseBtn(btn) {
+        btn.classList.remove('vote-pulse');
+        void btn.offsetWidth;
+        btn.classList.add('vote-pulse');
+        btn.addEventListener('animationend', () => btn.classList.remove('vote-pulse'), { once: true });
+    }
+
+    document.querySelectorAll('.comment-btn').forEach(btn => {
+        btn.addEventListener('click', () => openComments(btn.dataset.card, btn.dataset.name));
+    });
+
+    function openComments(cardId, cardName) {
+        currentCard = cardId;
+        document.getElementById('commentTitle').textContent = cardName;
+        document.getElementById('commentSub').textContent = `${comments[cardId].length} comment${comments[cardId].length !== 1 ? 's' : ''}`;
+        renderComments(cardId);
+        document.getElementById('hotlinesView').classList.remove('active');
+        document.getElementById('commentView').classList.add('active');
+        document.getElementById('commentInput').value = '';
+        autoResize(document.getElementById('commentInput'));
+    }
+
+    function renderComments(cardId) {
+        const list = document.getElementById('commentsList');
+        const c = comments[cardId];
+
+        if (c.length === 0) {
+            list.innerHTML = `
+                <div class="no-comments">
+                    <i class="fas fa-comments"></i>
+                    <span>No comments yet.<br>Be the first to review!</span>
+                </div>`;
+            return;
+        }
+
+        list.innerHTML = c.map((item, i) => `
+            <div class="comment-item">
+                <div class="comment-item-top">
+                    <div class="comment-avatar">${item.initials}</div>
+                    <span class="comment-user">${item.user}</span>
+                    <span class="comment-time">${item.time}</span>
+                </div>
+                <div class="comment-text">${escapeHtml(item.text)}</div>
+            </div>
+        `).join('');
+
+        list.scrollTop = list.scrollHeight;
+    }
+
+    document.getElementById('commentSendBtn').addEventListener('click', sendComment);
+
+    document.getElementById('commentInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendComment();
+        }
+    });
+
+    document.getElementById('commentInput').addEventListener('input', function() {
+        autoResize(this);
+    });
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+    }
+
+    function sendComment() {
+        const input = document.getElementById('commentInput');
+        const text = input.value.trim();
+        if (!text || !currentCard) return;
+
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const names = ['User', 'Resident', 'Citizen', 'Anonymous'];
+        const user = names[Math.floor(Math.random() * names.length)] + ' ' + Math.floor(Math.random() * 900 + 100);
+        const initials = user.charAt(0);
+
+        comments[currentCard].push({ user, initials, text, time: timeStr });
+
+        input.value = '';
+        autoResize(input);
+
+        renderComments(currentCard);
+
+        const c = comments[currentCard];
+        document.getElementById('commentSub').textContent = `${c.length} comment${c.length !== 1 ? 's' : ''}`;
+    }
+
+    document.getElementById('commentBackBtn').addEventListener('click', () => {
+        document.getElementById('commentView').classList.remove('active');
+        document.getElementById('hotlinesView').classList.add('active');
+        currentCard = null;
+    });
+
+    document.getElementById('backBtn').onclick = function() {
+        window.location.href = 'index.html';
+    };
+
+    document.getElementById('navRequest').onclick = function() { window.location.href = 'RequestHelp.html'; };
+    document.getElementById('navHotlines').onclick = function() { window.location.href = 'Hotline.html'; };
+    document.getElementById('navReport').onclick = function() { window.location.href = 'ReportFlood.html'; };
+    document.getElementById('navMyReports').onclick = function() { window.location.href = 'MyReports.html'; };
+    document.getElementById('navAccount').onclick = function() { window.location.href = 'AccountInfo.html'; };
+
+
+    function escapeHtml(text) {
+        return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
+</body>
+</html>

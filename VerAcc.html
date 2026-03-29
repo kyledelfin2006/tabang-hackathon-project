@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Verify Contact Info</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="VerAcc.css">
+</head>
+<body>
+
+<div class="phone">
+
+    <div class="status-bar">
+        <span>9:41</span>
+        <div class="status-icons">
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="white">
+                <rect x="0" y="8" width="3" height="4" rx="0.5"/>
+                <rect x="4.5" y="5" width="3" height="7" rx="0.5"/>
+                <rect x="9" y="2" width="3" height="10" rx="0.5"/>
+                <rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/>
+            </svg>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="white">
+                <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/>
+                <path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/>
+                <path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/>
+            </svg>
+            <svg width="22" height="12" viewBox="0 0 22 12" fill="white">
+                <rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/>
+                <rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/>
+                <path d="M19 4v4a2 2 0 000-4z"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="back-btn">&#8249;</div>
+        <div class="header-title">Verify Contact Info</div>
+    </div>
+
+    <div class="card">
+
+        <div>
+            <div class="card-title">Your Contact Details</div>
+            <div class="card-subtitle">Fill in your info. It will appear in the Emergency Hotlines directory.</div>
+        </div>
+
+        <div class="info-banner">
+            <div class="info-icon">i</div>
+            <div class="info-text">Why we need this: Rescuers use this directory to contact responders fast during floods</div>
+        </div>
+
+        <div class="section-label">Personal Information</div>
+
+        <div class="input-group">
+            <div class="input-label">Full Name <span>*</span></div>
+            <div class="input-wrapper" id="wrap-name">
+                <div class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="#1B3D87" width="18" height="18">
+                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                    </svg>
+                </div>
+                <input class="input-field" id="field-name" type="text" placeholder="Enter your full name">
+                <span class="check-icon">✓</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="input-label">Mobile Number <span>*</span></div>
+            <div class="input-wrapper" id="wrap-mobile">
+                <div class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="#1B3D87" width="18" height="18">
+                        <path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/>
+                    </svg>
+                </div>
+                <span class="phone-prefix">+63</span>
+                <input class="input-field" id="field-mobile" type="text" placeholder="9XX XXX XXXX">
+                <span class="check-icon">✓</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="input-label">Email Adress <span style="color:#aaa;font-weight:600;">(optional)</span></div>
+            <div class="input-wrapper" id="wrap-email">
+                <div class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="#aaa" width="18" height="18">
+                        <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                    </svg>
+                </div>
+                <input class="input-field" id="field-email" type="email" placeholder="e.g text">
+                <span class="check-icon">✓</span>
+            </div>
+        </div>
+
+        <div class="section-label">Location &amp; Address</div>
+
+        <div class="input-group">
+            <div class="input-label">Home Barangay <span>*</span></div>
+            <div class="input-wrapper" id="wrap-barangay">
+                <div class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="#1B3D87" width="18" height="18">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                </div>
+                <input class="input-field" id="field-barangay" type="text" placeholder="Enter your barangay">
+                <span class="check-icon">✓</span>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <div class="input-label">Landmark <span style="color:#aaa;font-weight:600;">(optional)</span></div>
+            <div class="input-wrapper" id="wrap-landmark">
+                <div class="input-icon">
+                    <svg viewBox="0 0 24 24" fill="#aaa" width="18" height="18">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                </div>
+                <input class="input-field" id="field-landmark" type="text" placeholder="e.g Near">
+                <span class="check-icon">✓</span>
+            </div>
+        </div>
+
+        <div class="checkbox-row">
+            <div class="checkbox">
+                <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+            </div>
+            <div class="checkbox-text">I agree my name, number &amp; barangay will be listed in Tabang Emergency Hotlines directory during disaster situations.</div>
+        </div>
+
+        <button class="submit-btn">Submit</button>
+
+    </div>
+
+</div>
+<script>
+    document.querySelector('.back-btn').onclick = function() {
+        window.location.href = 'AccountInfo.html';
+    };
+
+    function validate(inputId, wrapperId, checkFn) {
+        var input   = document.getElementById(inputId);
+        var wrapper = document.getElementById(wrapperId);
+        if (!input || !wrapper) return;
+        input.addEventListener('input', function() {
+            if (checkFn(input.value.trim())) {
+                wrapper.classList.add('valid');
+            } else {
+                wrapper.classList.remove('valid');
+            }
+        });
+    }
+
+    validate('field-name', 'wrap-name', function(v) {
+        var words = v.split(/\s+/).filter(function(w){ return w.length > 0; });
+        return words.length >= 2 && words.length <= 3;
+    });
+
+    validate('field-mobile', 'wrap-mobile', function(v) {
+        return /^\d{11}$/.test(v.replace(/\s/g, ''));
+    });
+
+    validate('field-email', 'wrap-email', function(v) {
+        return v.includes('@') && v.includes('.');
+    });
+
+    validate('field-barangay', 'wrap-barangay', function(v) {
+        var words = v.split(/\s+/).filter(function(w){ return w.length > 0; });
+        return words.length >= 3;
+    });
+
+    validate('field-landmark', 'wrap-landmark', function(v) {
+        return v.length > 0;
+    });
+
+    document.querySelector('.submit-btn').onclick = function() {
+        var name     = document.getElementById('field-name').value.trim();
+        var mobile   = document.getElementById('field-mobile').value.trim().replace(/\s/g, '');
+        var barangay = document.getElementById('field-barangay').value.trim();
+
+        var nameWords = name.split(/\s+/).filter(function(w){ return w.length > 0; });
+        if (nameWords.length < 2 || nameWords.length > 3) {
+            alert('Full name must be 2 to 3 words.'); return;
+        }
+        if (!/^\d{11}$/.test(mobile)) {
+            alert('Mobile number must be exactly 11 digits.'); return;
+        }
+        var barangayWords = barangay.split(/\s+/).filter(function(w){ return w.length > 0; });
+        if (barangayWords.length < 3) {
+            alert('Home Barangay must be at least 3 words.'); return;
+        }
+
+        alert('Verification submitted successfully!');
+        window.location.href = 'AccountInfo.html';
+    };
+</script>
+</body>
+</html>

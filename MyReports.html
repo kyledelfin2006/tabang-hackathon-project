@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>My Reports</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="Myreports.css">
+</head>
+<body>
+<div class="phone">
+
+    <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+            <i class="fas fa-signal"></i>
+            <i class="fas fa-wifi"></i>
+            <i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+
+    <div class="back-btn" id="backBtn"><i class="fas fa-chevron-left"></i></div>
+    <div class="page-title">My Reports</div>
+
+    <!-- TWO TAB BOXES -->
+    <div class="tab-boxes">
+        <div class="tab-box active" id="tabFlood" onclick="switchTab('flood')">
+            <div class="tab-box-icon flood-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="tab-box-label">Report Flood</div>
+            <div class="tab-box-count" id="floodCount">0</div>
+        </div>
+        <div class="tab-box" id="tabHelp" onclick="switchTab('help')">
+            <div class="tab-box-icon help-icon"><i class="fas fa-hand-holding-water"></i></div>
+            <div class="tab-box-label">Request Help</div>
+            <div class="tab-box-count" id="helpCount">0</div>
+        </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="scroll-area" id="reportsList"></div>
+
+    <div class="bottom-nav">
+        <button class="nav-item" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
+        <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
+        <button class="nav-item" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
+        <button class="nav-item active" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
+    </div>
+</div>
+
+<script>
+    function navigateTo(page) { window.location.href = page; }
+
+    document.getElementById('backBtn').onclick = function() { navigateTo('index.html'); };
+    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
+    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
+    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
+    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
+    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
+
+    let currentTab = 'flood';
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.getElementById('tabFlood').classList.toggle('active', tab === 'flood');
+        document.getElementById('tabHelp').classList.toggle('active', tab === 'help');
+        renderList();
+    }
+
+    function getFloodReports() {
+        try { return JSON.parse(localStorage.getItem('allReports') || '[]'); } catch(e) { return []; }
+    }
+
+    function getHelpRequests() {
+        try { return JSON.parse(localStorage.getItem('allHelpRequests') || '[]'); } catch(e) { return []; }
+    }
+
+    function renderList() {
+        const list = document.getElementById('reportsList');
+        const items = currentTab === 'flood' ? getFloodReports() : getHelpRequests();
+        const reversed = items.slice().reverse();
+        const isFlood = currentTab === 'flood';
+
+        if (reversed.length === 0) {
+            list.innerHTML =
+                '<div class="empty-state">' +
+                '<div class="empty-icon ' + (isFlood ? 'empty-flood' : 'empty-help') + '"><i class="fas fa-' + (isFlood ? 'water' : 'hands-helping') + '"></i></div>' +
+                '<div class="empty-title">No ' + (isFlood ? 'Flood Reports' : 'Help Requests') + ' Yet</div>' +
+                '<div class="empty-sub">' + (isFlood ? 'Submit a flood report and it will appear here.' : 'Request help and it will appear here.') + '</div>' +
+                '<button class="empty-btn ' + (isFlood ? '' : 'empty-btn-help') + '" onclick="navigateTo(\'' + (isFlood ? 'ReportFlood.html' : 'RequestHelp.html') + '\')">' +
+                '<i class="fas fa-plus"></i> ' + (isFlood ? 'Report a Flood' : 'Request Help') + '</button>' +
+                '</div>';
+            return;
+        }
+
+        let html = '<div class="list-count">' + reversed.length + ' ' + (isFlood ? 'Flood Report' : 'Help Request') + (reversed.length !== 1 ? 's' : '') + '</div>';
+
+        reversed.forEach(function(r, idx) {
+            html += isFlood ? buildFloodCard(r, idx) : buildHelpCard(r, idx);
+        });
+
+        html += '<div style="height:14px;"></div>';
+        list.innerHTML = html;
+    }
+
+    function getDelay(idx) {
+        return (idx * 0.07).toFixed(2) + 's';
+    }
+
+    function buildFloodCard(r, idx) {
+        const hasDetails = r.details && r.details !== 'No additional details provided.';
+        const card = document.createElement('div');
+        card.className = 'report-card';
+        card.style.animationDelay = getDelay(idx);
+        card.innerHTML =
+            '<div class="card-top">' +
+            '<div class="card-id"><i class="fas fa-hashtag"></i> ' + (r.id || '—') + '</div>' +
+            '<span class="badge badge-review">Under Review</span>' +
+            '</div>' +
+            '<div class="card-divider"></div>' +
+            '<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">' + escapeHtml(r.location || '—') + '</div></div></div>' +
+            '<div class="card-row"><i class="fas fa-clock row-icon"></i><div><div class="row-label">Submitted</div><div class="row-val">' + formatDate(r.timestamp) + '</div></div></div>' +
+            (hasDetails ? '<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">' + escapeHtml(r.details) + '</div></div></div>' : '') +
+            '<div class="card-footer">' +
+            '<span class="badge badge-priority"><i class="fas fa-flag"></i> High Priority</span>' +
+            '<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span>' +
+            '</div>';
+        return card.outerHTML;
+    }
+
+    function buildHelpCard(r, idx) {
+        const card = document.createElement('div');
+        card.className = 'report-card help-card';
+        card.style.animationDelay = getDelay(idx);
+        card.innerHTML =
+            '<div class="card-top">' +
+            '<div class="card-id help-id"><i class="fas fa-hashtag"></i> ' + (r.id || '—') + '</div>' +
+            '<span class="badge badge-help-status">Pending</span>' +
+            '</div>' +
+            '<div class="card-divider help-divider"></div>' +
+            '<div class="card-row"><i class="fas fa-user row-icon help-row-icon"></i><div><div class="row-label">Name</div><div class="row-val">' + escapeHtml(r.name || '—') + '</div></div></div>' +
+            '<div class="card-row"><i class="fas fa-phone row-icon help-row-icon"></i><div><div class="row-label">Phone</div><div class="row-val">' + escapeHtml(r.phone || '—') + '</div></div></div>' +
+            '<div class="card-row"><i class="fas fa-comment-alt row-icon help-row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">' + escapeHtml(r.description || '—') + '</div></div></div>' +
+            '<div class="card-row"><i class="fas fa-clock row-icon help-row-icon"></i><div><div class="row-label">Submitted</div><div class="row-val">' + formatDate(r.timestamp) + '</div></div></div>' +
+            '<div class="card-footer">' +
+            '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency</span>' +
+            '<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span>' +
+            '</div>';
+        return card.outerHTML;
+    }
+
+    function formatDate(timestamp) {
+        if (!timestamp) return '—';
+        // Try parsing; if it contains a comma or time, strip the time part
+        const date = new Date(timestamp);
+        if (!isNaN(date)) {
+            return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        }
+        // Fallback: strip time by splitting on comma or space after date
+        return timestamp.split(',')[0].trim();
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function updateCounts() {
+        document.getElementById('floodCount').textContent = getFloodReports().length;
+        document.getElementById('helpCount').textContent = getHelpRequests().length;
+    }
+
+    window.addEventListener('load', function() {
+        updateCounts();
+        renderList();
+    });
+</script>
+</body>
+</html>

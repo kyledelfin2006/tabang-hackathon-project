@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Report Flood</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="ReportFlood.css">
+</head>
+<body>
+<div class="phone">
+    <div class="status-bar">
+        <span class="status-time">9:41</span>
+        <div class="status-icons">
+            <i class="fas fa-signal"></i><i class="fas fa-wifi"></i><i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    <div class="back-btn"><i class="fas fa-chevron-left"></i></div>
+    <div class="page-title">Report Flood</div>
+    <div class="flood-img-wrap">
+        <img src="ff3ebecf9926983edf270610d42865e6.png" alt="Flood">
+    </div>
+    <div class="tagline">Report near your area</div>
+    <div class="form-area">
+        <div class="field-label">Location</div>
+        <div class="input-box">
+            <i class="fas fa-map-marker-alt"></i>
+            <input type="text" id="locationInput" placeholder="Enter Location">
+        </div>
+        <div class="details-label">Additional Details</div>
+        <div class="textarea-box">
+            <textarea id="detailsInput" placeholder="Enter details (e.g, extent of flooding)"></textarea>
+        </div>
+    </div>
+    <div class="submit-wrap">
+        <button class="submit-btn" id="submitBtn">Submit Report</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="bottom-nav">
+        <button class="nav-item" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
+        <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
+        <button class="nav-item active" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
+        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
+    </div>
+    <div class="toast" id="toast"></div>
+</div>
+<script>
+    function navigateTo(page) { window.location.href = page; }
+
+    document.querySelector('.back-btn').onclick = function() { navigateTo('index.html'); };
+    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
+    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
+    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
+    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
+    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
+
+    document.getElementById('submitBtn').onclick = function() {
+        var loc = document.getElementById('locationInput').value.trim();
+        var det = document.getElementById('detailsInput').value.trim();
+        if (!loc) { showToast('Please enter a location'); return; }
+
+        var report = {
+            id: 'RPT-' + Date.now().toString().slice(-6),
+            location: loc,
+            details: det || 'No additional details provided.',
+            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })
+        };
+
+        var all = JSON.parse(localStorage.getItem('allReports') || '[]');
+        all.push(report);
+        localStorage.setItem('allReports', JSON.stringify(all));
+
+        // ✅ Redirect to MyReports after submitting
+        navigateTo('MyReports.html');
+    };
+
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg; t.style.opacity = '1';
+        setTimeout(function() { t.style.opacity = '0'; }, 3000);
+    }
+</script>
+</body>
+</html>

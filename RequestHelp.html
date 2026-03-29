@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="RequestHelp.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Request Help</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div class="phone">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 28px 0;flex-shrink:0;">
+        <span style="color:#fff;font-size:15px;font-weight:700;">9:41</span>
+        <div style="display:flex;gap:5px;align-items:center;color:#fff;font-size:12px;">
+            <i class="fas fa-signal"></i><i class="fas fa-wifi"></i><i class="fas fa-battery-full"></i>
+        </div>
+    </div>
+    <div id="backBtn" style="color:#fff;font-size:18px;padding:8px 0 0 22px;cursor:pointer;"><i class="fas fa-chevron-left"></i></div>
+    <div style="text-align:center;color:#fff;font-size:28px;font-weight:800;margin-top:2px;">Request Help</div>
+    <div style="margin:14px 0 0;border-radius:18px;overflow:hidden;height:148px;flex-shrink:0;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+        <img src="898e29a7d024f10f6596d065b412cb43.png" style="width:100%;height:100%;object-fit:cover;object-position:center;" alt="Helping people in Disaster">
+    </div>
+    <div style="height:14px;"></div>
+    <div class="field-label">Name</div>
+    <div class="input-box"><input type="text" id="nameInput" placeholder="Enter your name"></div>
+    <div class="details-label">Phone Number</div>
+    <div class="input-box"><input type="tel" id="phoneInput" placeholder="Enter your number"></div>
+    <div class="details-label">Description</div>
+    <div class="textarea-box"><textarea id="descInput" placeholder="Describe situation..."></textarea></div>
+    <button class="submit-btn" id="submitBtn">Request Help</button>
+    <div class="toast" id="toast"></div>
+    <div class="bottom-nav">
+        <button class="nav-item active" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
+        <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
+        <button class="nav-item" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
+        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
+    </div>
+</div>
+
+<script>
+    function navigateTo(page) { window.location.href = page; }
+
+    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
+    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
+    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
+    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
+    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
+    document.getElementById('backBtn').onclick = function() { navigateTo('index.html'); };
+
+    document.getElementById('submitBtn').onclick = function() {
+        var name = document.getElementById('nameInput').value.trim();
+        var phone = document.getElementById('phoneInput').value.trim();
+        var desc = document.getElementById('descInput').value.trim();
+
+        if (!name) { showToast('Please enter your name'); return; }
+        if (!phone) { showToast('Please enter your phone number'); return; }
+        if (!desc) { showToast('Please describe your situation'); return; }
+
+        var request = {
+            id: 'HLP-' + Date.now().toString().slice(-6),
+            name: name,
+            phone: phone,
+            description: desc,
+            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })
+        };
+
+        var allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');
+        allHelp.push(request);
+        localStorage.setItem('allHelpRequests', JSON.stringify(allHelp));
+
+        navigateTo('MyReports.html');
+    };
+
+    function showToast(msg) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.opacity = '1';
+        setTimeout(function() { t.style.opacity = '0'; }, 3000);
+    }
+</script>
+</body>
+</html>
