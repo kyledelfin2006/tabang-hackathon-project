@@ -62,224 +62,228 @@
     </div>
 </div>
 
-<script>
-    function navigateTo(page) { window.location.href = page; }
+<script> // Kyle Reviewed! : Yes
 
-    let currentFilter = 'all';
-    let pendingDelete = null;
+ function navigateTo(page) { window.location.href = page; }
 
-    const overlay = document.getElementById('confirmOverlay');
-    document.getElementById('confirmCancel').onclick = function() {
-        overlay.classList.remove('show');
-        pendingDelete = null;
-    };
-    document.getElementById('confirmDelete').onclick = function() {
-        overlay.classList.remove('show');
-        if (!pendingDelete) return;
-        const { id, isFlood, cardEl } = pendingDelete;
-        pendingDelete = null;
-        cardEl.classList.add('deleting');
-        setTimeout(function() { deleteEntry(id, isFlood); }, 300);
-    };
+if (!localStorage.getItem('allReports')) localStorage.setItem('allReports', JSON.stringify([]));
+if (!localStorage.getItem('allHelpRequests')) localStorage.setItem('allHelpRequests', JSON.stringify([]));
 
-    function showConfirm(id, isFlood, cardEl) {
-        pendingDelete = { id, isFlood, cardEl };
-        document.getElementById('confirmTitle').textContent = isFlood ? 'Delete Report?' : 'Delete Request?';
-        overlay.classList.add('show');
+let currentFilter = 'all';
+let pendingDelete = null;
+const overlay = document.getElementById('confirmOverlay');
+
+document.getElementById('confirmCancel').onclick = function() {
+    overlay.classList.remove('show');
+    pendingDelete = null;
+};
+
+document.getElementById('confirmDelete').onclick = function() {
+    overlay.classList.remove('show');
+    if (!pendingDelete) return;
+    const { id, isFlood, cardEl } = pendingDelete;
+    pendingDelete = null;
+    cardEl.classList.add('deleting');
+    setTimeout(() => { deleteEntry(id, isFlood); }, 300);
+};
+
+function showConfirm(id, isFlood, cardEl) {
+    pendingDelete = { id, isFlood, cardEl };
+    document.getElementById('confirmTitle').textContent = isFlood ? 'Delete Report?' : 'Delete Request?';
+    overlay.classList.add('show');
+}
+
+function deleteEntry(id, isFlood) {
+    if (isFlood) {
+        let reports = getMyFloodReports().filter(r => r.id !== id);
+        localStorage.setItem('allReports', JSON.stringify(reports));
+    } else {
+        let requests = getMyHelpRequests().filter(r => r.id !== id);
+        localStorage.setItem('allHelpRequests', JSON.stringify(requests));
     }
+    renderList();
+}
 
-    function deleteEntry(id, isFlood) {
-        if (isFlood) {
-            let reports = getMyFloodReports().filter(r => r.id !== id);
-            localStorage.setItem('allReports', JSON.stringify(reports));
-        } else {
-            let requests = getMyHelpRequests().filter(r => r.id !== id);
-            localStorage.setItem('allHelpRequests', JSON.stringify(requests));
-        }
-        renderList();
+function getMyFloodReports() {
+    try { return JSON.parse(localStorage.getItem('allReports') || '[]'); }
+    catch(e) { return []; }
+}
+
+function getMyHelpRequests() {
+    try { return JSON.parse(localStorage.getItem('allHelpRequests') || '[]'); }
+    catch(e) { return []; }
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function formatDate(timestamp) {
+    if (!timestamp) return '—';
+    const date = new Date(timestamp);
+    if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
+    return timestamp.split(',').slice(0, 2).join(',').trim();
+}
 
+function setFilter(filter) {
+    currentFilter = filter;
+    ['All', 'Flood', 'Help'].forEach(type => {
+        const btn = document.getElementById('filter' + type);
+        btn.className = 'filter-btn' + (type.toLowerCase() === filter ? ` active-${filter}` : '');
+    });
+    renderList();
+}
 
-    const otherFloodReports = [
+function seedDemoData() {
+    if (localStorage.getItem('demoSeeded')) return;
+    localStorage.setItem('demoSeeded', 'true');
+
+    // Only add demo data on top of existing — don't overwrite
+    const existingReports = getMyFloodReports();
+    const existingHelp = getMyHelpRequests();
+
+    const demoReports = [
         {
-            id: 'RPT-882341',
-            location: 'Barangay Tiza, Malinao, Aklan',
-            details: 'Knee-deep flooding along the main road. Several houses affected.',
-            timestamp: 'Mar 28, 2026, 7:30 AM',
-            owner: 'Juan D.'
+            id: 'DEMO-001', isDemo: true,
+            location: 'Brgy. Poblacion, Ibajay, Aklan',
+            details: 'Water level rising near the bridge, approximately knee-deep.',
+            timestamp: 'Mar 29, 2026, 7:45 AM',
+            submittedBy: 'Risa Hontiveros'
         },
         {
-            id: 'RPT-774512',
-            location: 'New Washington, Aklan',
-            details: 'Flash flood near the river bank. Residents evacuating.',
-            timestamp: 'Mar 28, 2026, 9:10 AM',
-            owner: 'Maria S.'
+            id: 'DEMO-002', isDemo: true,
+            location: 'Brgy. Ondoy, Kalibo, Aklan',
+            details: 'Road is impassable. Several houses flooded.',
+            timestamp: 'Mar 29, 2026, 8:10 AM',
+            submittedBy: 'Kobe Bryant'
         },
         {
-            id: 'RPT-663290',
-            location: 'Kalibo Proper, Aklan',
-            details: 'Flooding at the public market area. Streets impassable.',
-            timestamp: 'Mar 29, 2026, 6:00 AM',
-            owner: 'Rodel A.'
+            id: 'DEMO-003', isDemo: true,
+            location: 'Brgy. Poblacion, Numancia, Aklan',
+            details: 'Flooding near the elementary school.',
+            timestamp: 'Mar 29, 2026, 9:00 AM',
+            submittedBy: 'Lebron James'
         }
     ];
 
-    const otherHelpRequests = [
+    const demoHelp = [
         {
-            id: 'HLP-991234',
-            name: 'Ana Reyes',
+            id: 'DEMO-001', isDemo: true,
+            name: 'Kai Sotto',
             phone: '09171234567',
-            description: 'Family of 5 stranded on rooftop. Need rescue immediately.',
-            timestamp: 'Mar 28, 2026, 8:45 AM',
-            owner: 'Ana R.'
+            description: 'Elderly resident trapped at home, needs evacuation assistance.',
+            timestamp: 'Mar 29, 2026, 8:30 AM',
+            submittedBy: 'Kai Sotto'
         },
         {
-            id: 'HLP-885671',
-            name: 'Angel Ilio',
+            id: 'DEMO-002', isDemo: true,
+            name: 'Dwight Ramos',
             phone: '09281234567',
-            description: 'Elderly person needs medical attention. Cannot evacuate alone.',
-            timestamp: 'Mar 29, 2026, 7:15 AM',
-            owner: 'Bernardo C.'
+            description: 'Family of 5 stranded on rooftop, needs immediate rescue.',
+            timestamp: 'Mar 29, 2026, 9:15 AM',
+            submittedBy: 'Dwight Ramos'
         }
     ];
 
-    function getMyFloodReports() {
-        try { return JSON.parse(localStorage.getItem('allReports') || '[]'); } catch(e) { return []; }
-    }
-    function getMyHelpRequests() {
-        try { return JSON.parse(localStorage.getItem('allHelpRequests') || '[]'); } catch(e) { return []; }
-    }
+    // Merge demo data with any existing real data
+    localStorage.setItem('allReports', JSON.stringify([...existingReports, ...demoReports]));
+    localStorage.setItem('allHelpRequests', JSON.stringify([...existingHelp, ...demoHelp]));
+}
 
-    function escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
+function renderList() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    const list = document.getElementById('reportsList');
 
-    function formatDate(timestamp) {
-        if (!timestamp) return '—';
-        const date = new Date(timestamp);
-        if (!isNaN(date.getTime())) {
-            return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        }
-        return timestamp.split(',').slice(0, 2).join(',').trim();
-    }
+    let items = [
+        ...getMyFloodReports().map(r => ({ ...r, type: 'flood', owner: r.submittedBy || 'You' })),
+        ...getMyHelpRequests().map(r => ({ ...r, type: 'help', owner: r.submittedBy || 'You' }))
+    ];
 
-    function setFilter(filter) {
-        currentFilter = filter;
-        document.getElementById('filterAll').className = 'filter-btn' + (filter === 'all' ? ' active-all' : '');
-        document.getElementById('filterFlood').className = 'filter-btn' + (filter === 'flood' ? ' active-flood' : '');
-        document.getElementById('filterHelp').className = 'filter-btn' + (filter === 'help' ? ' active-help' : '');
-        renderList();
-    }
+    if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
+    if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');
 
-    function renderList() {
-        const query = document.getElementById('searchInput').value.toLowerCase();
-        const list = document.getElementById('reportsList');
-
-        let floodItems = [
-            ...otherFloodReports.map(r => ({ ...r, isOwn: false })),
-            ...getMyFloodReports().map(r => ({ ...r, isOwn: true, owner: 'You' }))
-        ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        let helpItems = [
-            ...otherHelpRequests.map(r => ({ ...r, isOwn: false })),
-            ...getMyHelpRequests().map(r => ({ ...r, isOwn: true, owner: 'You' }))
-        ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        let combined = [];
-        if (currentFilter === 'all' || currentFilter === 'flood') {
-            combined = combined.concat(floodItems.map(r => ({ ...r, type: 'flood' })));
-        }
-        if (currentFilter === 'all' || currentFilter === 'help') {
-            combined = combined.concat(helpItems.map(r => ({ ...r, type: 'help' })));
-        }
-
-        combined.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-        if (query) {
-            combined = combined.filter(r => {
-                const searchable = [r.location || '', r.name || '', r.description || '', r.details || '', r.owner || ''].join(' ').toLowerCase();
-                return searchable.includes(query);
-            });
-        }
-
-        if (combined.length === 0) {
-            list.innerHTML =
-                '<div class="empty-state">' +
-                '<div class="empty-icon"><i class="fas fa-search"></i></div>' +
-                '<div class="empty-title">No Reports Found</div>' +
-                '<div class="empty-sub">No community reports match your current filter or search.</div>' +
-                '</div>';
-            return;
-        }
-
-        let html = '<div class="list-count">' + combined.length + ' Report' + (combined.length !== 1 ? 's' : '') + '</div>';
-
-        combined.forEach(function(r, idx) {
-            const delay = (idx * 0.06).toFixed(2) + 's';
-            const isHelp = r.type === 'help';
-            const cardClass = 'report-card' + (isHelp ? ' help-card' : '') + (r.isOwn ? ' own-card' : '');
-            const idClass = isHelp ? 'card-id help-id' : 'card-id';
-            const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
-            const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
-            const badgeHtml = isHelp
-                ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency</span>'
-                : '<span class="badge badge-priority"><i class="fas fa-flag"></i> High Priority</span>';
-            const ownerBadge = r.isOwn
-                ? '<span class="user-badge badge-you"><i class="fas fa-user"></i> You</span>'
-                : '<span class="user-badge badge-other"><i class="fas fa-user"></i> ' + escapeHtml(r.owner || 'Other') + '</span>';
-
-            const deleteBtn = r.isOwn
-                ? '<button class="card-delete-btn" data-id="' + escapeHtml(r.id) + '" data-isflood="' + (!isHelp) + '" title="Delete"><i class="fas fa-trash-alt"></i></button>'
-                : '';
-
-            if (!isHelp) {
-                html +=
-                    '<div class="' + cardClass + '" style="animation-delay:' + delay + '" data-id="' + escapeHtml(r.id) + '">' +
-                    '<div class="card-top">' +
-                    '<div class="' + idClass + '"><i class="fas fa-hashtag"></i> ' + escapeHtml(r.id || '—') + '</div>' +
-                    ownerBadge +
-                    deleteBtn +
-                    '</div>' +
-                    '<div class="' + dividerClass + '"></div>' +
-                    '<div class="card-row"><i class="fas fa-map-marker-alt ' + iconClass + '"></i><div><div class="row-label">Location</div><div class="row-val">' + escapeHtml(r.location || '—') + '</div></div></div>' +
-                    (r.details && r.details !== 'No additional details provided.' ? '<div class="card-row"><i class="fas fa-info-circle ' + iconClass + '"></i><div><div class="row-label">Details</div><div class="row-val">' + escapeHtml(r.details) + '</div></div></div>' : '') +
-                    '<div class="card-row"><i class="fas fa-clock ' + iconClass + '"></i><div><div class="row-label">Submitted</div><div class="row-val">' + escapeHtml(formatDate(r.timestamp)) + '</div></div></div>' +
-                    '<div class="card-footer">' + badgeHtml + '<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>' +
-                    '</div>';
-            } else {
-                html +=
-                    '<div class="' + cardClass + '" style="animation-delay:' + delay + '" data-id="' + escapeHtml(r.id) + '">' +
-                    '<div class="card-top">' +
-                    '<div class="' + idClass + '"><i class="fas fa-hashtag"></i> ' + escapeHtml(r.id || '—') + '</div>' +
-                    ownerBadge +
-                    deleteBtn +
-                    '</div>' +
-                    '<div class="' + dividerClass + '"></div>' +
-                    '<div class="card-row"><i class="fas fa-user ' + iconClass + '"></i><div><div class="row-label">Name</div><div class="row-val">' + escapeHtml(r.name || '—') + '</div></div></div>' +
-                    '<div class="card-row"><i class="fas fa-comment-alt ' + iconClass + '"></i><div><div class="row-label">Situation</div><div class="row-val">' + escapeHtml(r.description || '—') + '</div></div></div>' +
-                    '<div class="card-row"><i class="fas fa-clock ' + iconClass + '"></i><div><div class="row-label">Submitted</div><div class="row-val">' + escapeHtml(formatDate(r.timestamp)) + '</div></div></div>' +
-                    '<div class="card-footer">' + badgeHtml + '<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>' +
-                    '</div>';
-            }
-        });
-
-        html += '<div style="height:14px;"></div>';
-        list.innerHTML = html;
-
-        list.querySelectorAll('.card-delete-btn').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const id = btn.getAttribute('data-id');
-                const isFlood = btn.getAttribute('data-isflood') === 'true';
-                const cardEl = btn.closest('.report-card');
-                showConfirm(id, isFlood, cardEl);
-            });
+    if (query) {
+        items = items.filter(r => {
+            const searchable = [r.location||'', r.name||'', r.description||'', r.details||'', r.owner||''].join(' ').toLowerCase();
+            return searchable.includes(query);
         });
     }
 
-    window.addEventListener('load', renderList);
+    items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    if (items.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fas fa-search"></i></div>
+                <div class="empty-title">No Reports Found</div>
+                <div class="empty-sub">No reports match your current filter or search.</div>
+            </div>`;
+        return;
+    }
+
+    let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
+
+    items.forEach((r, idx) => {
+        const delay = (idx * 0.06).toFixed(2) + 's';
+        const isHelp = r.type === 'help';
+        const cardClass = `report-card${isHelp ? ' help-card' : ''} own-card`;
+        const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
+        const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
+        const badgeHtml = isHelp
+            ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency</span>'
+            : '<span class="badge badge-priority"><i class="fas fa-flag"></i> High Priority</span>';
+
+        const demoBadge = r.isDemo
+            ? `<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.15);letter-spacing:0.6px;text-transform:uppercase;">DEMO</span>`
+            : '';
+
+        const ownerBadge = `<span class="user-badge badge-you"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
+        const deleteBtn = `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
+
+        html += `
+        <div class="${cardClass}" style="animation-delay:${delay}" data-id="${escapeHtml(r.id)}">
+            <div class="card-top" style="flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                    ${ownerBadge}
+                    ${demoBadge}
+                </div>
+                <div style="display:flex;justify-content:flex-end;">${deleteBtn}</div>
+            </div>
+            <div class="${dividerClass}"></div>
+            ${isHelp
+            ? `<div class="card-row"><i class="fas fa-user ${iconClass}"></i><div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div></div>
+                   <div class="card-row"><i class="fas fa-comment-alt ${iconClass}"></i><div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div></div>`
+            : `<div class="card-row"><i class="fas fa-map-marker-alt ${iconClass}"></i><div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div></div>
+                   ${r.details ? `<div class="card-row"><i class="fas fa-info-circle ${iconClass}"></i><div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div></div>` : ''}`
+        }
+            <div class="card-row"><i class="fas fa-clock ${iconClass}"></i><div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div></div>
+            <div class="card-footer">${badgeHtml}<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>
+        </div>`;
+    });
+
+    html += '<div style="height:14px;"></div>';
+    list.innerHTML = html;
+
+    list.querySelectorAll('.card-delete-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const isFlood = btn.getAttribute('data-isflood') === 'true';
+            const cardEl = btn.closest('.report-card');
+            showConfirm(id, isFlood, cardEl);
+        });
+    });
+}
+
+// Single load entry point
+window.addEventListener('load', function() {
+    seedDemoData();
+    renderList();
+});
 </script>
 </body>
 </html>

@@ -184,18 +184,21 @@ body {
 
 
 .user-badge {
-    font-size: 10px;
+    font-size: 13px;        /* was 10px */
     font-weight: 700;
-    padding: 3px 9px;
+    padding: 5px 14px;
     border-radius: 20px;
-    display: flex; align-items: center; gap: 4px;
-    margin-left: auto;
+    display: flex; align-items: center; gap: 6px;
+    flex: 1;                /* ← makes it stretch to fill available space */
 }
+
 .badge-you {
     background: rgba(116,185,255,0.2);
     color: #74b9ff;
     border: 1px solid rgba(116,185,255,0.35);
+    justify-content: center;   /* ← centers the name text */
 }
+/* kyle was here */
 .badge-other {
     background: rgba(255,255,255,0.1);
     color: rgba(255,255,255,0.5);

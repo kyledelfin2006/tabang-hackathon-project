@@ -57,12 +57,15 @@
         if (!phone) { showToast('Please enter your phone number'); return; }
         if (!desc) { showToast('Please describe your situation'); return; }
 
+        var user = JSON.parse(localStorage.getItem('tabangUser'));
+
         var request = {
             id: 'HLP-' + Date.now().toString().slice(-6),
             name: name,
             phone: phone,
             description: desc,
-            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })
+            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
+            submittedBy: user ? (user.fullName || user.firstName) : 'Unknown User'  // ← add this
         };
 
         var allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');

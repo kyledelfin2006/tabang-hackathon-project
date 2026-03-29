@@ -29,7 +29,7 @@
         </div>
         <div class="details-label">Additional Details</div>
         <div class="textarea-box">
-            <textarea id="detailsInput" placeholder="Enter details (e.g, extent of flooding)"></textarea>
+            <label for="detailsInput"></label><textarea id="detailsInput" placeholder="Enter details (e.g, extent of flooding)"></textarea>
         </div>
     </div>
     <div class="submit-wrap">
@@ -65,6 +65,16 @@
             location: loc,
             details: det || 'No additional details provided.',
             timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })
+        };
+
+        var user = JSON.parse(localStorage.getItem('tabangUser'));
+
+        var report = {
+            id: 'RPT-' + Date.now().toString().slice(-6),
+            location: loc,
+            details: det || 'No additional details provided.',
+            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
+            submittedBy: user ? (user.fullName || user.firstName) : 'Unknown User'  // ← add this
         };
 
         var all = JSON.parse(localStorage.getItem('allReports') || '[]');
