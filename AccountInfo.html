@@ -42,9 +42,9 @@
         <div class="profile-info">
             <div class="profile-name-row">
                 <img src="tabang-badge.png" class="badge-img" onerror="this.style.display='none'">
-                <div class="profile-name">Mariano Ilejay Jr.</div>
+                <div class="profile-name" id="profileName">Guest User</div>
             </div>
-            <div class="profile-address">Banay-Banay Bliss<br>Malinao, Aklan</div>
+            <div class="profile-address" id="profileEmail">No email</div>
         </div>
     </div>
 
@@ -160,6 +160,12 @@
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     document.getElementById('backBtn').onclick = function() { window.location.href = 'index.html'; };
+
+    var user = JSON.parse(localStorage.getItem('tabangUser'));
+    if (user) {
+        document.getElementById('profileName').textContent = user.fullName || user.firstName;
+        document.getElementById('profileEmail').textContent = user.email;
+    }
 
     document.getElementById('photo-input').addEventListener('change', function(e) {
         var file = e.target.files[0];
