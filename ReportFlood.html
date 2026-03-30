@@ -46,44 +46,67 @@
     <div class="toast" id="toast"></div>
 </div>
 <script type="module">
-    import { db } from "./firebase.js";
+    import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    
-    onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        alert('Please log in to use this feature.');
-        window.location.href = 'Login.html';
-    }
-    
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
     function navigateTo(page) { window.location.href = page; }
 
-    document.querySelector('.back-btn').onclick = function() { navigateTo('index.html'); };
-    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
-    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
-    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
-    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
-    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
+    // Navigation buttons
+    document.querySelector('.back-btn').onclick = () => navigateTo('home.html');
+    document.getElementById('navRequest').onclick = () => navigateTo('RequestHelp.html');
+    document.getElementById('navHotlines').onclick = () => navigateTo('Hotline.html');
+    document.getElementById('navReport').onclick = () => navigateTo('ReportFlood.html');
+    document.getElementById('navMyReports').onclick = () => navigateTo('MyReports.html');
+    document.getElementById('navAccount').onclick = () => navigateTo('AccountInfo.html');
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            // Enable submit button (you can style it accordingly)
+            document.getElementById('submitBtn').disabled = false;
+        } else {
+            currentUser = null;
+            document.getElementById('submitBtn').disabled = true;
+            showToast('Please log in to report a flood.');
+        }
+    });
 
     document.getElementById('submitBtn').onclick = async function() {
-        var loc = document.getElementById('locationInput').value.trim();
-        var det = document.getElementById('detailsInput').value.trim();
-        if (!loc) { showToast('Please enter a location'); return; }
+        if (!currentUser) {
+            showToast('You must be logged in.');
+            return;
+        }
 
-        await addDoc(collection(db, "floodReports"), {
-        location: loc,
-         details: det || 'No additional details provided.',
-        timestamp: new Date()
-        });
-        
+        const loc = document.getElementById('locationInput').value.trim();
+        const det = document.getElementById('detailsInput').value.trim();
 
-        // ✅ Redirect to MyReports after submitting
-        navigateTo('MyReports.html');
+        if (!loc) {
+            showToast('Please enter a location');
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "floodReports"), {
+                location: loc,
+                details: det || 'No additional details provided.',
+                timestamp: new Date(),
+                userId: currentUser.uid,
+                submittedBy: currentUser.email || currentUser.displayName || 'Unknown'
+            });
+            navigateTo('MyReports.html');
+        } catch (err) {
+            showToast('Error: ' + err.message);
+        }
     };
 
     function showToast(msg) {
         var t = document.getElementById('toast');
-        t.textContent = msg; t.style.opacity = '1';
-        setTimeout(function() { t.style.opacity = '0'; }, 3000);
+        t.textContent = msg;
+        t.style.opacity = '1';
+        setTimeout(() => t.style.opacity = '0', 3000);
     }
 </script>
 </body>

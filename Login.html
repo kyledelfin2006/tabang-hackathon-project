@@ -39,23 +39,33 @@
     <div class="toast" id="toast"></div>
 </div>
 
-<script>
+<script type="module">
+    import { auth } from "./firebase.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
     function showToast(msg) {
         var t = document.getElementById('toast');
-        t.textContent = msg; t.style.opacity = '1';
+        t.textContent = msg;
+        t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
 
-    document.getElementById('loginBtn').onclick = function() {
-        var email = document.getElementById('emailInput').value.trim();
+    document.getElementById('loginBtn').onclick = async function() {
+        var input = document.getElementById('emailInput').value.trim();
         var pass  = document.getElementById('passInput').value.trim();
 
-        if (!email) { showToast('⚠️ Please enter your email'); return; }
-        if (!email.includes('@')) { showToast('⚠️ Please enter a valid email'); return; }
+        if (!input) { showToast('⚠️ Please enter your email or username'); return; }
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-        window.location.href = 'index.html';
+        // For email/password login, the input must be the email address
+        // If you allow username as well, you need to resolve it – we'll assume email.
+        try {
+            await signInWithEmailAndPassword(auth, input, pass);
+            window.location.href = 'home.html';  // or whatever your main page is
+        } catch (err) {
+            showToast('⚠️ ' + err.message);
+        }
     };
 </script>
 </body>

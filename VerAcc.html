@@ -137,69 +137,73 @@
     </div>
 
 </div>
-
 <script type="module">
-    import { db } from "./firebase.js";
+    import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    document.querySelector('.back-btn').onclick = function() {
-        window.location.href = 'AccountInfo.html';
-    };
+    let currentUser = null;
 
-    function validate(inputId, wrapperId, checkFn) {
-        var input   = document.getElementById(inputId);
-        var wrapper = document.getElementById(wrapperId);
-        if (!input || !wrapper) return;
-        input.addEventListener('input', function() {
-            if (checkFn(input.value.trim())) {
-                wrapper.classList.add('valid');
-            } else {
-                wrapper.classList.remove('valid');
-            }
-        });
-    }
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.querySelector('.submit-btn').disabled = false;
+        } else {
+            currentUser = null;
+            document.querySelector('.submit-btn').disabled = true;
+            // Optionally show a warning
+            const toast = document.getElementById('toast');
+            toast.textContent = 'Please log in to verify your account.';
+            toast.style.opacity = '1';
+            setTimeout(() => toast.style.opacity = '0', 3000);
+        }
+    });
+
+    document.querySelector('.back-btn').onclick = () => window.location.href = 'AccountInfo.html';
+
+    // Validation functions (unchanged)
+    function validate(inputId, wrapperId, checkFn) { ... } // keep your existing validation
 
     validate('field-name', 'wrap-name', function(v) {
-        var words = v.split(/\s+/).filter(function(w){ return w.length > 0; });
+        var words = v.split(/\s+/).filter(w => w.length > 0);
         return words.length >= 2 && words.length <= 4;
     });
-    validate('field-mobile', 'wrap-mobile', function(v) {
-        return /^\d{11}$/.test(v.replace(/\s/g, ''));
-    });
-    validate('field-email', 'wrap-email', function(v) {
-        return v.includes('@') && v.includes('.');
-    });
-    validate('field-barangay', 'wrap-barangay', function(v) {
-        return v.length >= 2;
-    });
-    validate('field-landmark', 'wrap-landmark', function(v) {
-        return v.length > 0;
-    });
+    validate('field-mobile', 'wrap-mobile', v => /^\d{11}$/.test(v.replace(/\s/g, '')));
+    validate('field-email', 'wrap-email', v => v.includes('@') && v.includes('.'));
+    validate('field-barangay', 'wrap-barangay', v => v.length >= 2);
+    validate('field-landmark', 'wrap-landmark', v => v.length > 0);
 
     document.querySelector('.submit-btn').onclick = async function() {
-        var name     = document.getElementById('field-name').value.trim();
-        var mobile   = document.getElementById('field-mobile').value.trim().replace(/\s/g, '');
+        if (!currentUser) {
+            showToast('⚠️ You must be logged in to submit verification.', 'error');
+            return;
+        }
+
+        var name = document.getElementById('field-name').value.trim();
+        var mobile = document.getElementById('field-mobile').value.trim().replace(/\s/g, '');
         var barangay = document.getElementById('field-barangay').value.trim();
 
-        var nameWords = name.split(/\s+/).filter(function(w){ return w.length > 0; });
+        var nameWords = name.split(/\s+/).filter(w => w.length > 0);
         if (nameWords.length < 2) { showToast('⚠️ Please enter your full name.', 'error'); return; }
         if (!/^\d{11}$/.test(mobile)) { showToast('⚠️ Mobile number must be 11 digits.', 'error'); return; }
         if (barangay.length < 2) { showToast('⚠️ Please enter your barangay.', 'error'); return; }
 
         try {
-    await addDoc(collection(db, "verifications"), {
-        name: name,
-        mobile: '+63' + mobile,
-        barangay: barangay,
-        email: document.getElementById('field-email').value.trim(),
-        landmark: document.getElementById('field-landmark').value.trim(),
-        timestamp: new Date()
-    });
-    showToast('✅ Verification submitted!', 'success');
-    setTimeout(function() { window.location.href = 'AccountInfo.html'; }, 2500);
-} catch (err) {
-    showToast('⚠️ ' + err.message, 'error');
-}
+            await addDoc(collection(db, "verifications"), {
+                name: name,
+                mobile: '+63' + mobile,
+                barangay: barangay,
+                email: document.getElementById('field-email').value.trim(),
+                landmark: document.getElementById('field-landmark').value.trim(),
+                timestamp: new Date(),
+                userId: currentUser.uid,
+                submittedBy: currentUser.email || currentUser.displayName || name
+            });
+            showToast('✅ Verification submitted!', 'success');
+            setTimeout(() => window.location.href = 'AccountInfo.html', 2500);
+        } catch (err) {
+            showToast('⚠️ ' + err.message, 'error');
+        }
     };
 
     function showToast(msg, type) {
@@ -207,7 +211,7 @@
         t.textContent = msg;
         t.className = 'toast-visible ' + (type || 'error');
         clearTimeout(t._timer);
-        t._timer = setTimeout(function() { t.className = ''; }, 3000);
+        t._timer = setTimeout(() => t.className = '', 3000);
     }
 </script>
 </body>

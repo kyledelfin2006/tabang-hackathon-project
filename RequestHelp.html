@@ -39,42 +39,66 @@
 </div>
 
 <script type="module">
-    import { db } from "./firebase.js";
+    import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     function navigateTo(page) { window.location.href = page; }
 
-    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
-    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
-    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
-    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
-    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
-    document.getElementById('backBtn').onclick = function() { navigateTo('index.html'); };
+    document.getElementById('navRequest').onclick = () => navigateTo('RequestHelp.html');
+    document.getElementById('navHotlines').onclick = () => navigateTo('Hotline.html');
+    document.getElementById('navReport').onclick = () => navigateTo('ReportFlood.html');
+    document.getElementById('navMyReports').onclick = () => navigateTo('MyReports.html');
+    document.getElementById('navAccount').onclick = () => navigateTo('AccountInfo.html');
+    document.getElementById('backBtn').onclick = () => navigateTo('home.html');
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('submitBtn').disabled = false;
+        } else {
+            currentUser = null;
+            document.getElementById('submitBtn').disabled = true;
+            showToast('Please log in to request help.');
+        }
+    });
 
     document.getElementById('submitBtn').onclick = async function() {
-        var name = document.getElementById('nameInput').value.trim();
-        var phone = document.getElementById('phoneInput').value.trim();
-        var desc = document.getElementById('descInput').value.trim();
+        if (!currentUser) {
+            showToast('You must be logged in.');
+            return;
+        }
+
+        const name = document.getElementById('nameInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const desc = document.getElementById('descInput').value.trim();
 
         if (!name) { showToast('Please enter your name'); return; }
         if (!phone) { showToast('Please enter your phone number'); return; }
         if (!desc) { showToast('Please describe your situation'); return; }
 
-        await addDoc(collection(db, "helpRequests"), {
-            name: name,
-            phone: phone,
-            description: desc,
-            timestamp: new Date()
-        });
-
-        navigateTo('MyReports.html');
+        try {
+            await addDoc(collection(db, "helpRequests"), {
+                name: name,
+                phone: phone,
+                description: desc,
+                timestamp: new Date(),
+                userId: currentUser.uid,
+                submittedBy: currentUser.email || currentUser.displayName || name
+            });
+            navigateTo('MyReports.html');
+        } catch (err) {
+            showToast('Error: ' + err.message);
+        }
     };
 
     function showToast(msg) {
         var t = document.getElementById('toast');
         t.textContent = msg;
         t.style.opacity = '1';
-        setTimeout(function() { t.style.opacity = '0'; }, 3000);
+        setTimeout(() => t.style.opacity = '0', 3000);
     }
 </script>
 </body>

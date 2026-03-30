@@ -53,16 +53,15 @@
     <div class="home-indicator"></div>
     <div class="toast" id="toast"></div>
 </div>
-
 <script type="module">
     import { auth, db } from "./firebase.js";
     import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    
+
     function showToast(msg, success) {
         var t = document.getElementById('toast');
         t.textContent = msg;
-        t.className = 'toast' + (success ? ' success' : '');
+        t.className = 'toast' + (success ? ' success' : ' error');
         t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
@@ -82,35 +81,34 @@
         if (!pass)                { showToast('⚠️ Please enter a password'); return; }
         if (pass.length < 6)      { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-<<<<<<< HEAD
-        // Save user data to firebase
-       try {
+        try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            const user = userCredential.user; // ← this gives you the user's unique ID
+            const user = userCredential.user;
 
-            // Save extra info to Firestore
             await setDoc(doc(db, "users", user.uid), {
                 firstName: firstName,
                 lastName: lastName,
                 fullName: firstName + ' ' + lastName,
                 username: username,
-                email: email
+                email: email,
+                createdAt: new Date()
             });
-=======
-        showToast('✅ Account created!', true);
-        setTimeout(function() { window.location.href = 'Login.html'; }, 1500);
-    };
->>>>>>> 1b97c39 (fixed conflict)
 
             showToast('✅ Account created!', true);
             setTimeout(function() { window.location.href = 'Login.html'; }, 1500);
-            } catch (err) {
+        } catch (err) {
             showToast('⚠️ ' + err.message);
-            }
-    }
+        }
+    };
+
+    // Google sign-up – placeholder for now, but can be implemented later
     function handleGoogle() {
         showToast('🔄 Redirecting to Google...', true);
+        // TODO: implement actual Google sign‑up using signInWithPopup
     }
+
+    // Expose handleGoogle globally for the inline onclick
+    window.handleGoogle = handleGoogle;
 </script>
 </body>
 </html>
