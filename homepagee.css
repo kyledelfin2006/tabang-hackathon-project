@@ -63,7 +63,7 @@ body {
 
 /* ── HERO ── */
 .hero-card {
-    background:rgba(255,255,255,0.1); backdrop-filter:blur(8px);
+    background:rgba(255,255,255,0.13);
     margin:20px 20px 16px; border-radius:32px; padding:22px 18px;
     text-align:center; border:1px solid rgba(255,255,255,0.25);
     display:flex; flex-direction:column; align-items:center;
@@ -293,7 +293,7 @@ body {
 
 /* ── BOTTOM NAV ── */
 .bottom-nav {
-    background:rgba(255,255,255,0.96); backdrop-filter:blur(12px);
+    background:rgba(255,255,255,0.96);
     display:flex; justify-content:space-around; align-items:center;
     padding:10px 16px; gap:8px;
     box-shadow:0 -2px 12px rgba(0,0,0,0.08);
@@ -312,7 +312,7 @@ body {
 /* ── MODAL ── */
 .modal {
     position:fixed; top:0; left:0; width:100%; height:100%;
-    background:rgba(0,0,0,0.7); backdrop-filter:blur(5px);
+    background:rgba(0,0,0,0.75);
     display:flex; justify-content:center; align-items:center;
     z-index:200; visibility:hidden; opacity:0; transition:0.2s;
 }
@@ -367,6 +367,7 @@ body {
     display: flex; flex-direction: column;
     overflow: hidden;
     box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+    will-change: transform;
 }
 .side-drawer.open { transform: translateX(0); }
 
@@ -419,6 +420,7 @@ body {
     display: flex; flex-direction: column;
     overflow: hidden;
     box-shadow: -4px 0 24px rgba(0,0,0,0.3);
+    will-change: transform;
 }
 .notif-panel.open { transform: translateX(0); }
 
