@@ -138,7 +138,10 @@
 
 </div>
 
-<script>
+<script type="module">
+    import { db } from "./firebase.js";
+    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
     document.querySelector('.back-btn').onclick = function() {
         window.location.href = 'AccountInfo.html';
     };
@@ -173,7 +176,7 @@
         return v.length > 0;
     });
 
-    document.querySelector('.submit-btn').onclick = function() {
+    document.querySelector('.submit-btn').onclick = async function() {
         var name     = document.getElementById('field-name').value.trim();
         var mobile   = document.getElementById('field-mobile').value.trim().replace(/\s/g, '');
         var barangay = document.getElementById('field-barangay').value.trim();
@@ -183,8 +186,20 @@
         if (!/^\d{11}$/.test(mobile)) { showToast('⚠️ Mobile number must be 11 digits.', 'error'); return; }
         if (barangay.length < 2) { showToast('⚠️ Please enter your barangay.', 'error'); return; }
 
-        showToast('✅ Verification submitted!', 'success');
-        setTimeout(function() { window.location.href = 'AccountInfo.html'; }, 2500);
+        try {
+    await addDoc(collection(db, "verifications"), {
+        name: name,
+        mobile: '+63' + mobile,
+        barangay: barangay,
+        email: document.getElementById('field-email').value.trim(),
+        landmark: document.getElementById('field-landmark').value.trim(),
+        timestamp: new Date()
+    });
+    showToast('✅ Verification submitted!', 'success');
+    setTimeout(function() { window.location.href = 'AccountInfo.html'; }, 2500);
+} catch (err) {
+    showToast('⚠️ ' + err.message, 'error');
+}
     };
 
     function showToast(msg, type) {

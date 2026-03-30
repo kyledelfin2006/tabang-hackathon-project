@@ -62,12 +62,11 @@
     </div>
 </div>
 
-<script> // Kyle Reviewed! : Yes
-
- function navigateTo(page) { window.location.href = page; }
-
-if (!localStorage.getItem('allReports')) localStorage.setItem('allReports', JSON.stringify([]));
-if (!localStorage.getItem('allHelpRequests')) localStorage.setItem('allHelpRequests', JSON.stringify([]));
+<script type="module"> // Kyle Reviewed! : Yes : Nice
+    import { db } from "./firebase.js";
+    import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+ 
+    function navigateTo(page) { window.location.href = page; }
 
 let currentFilter = 'all';
 let pendingDelete = null;
@@ -93,25 +92,20 @@ function showConfirm(id, isFlood, cardEl) {
     overlay.classList.add('show');
 }
 
-function deleteEntry(id, isFlood) {
-    if (isFlood) {
-        let reports = getMyFloodReports().filter(r => r.id !== id);
-        localStorage.setItem('allReports', JSON.stringify(reports));
-    } else {
-        let requests = getMyHelpRequests().filter(r => r.id !== id);
-        localStorage.setItem('allHelpRequests', JSON.stringify(requests));
-    }
+async function deleteEntry(id, isFlood) {
+    const collectionName = isFlood ? "floodReports" : "helpRequests";
+    await deleteDoc(doc(db, collectionName, id));
     renderList();
 }
 
-function getMyFloodReports() {
-    try { return JSON.parse(localStorage.getItem('allReports') || '[]'); }
-    catch(e) { return []; }
+async function getMyFloodReports() {
+    const snap = await getDocs(collection(db, "floodReports"));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
 }
 
-function getMyHelpRequests() {
-    try { return JSON.parse(localStorage.getItem('allHelpRequests') || '[]'); }
-    catch(e) { return []; }
+async function getMyHelpRequests() {
+    const snap = await getDocs(collection(db, "helpRequests"));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
 }
 
 function escapeHtml(text) {
@@ -138,69 +132,17 @@ function setFilter(filter) {
     renderList();
 }
 
-function seedDemoData() {
-    if (localStorage.getItem('demoSeeded')) return;
-    localStorage.setItem('demoSeeded', 'true');
 
-    // Only add demo data on top of existing — don't overwrite
-    const existingReports = getMyFloodReports();
-    const existingHelp = getMyHelpRequests();
-
-    const demoReports = [
-        {
-            id: 'DEMO-001', isDemo: true,
-            location: 'Brgy. Poblacion, Ibajay, Aklan',
-            details: 'Water level rising near the bridge, approximately knee-deep.',
-            timestamp: 'Mar 29, 2026, 7:45 AM',
-            submittedBy: 'Risa Hontiveros'
-        },
-        {
-            id: 'DEMO-002', isDemo: true,
-            location: 'Brgy. Ondoy, Kalibo, Aklan',
-            details: 'Road is impassable. Several houses flooded.',
-            timestamp: 'Mar 29, 2026, 8:10 AM',
-            submittedBy: 'Kobe Bryant'
-        },
-        {
-            id: 'DEMO-003', isDemo: true,
-            location: 'Brgy. Poblacion, Numancia, Aklan',
-            details: 'Flooding near the elementary school.',
-            timestamp: 'Mar 29, 2026, 9:00 AM',
-            submittedBy: 'Lebron James'
-        }
-    ];
-
-    const demoHelp = [
-        {
-            id: 'DEMO-001', isDemo: true,
-            name: 'Kai Sotto',
-            phone: '09171234567',
-            description: 'Elderly resident trapped at home, needs evacuation assistance.',
-            timestamp: 'Mar 29, 2026, 8:30 AM',
-            submittedBy: 'Kai Sotto'
-        },
-        {
-            id: 'DEMO-002', isDemo: true,
-            name: 'Dwight Ramos',
-            phone: '09281234567',
-            description: 'Family of 5 stranded on rooftop, needs immediate rescue.',
-            timestamp: 'Mar 29, 2026, 9:15 AM',
-            submittedBy: 'Dwight Ramos'
-        }
-    ];
-
-    // Merge demo data with any existing real data
-    localStorage.setItem('allReports', JSON.stringify([...existingReports, ...demoReports]));
-    localStorage.setItem('allHelpRequests', JSON.stringify([...existingHelp, ...demoHelp]));
-}
-
-function renderList() {
+async function renderList() {
     const query = document.getElementById('searchInput').value.toLowerCase();
     const list = document.getElementById('reportsList');
 
+    const floods = await getMyFloodReports();
+    const helps = await getMyHelpRequests();
+
     let items = [
-        ...getMyFloodReports().map(r => ({ ...r, type: 'flood', owner: r.submittedBy || 'You' })),
-        ...getMyHelpRequests().map(r => ({ ...r, type: 'help', owner: r.submittedBy || 'You' }))
+        ...floods.map(r => ({ ...r, owner: r.submittedBy || 'You' })),
+        ...helps.map(r => ({ ...r, owner: r.submittedBy || 'You' }))
     ];
 
     if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
@@ -281,7 +223,6 @@ function renderList() {
 
 // Single load entry point
 window.addEventListener('load', function() {
-    seedDemoData();
     renderList();
 });
 </script>

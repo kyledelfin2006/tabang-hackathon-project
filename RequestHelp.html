@@ -38,7 +38,10 @@
     </div>
 </div>
 
-<script>
+<script type="module">
+    import { db } from "./firebase.js";
+    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
     function navigateTo(page) { window.location.href = page; }
 
     document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
@@ -48,7 +51,7 @@
     document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
     document.getElementById('backBtn').onclick = function() { navigateTo('index.html'); };
 
-    document.getElementById('submitBtn').onclick = function() {
+    document.getElementById('submitBtn').onclick = async function() {
         var name = document.getElementById('nameInput').value.trim();
         var phone = document.getElementById('phoneInput').value.trim();
         var desc = document.getElementById('descInput').value.trim();
@@ -57,20 +60,12 @@
         if (!phone) { showToast('Please enter your phone number'); return; }
         if (!desc) { showToast('Please describe your situation'); return; }
 
-        var user = JSON.parse(localStorage.getItem('tabangUser'));
-
-        var request = {
-            id: 'HLP-' + Date.now().toString().slice(-6),
+        await addDoc(collection(db, "helpRequests"), {
             name: name,
             phone: phone,
             description: desc,
-            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
-            submittedBy: user ? (user.fullName || user.firstName) : 'Unknown User'  // ← add this
-        };
-
-        var allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');
-        allHelp.push(request);
-        localStorage.setItem('allHelpRequests', JSON.stringify(allHelp));
+            timestamp: new Date()
+        });
 
         navigateTo('MyReports.html');
     };

@@ -37,14 +37,18 @@
     <div class="toast" id="toast"></div>
 </div>
 
-<script>
+<script type="module">
+    import { auth } from "./firebase.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+
     function showToast(msg) {
         var t = document.getElementById('toast');
         t.textContent = msg; t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
 
-    document.getElementById('loginBtn').onclick = function() {
+    document.getElementById('loginBtn').onclick = async function() {
         var input = document.getElementById('emailInput').value.trim();
         var pass  = document.getElementById('passInput').value.trim();
 
@@ -52,18 +56,13 @@
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-        // Check against saved account in localStorage
-        var saved = JSON.parse(localStorage.getItem('tabangUser'));
-        if (!saved) { showToast('⚠️ No account found. Please sign up first.'); return; }
-
-        var matchEmail    = input.toLowerCase() === saved.email.toLowerCase();
-        var matchUsername = input.toLowerCase() === saved.username.toLowerCase();
-
-        if (!matchEmail && !matchUsername) { showToast('⚠️ Email or username not found'); return; }
-        if (pass !== saved.password)       { showToast('⚠️ Incorrect password'); return; }
-
-        localStorage.setItem('tabangLoggedIn', 'true');
+        // Check against saved account in firebase
+        try {
+        await signInWithEmailAndPassword(auth, input, pass);
         window.location.href = 'index.html';
+    } catch (err) {
+        showToast('⚠️ ' + err.message);
+    }
     };
 </script>
 </body>

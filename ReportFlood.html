@@ -45,7 +45,16 @@
     </div>
     <div class="toast" id="toast"></div>
 </div>
-<script>
+<script type="module">
+    import { db } from "./firebase.js";
+    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    
+    onAuthStateChanged(auth, (user) => {
+    if (!user) {
+        alert('Please log in to use this feature.');
+        window.location.href = 'Login.html';
+    }
+    
     function navigateTo(page) { window.location.href = page; }
 
     document.querySelector('.back-btn').onclick = function() { navigateTo('index.html'); };
@@ -55,31 +64,17 @@
     document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
     document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
 
-    document.getElementById('submitBtn').onclick = function() {
+    document.getElementById('submitBtn').onclick = async function() {
         var loc = document.getElementById('locationInput').value.trim();
         var det = document.getElementById('detailsInput').value.trim();
         if (!loc) { showToast('Please enter a location'); return; }
 
-        var report = {
-            id: 'RPT-' + Date.now().toString().slice(-6),
-            location: loc,
-            details: det || 'No additional details provided.',
-            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' })
-        };
-
-        var user = JSON.parse(localStorage.getItem('tabangUser'));
-
-        var report = {
-            id: 'RPT-' + Date.now().toString().slice(-6),
-            location: loc,
-            details: det || 'No additional details provided.',
-            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
-            submittedBy: user ? (user.fullName || user.firstName) : 'Unknown User'  // ← add this
-        };
-
-        var all = JSON.parse(localStorage.getItem('allReports') || '[]');
-        all.push(report);
-        localStorage.setItem('allReports', JSON.stringify(all));
+        await addDoc(collection(db, "floodReports"), {
+        location: loc,
+         details: det || 'No additional details provided.',
+        timestamp: new Date()
+        });
+        
 
         // ✅ Redirect to MyReports after submitting
         navigateTo('MyReports.html');
