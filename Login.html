@@ -19,6 +19,14 @@
         </div>
     </div>
 
+    <!-- Back Button -->
+    <div style="width:100%; margin-top:12px;">
+        <button onclick="window.location.href='landing.html'" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;color:white;font-size:15px;font-weight:600;font-family:'Inter',sans-serif;padding:4px 0;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            Back
+        </button>
+    </div>
+
     <div class="page-title">Login</div>
     <div class="page-subtitle">Please Sign in to continue</div>
 
@@ -29,8 +37,6 @@
     </div>
 
     <button class="login-btn" id="loginBtn">Login</button>
-
-    <button onclick="window.location.href='signup.html'" style="width:100%;height:56px;background:transparent;border:2px solid #f5900a;border-radius:50px;color:#f5900a;font-size:20px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;margin-top:14px;transition:all 0.2s;">Sign Up</button>
 
     <div class="home-indicator"></div>
 
@@ -56,9 +62,22 @@
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
+<<<<<<< HEAD
         // Check against saved account in firebase
         try {
         await signInWithEmailAndPassword(auth, input, pass);
+=======
+        var saved = JSON.parse(localStorage.getItem('tabangUser'));
+        if (!saved) { showToast('⚠️ No account found. Please sign up first.'); return; }
+
+        var matchEmail    = input.toLowerCase() === saved.email.toLowerCase();
+        var matchUsername = input.toLowerCase() === saved.username.toLowerCase();
+
+        if (!matchEmail && !matchUsername) { showToast('⚠️ Email or username not found'); return; }
+        if (pass !== saved.password)       { showToast('⚠️ Incorrect password'); return; }
+
+        localStorage.setItem('tabangLoggedIn', 'true');
+>>>>>>> 1b97c39 (fixed conflict)
         window.location.href = 'index.html';
     } catch (err) {
         showToast('⚠️ ' + err.message);
