@@ -161,27 +161,14 @@
     </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
-    import { db, auth } from "./firebase.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
-
-    
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
     document.getElementById('backBtn').onclick = function() { window.location.href = 'index.html'; };
-    onAuthStateChanged(auth, async (user) => {
 
     var user = JSON.parse(localStorage.getItem('tabangUser'));
     if (user) {
-        const docSnap = await getDoc(doc(db, "users", user.uid));
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            document.getElementById('profileName').textContent = data.fullName || data.firstName;
-            document.getElementById('profileEmail').textContent = data.email;
+        document.getElementById('profileName').textContent = user.fullName || user.firstName;
+        document.getElementById('profileEmail').textContent = user.email;
     }
-    } else {
-        window.location.href = 'Login.html'; // redirect if not logged in
-    }
-});
 
     document.getElementById('photo-input').addEventListener('change', function(e) {
         var file = e.target.files[0];
