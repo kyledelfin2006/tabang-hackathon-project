@@ -170,13 +170,14 @@
     document.getElementById('backBtn').onclick = function() { window.location.href = 'index.html'; };
     onAuthStateChanged(auth, async (user) => {
 
+    var user = JSON.parse(localStorage.getItem('tabangUser'));
     if (user) {
         const docSnap = await getDoc(doc(db, "users", user.uid));
         if (docSnap.exists()) {
             const data = docSnap.data();
             document.getElementById('profileName').textContent = data.fullName || data.firstName;
             document.getElementById('profileEmail').textContent = data.email;
-        }
+    }
     } else {
         window.location.href = 'Login.html'; // redirect if not logged in
     }

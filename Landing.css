@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     display: flex;
@@ -112,7 +111,6 @@ body {
     border-radius: 2px;
     margin-top: 8px;
 }
-=======
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -232,4 +230,3 @@ body {
       border-radius: 2px;
       margin-top: 8px;
     }
->>>>>>> 1b97c39 (fixed conflict)

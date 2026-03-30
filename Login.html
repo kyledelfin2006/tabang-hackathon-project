@@ -19,69 +19,43 @@
         </div>
     </div>
 
-    <!-- Back Button -->
-    <div style="width:100%; margin-top:12px;">
-        <button onclick="window.location.href='landing.html'" style="background:transparent;border:none;cursor:pointer;display:flex;align-items:center;gap:6px;color:white;font-size:15px;font-weight:600;font-family:'Inter',sans-serif;padding:4px 0;">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-            Back
-        </button>
-    </div>
-
     <div class="page-title">Login</div>
     <div class="page-subtitle">Please Sign in to continue</div>
 
     <div class="form-card">
-        <input class="input-field" id="emailInput" type="text" placeholder="Enter Email or Username">
+        <input class="input-field" id="emailInput" type="email" placeholder="Enter Email">
         <input class="input-field" id="passInput" type="password" placeholder="Enter password">
         <div class="forgot-pw" onclick="alert('Password reset link sent to your email!')">Forget Password?</div>
     </div>
 
     <button class="login-btn" id="loginBtn">Login</button>
 
+    <div style="margin-top: 16px; color: rgba(255,255,255,0.6); font-size: 13px; text-align: center;">
+        Don't have an account? <span onclick="window.location.href='signup.html'" style="color: #f5900a; font-weight: 700; cursor: pointer;">Sign Up</span>
+    </div>
+
     <div class="home-indicator"></div>
 
     <div class="toast" id="toast"></div>
 </div>
 
-<script type="module">
-    import { auth } from "./firebase.js";
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
-
+<script>
     function showToast(msg) {
         var t = document.getElementById('toast');
         t.textContent = msg; t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
 
-    document.getElementById('loginBtn').onclick = async function() {
-        var input = document.getElementById('emailInput').value.trim();
+    document.getElementById('loginBtn').onclick = function() {
+        var email = document.getElementById('emailInput').value.trim();
         var pass  = document.getElementById('passInput').value.trim();
 
-        if (!input) { showToast('⚠️ Please enter your email or username'); return; }
+        if (!email) { showToast('⚠️ Please enter your email'); return; }
+        if (!email.includes('@')) { showToast('⚠️ Please enter a valid email'); return; }
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-<<<<<<< HEAD
-        // Check against saved account in firebase
-        try {
-        await signInWithEmailAndPassword(auth, input, pass);
-=======
-        var saved = JSON.parse(localStorage.getItem('tabangUser'));
-        if (!saved) { showToast('⚠️ No account found. Please sign up first.'); return; }
-
-        var matchEmail    = input.toLowerCase() === saved.email.toLowerCase();
-        var matchUsername = input.toLowerCase() === saved.username.toLowerCase();
-
-        if (!matchEmail && !matchUsername) { showToast('⚠️ Email or username not found'); return; }
-        if (pass !== saved.password)       { showToast('⚠️ Incorrect password'); return; }
-
-        localStorage.setItem('tabangLoggedIn', 'true');
->>>>>>> 1b97c39 (fixed conflict)
         window.location.href = 'index.html';
-    } catch (err) {
-        showToast('⚠️ ' + err.message);
-    }
     };
 </script>
 </body>
