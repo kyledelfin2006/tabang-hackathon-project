@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <div class="back-btn" onclick="navigateTo('index.html')"><i class="fas fa-chevron-left"></i></div>
+    <div class="back-btn" onclick="navigateTo('Homepage.html')"><i class="fas fa-chevron-left"></i></div>
     <div class="page-title">All Reports</div>
     <div class="page-subtitle">Community flood reports & help requests</div>
 
@@ -154,7 +154,6 @@ async function renderList() {
             return searchable.includes(query);
         });
     }
-
     items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     if (items.length === 0) {

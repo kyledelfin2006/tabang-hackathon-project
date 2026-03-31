@@ -19,7 +19,7 @@
         </div>
     </div>
 
-    <div class="back-btn" onclick="window.location.href='Login.html'">← Back</div>
+    <div class="back-btn" onclick="window.location.href='Login.html'">← Back to Login</div>
 
     <div class="page-title">Create Account</div>
     <div class="page-subtitle">Sign up to get started</div>
@@ -82,7 +82,6 @@
         if (!pass)                { showToast('⚠️ Please enter a password'); return; }
         if (pass.length < 6)      { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-<<<<<<< HEAD
         // Save user data to firebase
        try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
@@ -96,11 +95,6 @@
                 username: username,
                 email: email
             });
-=======
-        showToast('✅ Account created!', true);
-        setTimeout(function() { window.location.href = 'Login.html'; }, 1500);
-    };
->>>>>>> 1b97c39 (fixed conflict)
 
             showToast('✅ Account created!', true);
             setTimeout(function() { window.location.href = 'Login.html'; }, 1500);

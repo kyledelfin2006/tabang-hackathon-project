@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Tabang - Flood Assistance</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="homepagee.css">
 </head>
 <body>
@@ -246,6 +244,8 @@
     </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script>
     function navigateTo(p){window.location.href=p;}
     document.getElementById('navRequest').onclick=function(){navigateTo('RequestHelp.html');};
@@ -299,18 +299,7 @@
 
     document.getElementById('openDashboard').onclick = function() {
         dashPanel.classList.add('open');
-        if (!mapBuilt) {
-            mapBuilt = true;
-            var d3Script = document.createElement('script');
-            d3Script.src = 'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js';
-            d3Script.onload = function() {
-                var topoScript = document.createElement('script');
-                topoScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js';
-                topoScript.onload = function() { buildMap(); };
-                document.head.appendChild(topoScript);
-            };
-            document.head.appendChild(d3Script);
-        }
+        if (!mapBuilt) { buildMap(); mapBuilt = true; }
     };
     document.getElementById('closeDashboard').onclick = function() {
         dashPanel.classList.remove('open');

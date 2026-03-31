@@ -23,7 +23,7 @@
     <div class="page-subtitle">Please Sign in to continue</div>
 
     <div class="form-card">
-        <input class="input-field" id="emailInput" type="email" placeholder="Enter Email">
+        <input class="input-field" id="emailInput" type="text" placeholder="Enter Email or Username">
         <input class="input-field" id="passInput" type="password" placeholder="Enter password">
         <div class="forgot-pw" onclick="alert('Password reset link sent to your email!')">Forget Password?</div>
     </div>
@@ -47,15 +47,17 @@
     }
 
     document.getElementById('loginBtn').onclick = function() {
-        var email = document.getElementById('emailInput').value.trim();
-        var pass  = document.getElementById('passInput').value.trim();
+        var emailOrUser = document.getElementById('emailInput').value.trim();
+        var pass        = document.getElementById('passInput').value.trim();
 
-        if (!email) { showToast('⚠️ Please enter your email'); return; }
-        if (!email.includes('@')) { showToast('⚠️ Please enter a valid email'); return; }
+        if (!emailOrUser) { showToast('⚠️ Please enter your email or username'); return; }
+        if (emailOrUser.includes('@') && !emailOrUser.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            showToast('⚠️ Please enter a valid email'); return;
+        }
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-        window.location.href = 'index.html';
+        window.location.href = 'Homepage.html';
     };
 </script>
 </body>

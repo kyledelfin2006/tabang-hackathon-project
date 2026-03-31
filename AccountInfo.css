@@ -2,7 +2,7 @@
 
 body {
     font-family: 'Inter', sans-serif;
-    background: #1a1a2e;
+    background: #0a1f4e;
     display: flex; justify-content: center; align-items: center; min-height: 100vh;
 }
 
@@ -121,7 +121,6 @@ body {
     overflow-y: auto;
     transform: translateY(100%);
     transition: transform 0.3s ease;
-    will-change: transform;
 }
 .modal-overlay.show .modal-sheet { transform: translateY(0); }
 
