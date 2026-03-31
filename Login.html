@@ -30,6 +30,9 @@
 
     <button class="login-btn" id="loginBtn">Login</button>
 
+    <!-- Guest Mode Button -->
+    <button class="guest-btn" id="guestBtn">Continue as Guest</button>
+
     <div style="margin-top: 16px; color: rgba(255,255,255,0.6); font-size: 13px; text-align: center;">
         Don't have an account? <span onclick="window.location.href='signup.html'" style="color: #f5900a; font-weight: 700; cursor: pointer;">Sign Up</span>
     </div>
@@ -39,13 +42,18 @@
     <div class="toast" id="toast"></div>
 </div>
 
-<script>
+<script type="module">
+    import { auth } from "./firebase.js";
+    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
     function showToast(msg) {
         var t = document.getElementById('toast');
-        t.textContent = msg; t.style.opacity = '1';
+        t.textContent = msg;
+        t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
 
+<<<<<<< HEAD
     document.getElementById('loginBtn').onclick = function() {
         var emailOrUser = document.getElementById('emailInput').value.trim();
         var pass        = document.getElementById('passInput').value.trim();
@@ -57,6 +65,27 @@
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
+=======
+    // Login with email/password
+    document.getElementById('loginBtn').onclick = async function() {
+        var input = document.getElementById('emailInput').value.trim();
+        var pass  = document.getElementById('passInput').value.trim();
+
+        if (!input) { showToast('⚠️ Please enter your email'); return; }
+        if (!pass)  { showToast('⚠️ Please enter your password'); return; }
+        if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
+
+        try {
+            await signInWithEmailAndPassword(auth, input, pass);
+            window.location.href = 'Homepage.html';  // change to your main page
+        } catch (err) {
+            showToast('⚠️ ' + err.message);
+        }
+    };
+
+    // Guest mode – simply go to homepage without authenticating
+    document.getElementById('guestBtn').onclick = function() {
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
         window.location.href = 'Homepage.html';
     };
 </script>

@@ -50,11 +50,12 @@
         <button class="nav-item active" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
         <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
         <button class="nav-item" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
-        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>All Reports</span></button>
         <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
 </div>
 
+<<<<<<< HEAD
 <script>
     let selectedImages = [];
     const MAX_IMAGES = 5;
@@ -66,15 +67,34 @@
         reports: `${API_BASE_URL}/reports`,
         helpRequests: `${API_BASE_URL}/help-requests`
     };
+=======
+<script type="module">
+    import { db, auth } from "./firebase.js";
+    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
 
     function navigateTo(page) { window.location.href = page; }
 
-    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
-    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
-    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
-    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
-    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
-    document.getElementById('backBtn').onclick = function() { navigateTo('index.html'); };
+    document.getElementById('navRequest').onclick = () => navigateTo('RequestHelp.html');
+    document.getElementById('navHotlines').onclick = () => navigateTo('Hotline.html');
+    document.getElementById('navReport').onclick = () => navigateTo('ReportFlood.html');
+    document.getElementById('navMyReports').onclick = () => navigateTo('MyReports.html');
+    document.getElementById('navAccount').onclick = () => navigateTo('AccountInfo.html');
+    document.getElementById('backBtn').onclick = () => navigateTo('Homepage.html');
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('submitBtn').disabled = false;
+        } else {
+            currentUser = null;
+            document.getElementById('submitBtn').disabled = true;
+            showToast('Please log in to request help.');
+        }
+    });
 
     // Image upload handling
     const uploadBox = document.getElementById('uploadBox');
@@ -184,9 +204,14 @@
     }
 
     document.getElementById('submitBtn').onclick = async function() {
-        var name = document.getElementById('nameInput').value.trim();
-        var phone = document.getElementById('phoneInput').value.trim();
-        var desc = document.getElementById('descInput').value.trim();
+        if (!currentUser) {
+            showToast('You must be logged in.');
+            return;
+        }
+
+        const name = document.getElementById('nameInput').value.trim();
+        const phone = document.getElementById('phoneInput').value.trim();
+        const desc = document.getElementById('descInput').value.trim();
 
         if (!name) { showToast('Please enter your name'); return; }
         if (!phone) { showToast('Please enter your phone number'); return; }
@@ -233,6 +258,19 @@
         loadingDiv.style.display = 'none';
 
         navigateTo('MyReports.html');
+        try {
+            await addDoc(collection(db, "helpRequests"), {
+                name: name,
+                phone: phone,
+                description: desc,
+                timestamp: new Date(),
+                userId: currentUser.uid,
+                submittedBy: currentUser.email || currentUser.displayName || name
+            });
+            navigateTo('MyReports.html');
+        } catch (err) {
+            showToast('Error: ' + err.message);
+        }
     };
 
     // Auto-sync when back online
@@ -260,7 +298,7 @@
         var t = document.getElementById('toast');
         t.textContent = msg;
         t.style.opacity = '1';
-        setTimeout(function() { t.style.opacity = '0'; }, 3000);
+        setTimeout(() => t.style.opacity = '0', 3000);
     }
 
     // Load initial data

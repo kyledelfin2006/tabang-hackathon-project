@@ -56,12 +56,13 @@
         <button class="nav-item" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
         <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
         <button class="nav-item active" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
-        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>All Reports</span></button>
         <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
     <div class="toast" id="toast"></div>
     <div class="loading" id="loading">Submitting...</div>
 </div>
+<<<<<<< HEAD
 
 <script>
     let selectedImages = [];
@@ -73,15 +74,36 @@
         reports: `${API_BASE_URL}/reports`,
         helpRequests: `${API_BASE_URL}/help-requests`
     };
+=======
+<script type="module">
+    import { db, auth } from "./firebase.js";
+    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
 
     function navigateTo(page) { window.location.href = page; }
 
-    document.querySelector('.back-btn').onclick = function() { navigateTo('index.html'); };
-    document.getElementById('navRequest').onclick = function() { navigateTo('RequestHelp.html'); };
-    document.getElementById('navHotlines').onclick = function() { navigateTo('Hotline.html'); };
-    document.getElementById('navReport').onclick = function() { navigateTo('ReportFlood.html'); };
-    document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
-    document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
+    // Navigation buttons
+    document.querySelector('.back-btn').onclick = () => navigateTo('Homepage.html');
+    document.getElementById('navRequest').onclick = () => navigateTo('RequestHelp.html');
+    document.getElementById('navHotlines').onclick = () => navigateTo('Hotline.html');
+    document.getElementById('navReport').onclick = () => navigateTo('ReportFlood.html');
+    document.getElementById('navMyReports').onclick = () => navigateTo('MyReports.html');
+    document.getElementById('navAccount').onclick = () => navigateTo('AccountInfo.html');
+
+    let currentUser = null;
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            // Enable submit button (you can style it accordingly)
+            document.getElementById('submitBtn').disabled = false;
+        } else {
+            currentUser = null;
+            document.getElementById('submitBtn').disabled = true;
+            showToast('Please log in to report a flood.');
+        }
+    });
 
     const uploadBox = document.getElementById('uploadBox');
     const fileInput = document.getElementById('fileInput');
@@ -227,6 +249,7 @@
     }
 
     document.getElementById('submitBtn').onclick = async function() {
+<<<<<<< HEAD
         var loc = document.getElementById('locationInput').value.trim();
         var det = document.getElementById('detailsInput').value.trim();
 
@@ -283,6 +306,33 @@
         loadingDiv.style.display = 'none';
 
         navigateTo('MyReports.html');
+=======
+        if (!currentUser) {
+            showToast('You must be logged in.');
+            return;
+        }
+
+        const loc = document.getElementById('locationInput').value.trim();
+        const det = document.getElementById('detailsInput').value.trim();
+
+        if (!loc) {
+            showToast('Please enter a location');
+            return;
+        }
+
+        try {
+            await addDoc(collection(db, "floodReports"), {
+                location: loc,
+                details: det || 'No additional details provided.',
+                timestamp: new Date(),
+                userId: currentUser.uid,
+                submittedBy: currentUser.email || currentUser.displayName || 'Unknown'
+            });
+            navigateTo('MyReports.html');
+        } catch (err) {
+            showToast('Error: ' + err.message);
+        }
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
     };
 
     window.addEventListener('online', async () => {
@@ -309,7 +359,11 @@
         var t = document.getElementById('toast');
         t.textContent = msg;
         t.style.opacity = '1';
+<<<<<<< HEAD
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
+=======
+        setTimeout(() => t.style.opacity = '0', 3000);
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
     }
 
     async function loadInitialData() {

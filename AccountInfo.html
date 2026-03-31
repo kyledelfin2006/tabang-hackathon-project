@@ -157,7 +157,12 @@
         </div>
     </div>
 </div>
+<script type="module">
+    import { db, auth } from "./firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+<<<<<<< HEAD
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
     import { db, auth } from "./firebase.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -176,21 +181,74 @@
         }
     } else {
         window.location.href = 'Login.html'; // redirect if not logged in
+=======
+    // Expose modal functions globally
+    window.openModal = function(id) { document.getElementById(id).classList.add('show'); };
+    window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); };
+    window.handleOverlayClick = function(e, id) { 
+        if (e.target.classList.contains('modal-overlay')) window.closeModal(id); 
+    };
+
+    document.getElementById('backBtn').onclick = () => window.location.href = 'Homepage.html';
+
+    // Sign out button (in modal)
+    // The modal's sign out button has class "btn-danger" and onclick redirects directly – we'll override it
+    const signOutBtn = document.querySelector('#modal-signout .btn-danger');
+    if (signOutBtn) {
+        signOutBtn.onclick = async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'Login.html';
+        };
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
     }
 });
 
-    document.getElementById('photo-input').addEventListener('change', function(e) {
-        var file = e.target.files[0];
+    // Load user profile
+    onAuthStateChanged(auth, async (user) => {
+        const nameEl = document.getElementById('profileName');
+        const emailEl = document.getElementById('profileEmail');
+
+        if (user) {
+            try {
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Try various possible name fields
+                    let displayName = data.fullName || data.displayName || data.name;
+                    if (!displayName && data.firstName && data.lastName) {
+                        displayName = `${data.firstName} ${data.lastName}`;
+                    }
+                    nameEl.textContent = displayName || 'User';
+                    emailEl.textContent = data.email || user.email;
+                } else {
+                    // No Firestore doc – use auth info
+                    nameEl.textContent = user.displayName || 'User';
+                    emailEl.textContent = user.email;
+                }
+            } catch (err) {
+                console.error("Error loading user data:", err);
+                nameEl.textContent = 'User';
+                emailEl.textContent = user.email;
+            }
+        } else {
+            nameEl.textContent = 'Guest User';
+            emailEl.textContent = 'No email';
+        }
+    });
+
+    // Photo upload
+    document.getElementById('photo-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
         if (file) {
-            var reader = new FileReader();
-            reader.onload = function(ev) {
-                document.getElementById('avatar-circle').innerHTML = '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('avatar-circle').innerHTML = 
+                    '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
             };
             reader.readAsDataURL(file);
         }
     });
-
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-    function handleOverlayClick(e, id) { if (e.target.classList.contains('modal-overlay')) closeModal(id); }
 </script>
+</body>
+</html>

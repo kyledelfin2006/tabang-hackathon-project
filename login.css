@@ -86,3 +86,24 @@ body {
     transition: opacity 0.2s; z-index: 99;
     font-family: 'Inter', sans-serif;
 }
+
+/* Guest Mode Button */
+.guest-btn {
+    width: 100%;
+    height: 56px;
+    background: transparent;
+    border: 2px solid #f5900a;
+    border-radius: 50px;
+    color: #f5900a;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 14px;
+}
+
+.guest-btn:hover {
+    background: rgba(245, 144, 10, 0.1);
+    transform: scale(0.98);
+}

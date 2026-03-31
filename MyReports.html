@@ -45,7 +45,7 @@
         <button class="nav-item" id="navRequest" onclick="navigateTo('RequestHelp.html')"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
         <button class="nav-item" id="navHotlines" onclick="navigateTo('Hotline.html')"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
         <button class="nav-item" id="navReport" onclick="navigateTo('ReportFlood.html')"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
-        <button class="nav-item active" id="navMyReports" onclick="navigateTo('MyReports.html')"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item active" id="navMyReports" onclick="navigateTo('MyReports.html')"><i class="fas fa-clipboard-list"></i><span>All Reports</span></button>
         <button class="nav-item" id="navAccount" onclick="navigateTo('AccountInfo.html')"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
 </div>
@@ -61,169 +61,217 @@
         </div>
     </div>
 </div>
-
-<script type="module"> // Kyle Reviewed! : Yes : Nice
-    import { db } from "./firebase.js";
+<script type="module">
+    import { db, auth } from "./firebase.js";
     import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
- 
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
     function navigateTo(page) { window.location.href = page; }
 
-let currentFilter = 'all';
-let pendingDelete = null;
-const overlay = document.getElementById('confirmOverlay');
+    let currentFilter = 'all';
+    let pendingDelete = null;
+    const overlay = document.getElementById('confirmOverlay');
+    let currentUser = null;
 
-document.getElementById('confirmCancel').onclick = function() {
-    overlay.classList.remove('show');
-    pendingDelete = null;
-};
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const searchInput = document.getElementById('searchInput');
 
-document.getElementById('confirmDelete').onclick = function() {
-    overlay.classList.remove('show');
-    if (!pendingDelete) return;
-    const { id, isFlood, cardEl } = pendingDelete;
-    pendingDelete = null;
-    cardEl.classList.add('deleting');
-    setTimeout(() => { deleteEntry(id, isFlood); }, 300);
-};
+    // Helper functions (same as before)
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
-function showConfirm(id, isFlood, cardEl) {
-    pendingDelete = { id, isFlood, cardEl };
-    document.getElementById('confirmTitle').textContent = isFlood ? 'Delete Report?' : 'Delete Request?';
-    overlay.classList.add('show');
-}
+    function toDate(timestamp) {
+        if (!timestamp) return null;
+        if (timestamp.toDate) return timestamp.toDate();
+        const d = new Date(timestamp);
+        return isNaN(d.getTime()) ? null : d;
+    }
 
-async function deleteEntry(id, isFlood) {
-    const collectionName = isFlood ? "floodReports" : "helpRequests";
-    await deleteDoc(doc(db, collectionName, id));
-    renderList();
-}
-
-async function getMyFloodReports() {
-    const snap = await getDocs(collection(db, "floodReports"));
-    return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
-}
-
-async function getMyHelpRequests() {
-    const snap = await getDocs(collection(db, "helpRequests"));
-    return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function formatDate(timestamp) {
-    if (!timestamp) return '—';
-    const date = new Date(timestamp);
-    if (!isNaN(date.getTime())) {
+    function formatDate(timestamp) {
+        const date = toDate(timestamp);
+        if (!date) return '—';
         return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
-    return timestamp.split(',').slice(0, 2).join(',').trim();
-}
 
-function setFilter(filter) {
-    currentFilter = filter;
-    ['All', 'Flood', 'Help'].forEach(type => {
-        const btn = document.getElementById('filter' + type);
-        btn.className = 'filter-btn' + (type.toLowerCase() === filter ? ` active-${filter}` : '');
+    // ---------- Authentication ----------
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        // Enable filters and search regardless of login state
+        filterBtns.forEach(btn => btn.disabled = false);
+        if (searchInput) searchInput.disabled = false;
+        renderList(); // Always fetch and render reports
     });
-    renderList();
-}
 
+    // ---------- Delete confirmation (unchanged) ----------
+    document.getElementById('confirmCancel').onclick = () => {
+        overlay.classList.remove('show');
+        pendingDelete = null;
+    };
+    document.getElementById('confirmDelete').onclick = () => {
+        overlay.classList.remove('show');
+        if (!pendingDelete) return;
+        const { id, isFlood, cardEl } = pendingDelete;
+        pendingDelete = null;
+        cardEl.classList.add('deleting');
+        setTimeout(() => deleteEntry(id, isFlood), 300);
+    };
 
-async function renderList() {
-    const query = document.getElementById('searchInput').value.toLowerCase();
-    const list = document.getElementById('reportsList');
-
-    const floods = await getMyFloodReports();
-    const helps = await getMyHelpRequests();
-
-    let items = [
-        ...floods.map(r => ({ ...r, owner: r.submittedBy || 'You' })),
-        ...helps.map(r => ({ ...r, owner: r.submittedBy || 'You' }))
-    ];
-
-    if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
-    if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');
-
-    if (query) {
-        items = items.filter(r => {
-            const searchable = [r.location||'', r.name||'', r.description||'', r.details||'', r.owner||''].join(' ').toLowerCase();
-            return searchable.includes(query);
-        });
+    function showConfirm(id, isFlood, cardEl) {
+        pendingDelete = { id, isFlood, cardEl };
+        document.getElementById('confirmTitle').textContent = isFlood ? 'Delete Report?' : 'Delete Request?';
+        overlay.classList.add('show');
     }
+
+    async function deleteEntry(id, isFlood) {
+        const collectionName = isFlood ? "floodReports" : "helpRequests";
+        await deleteDoc(doc(db, collectionName, id));
+        renderList();
+    }
+
+    // ---------- Fetch ALL reports (no user filter) ----------
+    async function getAllFloodReports() {
+        const snap = await getDocs(collection(db, "floodReports"));
+        return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+    }
+
+    async function getAllHelpRequests() {
+        const snap = await getDocs(collection(db, "helpRequests"));
+        return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
+    }
+
+    // ---------- Filter & search ----------
+    function setFilter(filter) {
+        currentFilter = filter;
+        ['All', 'Flood', 'Help'].forEach(type => {
+            const btn = document.getElementById('filter' + type);
+            btn.className = 'filter-btn' + (type.toLowerCase() === filter ? ` active-${filter}` : '');
+        });
+        renderList();
+    }
+<<<<<<< HEAD
     items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+=======
 
-    if (items.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon"><i class="fas fa-search"></i></div>
-                <div class="empty-title">No Reports Found</div>
-                <div class="empty-sub">No reports match your current filter or search.</div>
-            </div>`;
-        return;
+    // ---------- Render the list of reports ----------
+    async function renderList() {
+        const queryStr = document.getElementById('searchInput').value.toLowerCase();
+        const list = document.getElementById('reportsList');
+>>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
+
+        list.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
+
+        const floods = await getAllFloodReports();
+        const helps = await getAllHelpRequests();
+
+        let items = [
+            ...floods.map(r => ({ ...r, owner: r.submittedBy || 'Unknown' })),
+            ...helps.map(r => ({ ...r, owner: r.submittedBy || 'Unknown' }))
+        ];
+
+        // Apply filter
+        if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
+        if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');
+
+        // Apply search
+        if (queryStr) {
+            items = items.filter(r => {
+                const searchable = [r.location||'', r.name||'', r.description||'', r.details||'', r.owner||''].join(' ').toLowerCase();
+                return searchable.includes(queryStr);
+            });
+        }
+
+        // Sort by date (newest first)
+        items.sort((a, b) => {
+            const dateA = toDate(a.timestamp) || new Date(0);
+            const dateB = toDate(b.timestamp) || new Date(0);
+            return dateB - dateA;
+        });
+
+        if (items.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-search"></i></div>
+                    <div class="empty-title">No Reports Found</div>
+                    <div class="empty-sub">No reports match your current filter or search.</div>
+                </div>`;
+            return;
+        }
+
+        let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
+
+        items.forEach((r, idx) => {
+            const isHelp = r.type === 'help';
+            const isOwner = currentUser && r.userId === currentUser.uid;
+            const cardClass = `report-card${isHelp ? ' help-card' : ''}`;
+            const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
+            const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
+
+            // Badge
+            const badgeHtml = isHelp
+                ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency Request</span>'
+                : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
+
+            // Owner badge – different style if it's the current user's report
+            const ownerBadgeClass = isOwner ? 'badge-you' : 'badge-other';
+            const ownerBadge = `<span class="user-badge ${ownerBadgeClass}"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
+
+            // Delete button only if owner and logged in
+            const deleteBtn = (currentUser && isOwner)
+                ? `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`
+                : '';
+
+            // Row items
+            let rows = '';
+            if (isHelp) {
+                rows = `
+                    <div class="card-row"><i class="fas fa-user ${iconClass}"></i><div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div></div>
+                    <div class="card-row"><i class="fas fa-phone ${iconClass}"></i><div><div class="row-label">Phone</div><div class="row-val">${escapeHtml(r.phone || '—')}</div></div></div>
+                    <div class="card-row"><i class="fas fa-comment-alt ${iconClass}"></i><div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div></div>`;
+            } else {
+                rows = `
+                    <div class="card-row"><i class="fas fa-map-marker-alt ${iconClass}"></i><div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div></div>
+                    ${r.details ? `<div class="card-row"><i class="fas fa-info-circle ${iconClass}"></i><div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div></div>` : ''}`;
+            }
+
+            // Date row (common)
+            rows += `
+                <div class="card-row"><i class="fas fa-clock ${iconClass}"></i><div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div></div>`;
+
+            // Build the card
+            html += `
+                <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
+                    <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
+                        ${ownerBadge}
+                        ${deleteBtn}
+                    </div>
+                    <div class="${dividerClass}"></div>
+                    ${rows}
+                    <div class="card-footer">${badgeHtml}<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>
+                </div>`;
+        });
+
+        html += '<div style="height:14px;"></div>';
+        list.innerHTML = html;
+
+        // Attach delete button event listeners (only for buttons that exist)
+        list.querySelectorAll('.card-delete-btn').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const id = btn.getAttribute('data-id');
+                const isFlood = btn.getAttribute('data-isflood') === 'true';
+                const cardEl = btn.closest('.report-card');
+                showConfirm(id, isFlood, cardEl);
+            });
+        });
     }
 
-    let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
-
-    items.forEach((r, idx) => {
-        const delay = (idx * 0.06).toFixed(2) + 's';
-        const isHelp = r.type === 'help';
-        const cardClass = `report-card${isHelp ? ' help-card' : ''} own-card`;
-        const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
-        const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
-        const badgeHtml = isHelp
-            ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency</span>'
-            : '<span class="badge badge-priority"><i class="fas fa-flag"></i> High Priority</span>';
-
-        const demoBadge = r.isDemo
-            ? `<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.3);border:1px solid rgba(255,255,255,0.15);letter-spacing:0.6px;text-transform:uppercase;">DEMO</span>`
-            : '';
-
-        const ownerBadge = `<span class="user-badge badge-you"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
-        const deleteBtn = `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
-
-        html += `
-        <div class="${cardClass}" style="animation-delay:${delay}" data-id="${escapeHtml(r.id)}">
-            <div class="card-top" style="flex-direction:column;gap:8px;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                    ${ownerBadge}
-                    ${demoBadge}
-                </div>
-                <div style="display:flex;justify-content:flex-end;">${deleteBtn}</div>
-            </div>
-            <div class="${dividerClass}"></div>
-            ${isHelp
-            ? `<div class="card-row"><i class="fas fa-user ${iconClass}"></i><div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div></div>
-                   <div class="card-row"><i class="fas fa-comment-alt ${iconClass}"></i><div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div></div>`
-            : `<div class="card-row"><i class="fas fa-map-marker-alt ${iconClass}"></i><div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div></div>
-                   ${r.details ? `<div class="card-row"><i class="fas fa-info-circle ${iconClass}"></i><div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div></div>` : ''}`
-        }
-            <div class="card-row"><i class="fas fa-clock ${iconClass}"></i><div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div></div>
-            <div class="card-footer">${badgeHtml}<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>
-        </div>`;
-    });
-
-    html += '<div style="height:14px;"></div>';
-    list.innerHTML = html;
-
-    list.querySelectorAll('.card-delete-btn').forEach(btn => {
-        btn.addEventListener('click', e => {
-            e.stopPropagation();
-            const id = btn.getAttribute('data-id');
-            const isFlood = btn.getAttribute('data-isflood') === 'true';
-            const cardEl = btn.closest('.report-card');
-            showConfirm(id, isFlood, cardEl);
-        });
-    });
-}
-
-// Single load entry point
-window.addEventListener('load', function() {
-    renderList();
-});
+    // Expose functions for inline onclick handlers
+    window.navigateTo = navigateTo;
+    window.setFilter = setFilter;
 </script>
 </body>
 </html>
