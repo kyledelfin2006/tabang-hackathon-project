@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Verify Contact Info</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="VerAcc.css">
 </head>
 <body>
 
 <div class="phone">
 
-    <!-- TOAST: first child, position absolute from top of phone -->
     <div id="toast"></div>
 
     <div class="status-bar">
@@ -90,7 +90,7 @@
                         <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                     </svg>
                 </div>
-                <input class="input-field" id="field-email" type="email" placeholder="e.g. name@email.com">
+                <input class="input-field" id="field-email" type="email" placeholder="e.g. name@email.com" readonly>
                 <span class="check-icon">✓</span>
             </div>
         </div>
@@ -123,6 +123,30 @@
             </div>
         </div>
 
+        <!-- Government ID Upload -->
+        <div class="section-label">Government ID</div>
+        <div class="input-group">
+            <div class="input-label">Upload valid ID <span>*</span></div>
+            <div class="file-upload-wrapper" id="wrap-id">
+                <input type="file" id="idFile" accept="image/*" style="display:none;">
+                <button type="button" class="file-upload-btn" onclick="document.getElementById('idFile').click()">Choose Image</button>
+                <span id="idFileName" class="file-name">No file chosen</span>
+                <div class="image-preview" id="idPreview"></div>
+            </div>
+        </div>
+
+        <!-- Selfie Upload -->
+        <div class="section-label">Latest Selfie</div>
+        <div class="input-group">
+            <div class="input-label">Upload a recent selfie <span>*</span></div>
+            <div class="file-upload-wrapper" id="wrap-selfie">
+                <input type="file" id="selfieFile" accept="image/*" style="display:none;">
+                <button type="button" class="file-upload-btn" onclick="document.getElementById('selfieFile').click()">Choose Image</button>
+                <span id="selfieFileName" class="file-name">No file chosen</span>
+                <div class="image-preview" id="selfiePreview"></div>
+            </div>
+        </div>
+
         <div class="checkbox-row">
             <div class="checkbox">
                 <svg viewBox="0 0 24 24" fill="white" width="14" height="14">
@@ -137,6 +161,7 @@
     </div>
 
 </div>
+
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -149,31 +174,65 @@
     const emailInput = document.getElementById('field-email');
     const toast = document.getElementById('toast');
 
+    // File inputs
+    const idFileInput = document.getElementById('idFile');
+    const selfieFileInput = document.getElementById('selfieFile');
+    const idFileNameSpan = document.getElementById('idFileName');
+    const selfieFileNameSpan = document.getElementById('selfieFileName');
+    const idPreviewDiv = document.getElementById('idPreview');
+    const selfiePreviewDiv = document.getElementById('selfiePreview');
+
+    // Helper to show toast
+    function showToast(msg, type) {
+        toast.textContent = msg;
+        toast.className = 'toast-visible ' + (type || 'error');
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.className = '', 3000);
+    }
+
+    // Helper to preview image
+    function previewImage(file, previewContainer, fileNameSpan) {
+        if (file) {
+            fileNameSpan.textContent = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewContainer.innerHTML = `<img src="${e.target.result}" style="max-width:100%; max-height:120px; border-radius:8px; margin-top:8px;">`;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            fileNameSpan.textContent = 'No file chosen';
+            previewContainer.innerHTML = '';
+        }
+    }
+
+    // Helper to convert file to Base64 string
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    idFileInput.addEventListener('change', () => previewImage(idFileInput.files[0], idPreviewDiv, idFileNameSpan));
+    selfieFileInput.addEventListener('change', () => previewImage(selfieFileInput.files[0], selfiePreviewDiv, selfieFileNameSpan));
+
+    // ---------- Authentication ----------
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
-            // Pre-fill email field with user's email and make it readonly
-            if (emailInput) {
-                emailInput.value = user.email;
-                emailInput.readOnly = true;
-                // Add a small indicator (optional)
-                emailInput.style.backgroundColor = '#f5f5f5';
-            }
-            // Enable submit button
+            emailInput.value = user.email;
+            emailInput.readOnly = true;
+            emailInput.style.backgroundColor = '#f5f5f5';
             submitBtn.disabled = false;
-            // Remove any login warning if present
+            // Remove login warning if present
             const warning = document.querySelector('.login-warning');
             if (warning) warning.remove();
         } else {
             currentUser = null;
             submitBtn.disabled = true;
-            // Clear any pre-filled email
-            if (emailInput) {
-                emailInput.value = '';
-                emailInput.readOnly = false;
-                emailInput.style.backgroundColor = '';
-            }
-            // Show a login warning at the top of the card
+            // Show login warning
             const card = document.querySelector('.card');
             let warning = document.querySelector('.login-warning');
             if (!warning) {
@@ -188,17 +247,14 @@
                 `;
                 card.insertBefore(warning, card.firstChild);
             }
-            // Also show a toast
-            toast.textContent = 'Please log in to verify your account.';
-            toast.style.opacity = '1';
-            setTimeout(() => toast.style.opacity = '0', 3000);
+            showToast('Please log in to verify your account.', 'error');
         }
     });
 
     // Back button
     document.querySelector('.back-btn').onclick = () => window.location.href = 'AccountInfo.html';
 
-    // Validation helper
+    // Validation functions
     function validate(inputId, wrapperId, checkFn) {
         const input = document.getElementById(inputId);
         const wrapper = document.getElementById(wrapperId);
@@ -212,24 +268,23 @@
         });
     }
 
-    // Validators
     validate('field-name', 'wrap-name', (v) => {
         const words = v.split(/\s+/).filter(w => w.length > 0);
         return words.length >= 2 && words.length <= 4;
     });
     validate('field-mobile', 'wrap-mobile', (v) => /^\d{11}$/.test(v.replace(/\s/g, '')));
-    // Email validation is still applied, but field is readonly – still useful in case it becomes editable later
     validate('field-email', 'wrap-email', (v) => v.includes('@') && v.includes('.'));
     validate('field-barangay', 'wrap-barangay', (v) => v.length >= 2);
     validate('field-landmark', 'wrap-landmark', (v) => v.length > 0);
 
-    // Submit
+    // Submit using Base64 encoding (no Firebase Storage)
     submitBtn.onclick = async function() {
         if (!currentUser) {
             showToast('⚠️ You must be logged in to submit verification.', 'error');
             return;
         }
 
+        // Validate text fields
         const name = document.getElementById('field-name').value.trim();
         const mobile = document.getElementById('field-mobile').value.trim().replace(/\s/g, '');
         const barangay = document.getElementById('field-barangay').value.trim();
@@ -239,7 +294,33 @@
         if (!/^\d{11}$/.test(mobile)) { showToast('⚠️ Mobile number must be 11 digits.', 'error'); return; }
         if (barangay.length < 2) { showToast('⚠️ Please enter your barangay.', 'error'); return; }
 
+        // Validate file selections
+        const idFile = idFileInput.files[0];
+        const selfieFile = selfieFileInput.files[0];
+        if (!idFile) { showToast('⚠️ Please upload a government ID.', 'error'); return; }
+        if (!selfieFile) { showToast('⚠️ Please upload a recent selfie.', 'error'); return; }
+
+        // Optional: File size validation (keep under 500KB each to stay within Firestore document limit)
+        const MAX_FILE_SIZE = 500 * 1024; // 500KB
+        if (idFile.size > MAX_FILE_SIZE) {
+            showToast('⚠️ ID image must be less than 500KB. Please compress the image.', 'error');
+            return;
+        }
+        if (selfieFile.size > MAX_FILE_SIZE) {
+            showToast('⚠️ Selfie must be less than 500KB. Please compress the image.', 'error');
+            return;
+        }
+
+        // Disable submit button to prevent double submission
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
         try {
+            // Convert files to Base64 strings
+            const idBase64 = await fileToBase64(idFile);
+            const selfieBase64 = await fileToBase64(selfieFile);
+
+            // Save verification document to Firestore
             await addDoc(collection(db, "verifications"), {
                 name: name,
                 mobile: '+63' + mobile,
@@ -248,22 +329,20 @@
                 landmark: document.getElementById('field-landmark').value.trim(),
                 timestamp: new Date(),
                 userId: currentUser.uid,
-                submittedBy: currentUser.email || currentUser.displayName || name
+                submittedBy: currentUser.email || currentUser.displayName || name,
+                idPhotoBase64: idBase64,
+                selfieBase64: selfieBase64
             });
+
             showToast('✅ Verification submitted!', 'success');
             setTimeout(() => window.location.href = 'AccountInfo.html', 2500);
         } catch (err) {
+            console.error("Submission error:", err);
             showToast('⚠️ ' + err.message, 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit';
         }
     };
-
-    function showToast(msg, type) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = 'toast-visible ' + (type || 'error');
-        clearTimeout(t._timer);
-        t._timer = setTimeout(() => t.className = '', 3000);
-    }
 </script>
 </body>
 </html>

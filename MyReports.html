@@ -45,7 +45,7 @@
         <button class="nav-item" id="navRequest" onclick="navigateTo('RequestHelp.html')"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
         <button class="nav-item" id="navHotlines" onclick="navigateTo('Hotline.html')"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
         <button class="nav-item" id="navReport" onclick="navigateTo('ReportFlood.html')"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
-        <button class="nav-item active" id="navMyReports" onclick="navigateTo('MyReports.html')"><i class="fas fa-clipboard-list"></i><span>My Reports</span></button>
+        <button class="nav-item active" id="navMyReports" onclick="navigateTo('MyReports.html')"><i class="fas fa-clipboard-list"></i><span>All Reports</span></button>
         <button class="nav-item" id="navAccount" onclick="navigateTo('AccountInfo.html')"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
 </div>
@@ -63,7 +63,7 @@
 </div>
 <script type="module">
     import { db, auth } from "./firebase.js";
-    import { collection, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     function navigateTo(page) { window.location.href = page; }
@@ -76,7 +76,7 @@
     const filterBtns = document.querySelectorAll('.filter-btn');
     const searchInput = document.getElementById('searchInput');
 
-    // ---------- Helper functions ----------
+    // Helper functions (same as before)
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -86,7 +86,7 @@
 
     function toDate(timestamp) {
         if (!timestamp) return null;
-        if (timestamp.toDate) return timestamp.toDate(); // Firestore Timestamp
+        if (timestamp.toDate) return timestamp.toDate();
         const d = new Date(timestamp);
         return isNaN(d.getTime()) ? null : d;
     }
@@ -99,28 +99,14 @@
 
     // ---------- Authentication ----------
     onAuthStateChanged(auth, (user) => {
-        const listDiv = document.getElementById('reportsList');
-        if (!user) {
-            currentUser = null;
-            listDiv.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-icon"><i class="fas fa-lock"></i></div>
-                    <div class="empty-title">Please Log In</div>
-                    <div class="empty-sub">You need to be logged in to view your reports.</div>
-                    <button class="login-prompt-btn" onclick="navigateTo('Login.html')" style="margin-top:16px; padding:10px 24px; background:#1B3D87; color:white; border:none; border-radius:50px; font-weight:600; cursor:pointer;">Log In</button>
-                </div>`;
-            filterBtns.forEach(btn => btn.disabled = true);
-            if (searchInput) searchInput.disabled = true;
-            return;
-        }
-
         currentUser = user;
+        // Enable filters and search regardless of login state
         filterBtns.forEach(btn => btn.disabled = false);
         if (searchInput) searchInput.disabled = false;
-        renderList();
+        renderList(); // Always fetch and render reports
     });
 
-    // ---------- Delete confirmation ----------
+    // ---------- Delete confirmation (unchanged) ----------
     document.getElementById('confirmCancel').onclick = () => {
         overlay.classList.remove('show');
         pendingDelete = null;
@@ -146,24 +132,19 @@
         renderList();
     }
 
-    // ---------- Fetch user's reports ----------
-    async function getMyFloodReports() {
-        if (!currentUser) return [];
-        const q = query(collection(db, "floodReports"), where("userId", "==", currentUser.uid));
-        const snap = await getDocs(q);
+    // ---------- Fetch ALL reports (no user filter) ----------
+    async function getAllFloodReports() {
+        const snap = await getDocs(collection(db, "floodReports"));
         return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
     }
 
-    async function getMyHelpRequests() {
-        if (!currentUser) return [];
-        const q = query(collection(db, "helpRequests"), where("userId", "==", currentUser.uid));
-        const snap = await getDocs(q);
+    async function getAllHelpRequests() {
+        const snap = await getDocs(collection(db, "helpRequests"));
         return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
     }
 
     // ---------- Filter & search ----------
     function setFilter(filter) {
-        if (!currentUser) return;
         currentFilter = filter;
         ['All', 'Flood', 'Help'].forEach(type => {
             const btn = document.getElementById('filter' + type);
@@ -174,15 +155,13 @@
 
     // ---------- Render the list of reports ----------
     async function renderList() {
-        if (!currentUser) return;
-
         const queryStr = document.getElementById('searchInput').value.toLowerCase();
         const list = document.getElementById('reportsList');
 
         list.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
 
-        const floods = await getMyFloodReports();
-        const helps = await getMyHelpRequests();
+        const floods = await getAllFloodReports();
+        const helps = await getAllHelpRequests();
 
         let items = [
             ...floods.map(r => ({ ...r, owner: r.submittedBy || 'Unknown' })),
@@ -222,7 +201,8 @@
 
         items.forEach((r, idx) => {
             const isHelp = r.type === 'help';
-            const cardClass = `report-card${isHelp ? ' help-card' : ''} own-card`;
+            const isOwner = currentUser && r.userId === currentUser.uid;
+            const cardClass = `report-card${isHelp ? ' help-card' : ''}`;
             const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
             const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
 
@@ -231,64 +211,31 @@
                 ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency Request</span>'
                 : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
 
-            // Owner badge
-            const ownerBadge = `<span class="user-badge badge-you"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
+            // Owner badge – different style if it's the current user's report
+            const ownerBadgeClass = isOwner ? 'badge-you' : 'badge-other';
+            const ownerBadge = `<span class="user-badge ${ownerBadgeClass}"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
 
-            // Delete button
-            const deleteBtn = `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
+            // Delete button only if owner and logged in
+            const deleteBtn = (currentUser && isOwner)
+                ? `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`
+                : '';
 
             // Row items
             let rows = '';
             if (isHelp) {
                 rows = `
-                    <div class="card-row">
-                        <i class="fas fa-user ${iconClass}"></i>
-                        <div>
-                            <div class="row-label">Name</div>
-                            <div class="row-val">${escapeHtml(r.name || '—')}</div>
-                        </div>
-                    </div>
-                    <div class="card-row">
-                        <i class="fas fa-phone ${iconClass}"></i>
-                        <div>
-                            <div class="row-label">Phone</div>
-                            <div class="row-val">${escapeHtml(r.phone || '—')}</div>
-                        </div>
-                    </div>
-                    <div class="card-row">
-                        <i class="fas fa-comment-alt ${iconClass}"></i>
-                        <div>
-                            <div class="row-label">Situation</div>
-                            <div class="row-val">${escapeHtml(r.description || '—')}</div>
-                        </div>
-                    </div>`;
+                    <div class="card-row"><i class="fas fa-user ${iconClass}"></i><div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div></div>
+                    <div class="card-row"><i class="fas fa-phone ${iconClass}"></i><div><div class="row-label">Phone</div><div class="row-val">${escapeHtml(r.phone || '—')}</div></div></div>
+                    <div class="card-row"><i class="fas fa-comment-alt ${iconClass}"></i><div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div></div>`;
             } else {
                 rows = `
-                    <div class="card-row">
-                        <i class="fas fa-map-marker-alt ${iconClass}"></i>
-                        <div>
-                            <div class="row-label">Location</div>
-                            <div class="row-val">${escapeHtml(r.location || '—')}</div>
-                        </div>
-                    </div>
-                    <div class="card-row">
-                        <i class="fas fa-info-circle ${iconClass}"></i>
-                        <div>
-                            <div class="row-label">Details</div>
-                            <div class="row-val">${escapeHtml(r.details || '—')}</div>
-                        </div>
-                    </div>`;
+                    <div class="card-row"><i class="fas fa-map-marker-alt ${iconClass}"></i><div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div></div>
+                    ${r.details ? `<div class="card-row"><i class="fas fa-info-circle ${iconClass}"></i><div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div></div>` : ''}`;
             }
 
             // Date row (common)
             rows += `
-                <div class="card-row">
-                    <i class="fas fa-clock ${iconClass}"></i>
-                    <div>
-                        <div class="row-label">Submitted</div>
-                        <div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div>
-                    </div>
-                </div>`;
+                <div class="card-row"><i class="fas fa-clock ${iconClass}"></i><div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div></div>`;
 
             // Build the card
             html += `
@@ -306,7 +253,7 @@
         html += '<div style="height:14px;"></div>';
         list.innerHTML = html;
 
-        // Attach delete button event listeners
+        // Attach delete button event listeners (only for buttons that exist)
         list.querySelectorAll('.card-delete-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
