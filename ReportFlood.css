@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Font loaded via <link> in HTML for better performance */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
     font-family: 'Inter', -apple-system, sans-serif;
@@ -243,4 +243,83 @@ body {
     pointer-events: none;
     transition: opacity 0.2s;
     z-index: 99;
+}
+.image-upload-area {
+    margin: 12px 0 8px;
+}
+.upload-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    border: 2px dashed #1a4599;
+    transition: all 0.2s;
+}
+.upload-box:hover {
+    background: #f5f5f5;
+}
+.upload-box i {
+    font-size: 32px;
+    color: #1a4599;
+    margin-bottom: 8px;
+}
+.upload-box p {
+    color: #666;
+    font-size: 12px;
+    margin-top: 4px;
+}
+.image-preview {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.remove-image {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 10px;
+}
+.file-input {
+    display: none;
+}
+.image-count {
+    font-size: 11px;
+    color: #fff;
+    margin-top: 4px;
+    text-align: center;
+}
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    z-index: 1000;
+    display: none;
 }

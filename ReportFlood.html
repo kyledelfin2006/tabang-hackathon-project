@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Report Flood</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="ReportFlood.css">
 </head>
@@ -27,9 +31,21 @@
             <i class="fas fa-map-marker-alt"></i>
             <input type="text" id="locationInput" placeholder="Enter Location">
         </div>
+
+        <div class="image-upload-area">
+            <div class="field-label">Upload Photos</div>
+            <div class="upload-box" id="uploadBox">
+                <i class="fas fa-camera"></i>
+                <p>Tap to take photo or select from gallery</p>
+            </div>
+            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple>
+            <div class="image-preview" id="imagePreview"></div>
+            <div class="image-count" id="imageCount">0 image(s) selected</div>
+        </div>
+
         <div class="details-label">Additional Details</div>
         <div class="textarea-box">
-            <label for="detailsInput"></label><textarea id="detailsInput" placeholder="Enter details (e.g, extent of flooding)"></textarea>
+            <textarea id="detailsInput" placeholder="Enter details (e.g, extent of flooding)"></textarea>
         </div>
     </div>
     <div class="submit-wrap">
@@ -44,17 +60,20 @@
         <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
     <div class="toast" id="toast"></div>
+    <div class="loading" id="loading">Submitting...</div>
 </div>
-<script type="module">
-    import { db } from "./firebase.js";
-    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    
-    onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        alert('Please log in to use this feature.');
-        window.location.href = 'Login.html';
-    }
-    
+
+<script>
+    let selectedImages = [];
+    const MAX_IMAGES = 5;
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    const API_BASE_URL = 'https://your-api-domain.com/api'; // Change this!
+    const API_ENDPOINTS = {
+        reports: `${API_BASE_URL}/reports`,
+        helpRequests: `${API_BASE_URL}/help-requests`
+    };
+
     function navigateTo(page) { window.location.href = page; }
 
     document.querySelector('.back-btn').onclick = function() { navigateTo('index.html'); };
@@ -64,27 +83,240 @@
     document.getElementById('navMyReports').onclick = function() { navigateTo('MyReports.html'); };
     document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
 
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const imageCount = document.getElementById('imageCount');
+
+    uploadBox.onclick = () => fileInput.click();
+
+    fileInput.onchange = function(e) {
+        const files = Array.from(e.target.files);
+
+        if (selectedImages.length + files.length > MAX_IMAGES) {
+            showToast(`Maximum ${MAX_IMAGES} images allowed`);
+            return;
+        }
+
+        files.forEach(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                showToast(`File ${file.name} is too large (max 5MB)`);
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                showToast(`File ${file.name} is not an image`);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                selectedImages.push({
+                    data: evt.target.result,
+                    name: file.name,
+                    type: file.type,
+                    file: file
+                });
+                updatePreview();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        fileInput.value = '';
+    };
+
+    function updatePreview() {
+        imagePreview.innerHTML = '';
+        selectedImages.forEach((img, index) => {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            div.innerHTML = `
+                <img src="${img.data}" alt="Preview">
+                <div class="remove-image" onclick="removeImage(${index})">×</div>
+            `;
+            imagePreview.appendChild(div);
+        });
+        imageCount.textContent = `${selectedImages.length} image(s) selected`;
+    }
+
+    window.removeImage = function(index) {
+        selectedImages.splice(index, 1);
+        updatePreview();
+    };
+
+    // Function to submit report to server via fetch
+    async function submitReportToServer(reportData) {
+        try {
+            const response = await fetch(API_ENDPOINTS.reports, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}` // If using auth
+                },
+                body: JSON.stringify(reportData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            } 
+
+            const result = await response.json();
+            return { success: true, data: result };
+        } catch (error) {
+            console.error('Error submitting report:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Alternative: Upload with FormData (for file uploads to server)
+    async function submitReportWithFiles(reportData, files) {
+        const formData = new FormData();
+
+        // Append text data
+        formData.append('location', reportData.location);
+        formData.append('details', reportData.details);
+        formData.append('timestamp', reportData.timestamp);
+        formData.append('userId', localStorage.getItem('userId') || 'anonymous');
+
+        // Append files
+        files.forEach((file, index) => {
+            formData.append(`images`, file.file, file.name);
+        });
+
+        try {
+            const response = await fetch(API_ENDPOINTS.reports, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return { success: true, data: result };
+        } catch (error) {
+            console.error('Error submitting report with files:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Function to sync reports with server
+    async function syncReportsWithServer() {
+        try {
+            const response = await fetch(API_ENDPOINTS.reports, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                }
+            });
+
+            if (response.ok) {
+                const serverReports = await response.json();
+                // Merge or replace local storage with server data
+                localStorage.setItem('allReports', JSON.stringify(serverReports));
+                return serverReports;
+            }
+        } catch (error) {
+            console.error('Error syncing reports:', error);
+        }
+        return null;
+    }
+
     document.getElementById('submitBtn').onclick = async function() {
         var loc = document.getElementById('locationInput').value.trim();
         var det = document.getElementById('detailsInput').value.trim();
-        if (!loc) { showToast('Please enter a location'); return; }
 
-        await addDoc(collection(db, "floodReports"), {
-        location: loc,
-         details: det || 'No additional details provided.',
-        timestamp: new Date()
-        });
-        
+        if (!loc) {
+            showToast('Please enter a location');
+            return;
+        }
 
-        // ✅ Redirect to MyReports after submitting
+        // Show loading
+        const loadingDiv = document.getElementById('loading');
+        loadingDiv.style.display = 'block';
+
+        // Prepare report data
+        const reportData = {
+            id: 'RPT-' + Date.now().toString().slice(-6),
+            location: loc,
+            details: det || 'No additional details provided.',
+            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
+            isoDate: new Date().toISOString(),
+            images: selectedImages.map(img => img.data), // Base64 for localStorage fallback
+            hasImages: selectedImages.length > 0,
+            userId: localStorage.getItem('userId') || 'anonymous',
+            status: 'pending'
+        };
+
+        // Try to submit to server first
+        let submissionResult;
+
+        if (selectedImages.length > 0) {
+            // If there are images, use FormData upload
+            submissionResult = await submitReportWithFiles(reportData, selectedImages);
+        } else {
+            // Otherwise use JSON
+            submissionResult = await submitReportToServer(reportData);
+        }
+
+        // Always save to localStorage as backup/offline support
+        let allReports = JSON.parse(localStorage.getItem('allReports') || '[]');
+
+        if (submissionResult.success) {
+            // If server submission succeeded, use server-generated ID
+            reportData.id = submissionResult.data.id || reportData.id;
+            reportData.serverSynced = true;
+            showToast('Report submitted successfully!');
+        } else {
+            reportData.serverSynced = false;
+            reportData.syncError = submissionResult.error;
+            showToast('Report saved locally. Will sync when online.');
+        }
+
+        allReports.push(reportData);
+        localStorage.setItem('allReports', JSON.stringify(allReports));
+
+        loadingDiv.style.display = 'none';
+
         navigateTo('MyReports.html');
     };
 
+    window.addEventListener('online', async () => {
+        const allReports = JSON.parse(localStorage.getItem('allReports') || '[]');
+        const unsyncedReports = allReports.filter(report => !report.serverSynced);
+
+        if (unsyncedReports.length > 0) {
+            showToast(`Syncing ${unsyncedReports.length} reports...`);
+
+            for (const report of unsyncedReports) {
+                const result = await submitReportToServer(report);
+                if (result.success) {
+                    report.serverSynced = true;
+                    delete report.syncError;
+                }
+            }
+
+            localStorage.setItem('allReports', JSON.stringify(allReports));
+            showToast('Sync complete!');
+        }
+    });
+
     function showToast(msg) {
         var t = document.getElementById('toast');
-        t.textContent = msg; t.style.opacity = '1';
+        t.textContent = msg;
+        t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
+
+    async function loadInitialData() {
+        await syncReportsWithServer();
+    }
+
+    loadInitialData();
 </script>
 </body>
 </html>

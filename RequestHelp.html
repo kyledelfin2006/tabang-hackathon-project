@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="RequestHelp.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Request Help</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="RequestHelp.css">
 </head>
 <body>
 <div class="phone">
@@ -25,10 +29,23 @@
     <div class="input-box"><input type="text" id="nameInput" placeholder="Enter your name"></div>
     <div class="details-label">Phone Number</div>
     <div class="input-box"><input type="tel" id="phoneInput" placeholder="Enter your number"></div>
+
+    <div class="image-upload-area">
+        <div class="field-label">Upload Photos (Optional)</div>
+        <div class="upload-box" id="uploadBox">
+            <i class="fas fa-camera"></i>
+            <p>Tap to take photo or select from gallery</p>
+        </div>
+        <input type="file" id="fileInput" class="file-input" accept="image/*" multiple>
+        <div class="image-preview" id="imagePreview"></div>
+        <div class="image-count" id="imageCount">0 image(s) selected</div>
+    </div>
+
     <div class="details-label">Description</div>
     <div class="textarea-box"><textarea id="descInput" placeholder="Describe situation..."></textarea></div>
     <button class="submit-btn" id="submitBtn">Request Help</button>
     <div class="toast" id="toast"></div>
+    <div class="loading" id="loading">Submitting...</div>
     <div class="bottom-nav">
         <button class="nav-item active" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
         <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
@@ -38,9 +55,17 @@
     </div>
 </div>
 
-<script type="module">
-    import { db } from "./firebase.js";
-    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
+    let selectedImages = [];
+    const MAX_IMAGES = 5;
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    // API Configuration - Replace with your actual API endpoint
+    const API_BASE_URL = 'https://your-api-domain.com/api';
+    const API_ENDPOINTS = {
+        reports: `${API_BASE_URL}/reports`,
+        helpRequests: `${API_BASE_URL}/help-requests`
+    };
 
     function navigateTo(page) { window.location.href = page; }
 
@@ -51,6 +76,113 @@
     document.getElementById('navAccount').onclick = function() { navigateTo('AccountInfo.html'); };
     document.getElementById('backBtn').onclick = function() { navigateTo('index.html'); };
 
+    // Image upload handling
+    const uploadBox = document.getElementById('uploadBox');
+    const fileInput = document.getElementById('fileInput');
+    const imagePreview = document.getElementById('imagePreview');
+    const imageCount = document.getElementById('imageCount');
+
+    uploadBox.onclick = () => fileInput.click();
+
+    fileInput.onchange = function(e) {
+        const files = Array.from(e.target.files);
+
+        if (selectedImages.length + files.length > MAX_IMAGES) {
+            showToast(`Maximum ${MAX_IMAGES} images allowed`);
+            return;
+        }
+
+        files.forEach(file => {
+            if (file.size > MAX_FILE_SIZE) {
+                showToast(`File ${file.name} is too large (max 5MB)`);
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                showToast(`File ${file.name} is not an image`);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                selectedImages.push({
+                    data: evt.target.result,
+                    name: file.name,
+                    type: file.type,
+                    file: file
+                });
+                updatePreview();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        fileInput.value = '';
+    };
+
+    function updatePreview() {
+        imagePreview.innerHTML = '';
+        selectedImages.forEach((img, index) => {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+            div.innerHTML = `
+                <img src="${img.data}" alt="Preview">
+                <div class="remove-image" onclick="removeImage(${index})">×</div>
+            `;
+            imagePreview.appendChild(div);
+        });
+        imageCount.textContent = `${selectedImages.length} image(s) selected`;
+    }
+
+    window.removeImage = function(index) {
+        selectedImages.splice(index, 1);
+        updatePreview();
+    };
+
+    // Function to submit help request to server
+    async function submitHelpRequestToServer(requestData) {
+        try {
+            const response = await fetch(API_ENDPOINTS.helpRequests, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            return { success: true, data: result };
+        } catch (error) {
+            console.error('Error submitting help request:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Function to get all help requests from server
+    async function fetchAllHelpRequests() {
+        try {
+            const response = await fetch(API_ENDPOINTS.helpRequests, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                }
+            });
+
+            if (response.ok) {
+                const requests = await response.json();
+                localStorage.setItem('allHelpRequests', JSON.stringify(requests));
+                return requests;
+            }
+        } catch (error) {
+            console.error('Error fetching help requests:', error);
+        }
+        return null;
+    }
+
     document.getElementById('submitBtn').onclick = async function() {
         var name = document.getElementById('nameInput').value.trim();
         var phone = document.getElementById('phoneInput').value.trim();
@@ -60,15 +192,69 @@
         if (!phone) { showToast('Please enter your phone number'); return; }
         if (!desc) { showToast('Please describe your situation'); return; }
 
-        await addDoc(collection(db, "helpRequests"), {
+        // Show loading
+        const loadingDiv = document.getElementById('loading');
+        loadingDiv.style.display = 'block';
+
+        // Prepare request data
+        const requestData = {
+            id: 'HLP-' + Date.now().toString().slice(-6),
             name: name,
             phone: phone,
             description: desc,
-            timestamp: new Date()
-        });
+            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
+            isoDate: new Date().toISOString(),
+            images: selectedImages.map(img => img.data),
+            hasImages: selectedImages.length > 0,
+            userId: localStorage.getItem('userId') || 'anonymous',
+            status: 'pending'
+        };
+
+        // Try to submit to server
+        const submissionResult = await submitHelpRequestToServer(requestData);
+
+        // Save to localStorage
+        let allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');
+
+        if (submissionResult.success) {
+            requestData.id = submissionResult.data.id || requestData.id;
+            requestData.serverSynced = true;
+            showToast('Help request submitted successfully!');
+        } else {
+            requestData.serverSynced = false;
+            requestData.syncError = submissionResult.error;
+            showToast('Request saved locally. Will sync when online.');
+        }
+
+        allHelp.push(requestData);
+        localStorage.setItem('allHelpRequests', JSON.stringify(allHelp));
+
+        // Hide loading
+        loadingDiv.style.display = 'none';
 
         navigateTo('MyReports.html');
     };
+
+    // Auto-sync when back online
+    window.addEventListener('online', async () => {
+        const allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');
+        const unsynced = allHelp.filter(req => !req.serverSynced);
+
+        if (unsynced.length > 0) {
+            showToast(`Syncing ${unsynced.length} requests...`);
+
+            for (const req of unsynced) {
+                const result = await submitHelpRequestToServer(req);
+                if (result.success) {
+                    req.serverSynced = true;
+                    delete req.syncError;
+                }
+            }
+
+            localStorage.setItem('allHelpRequests', JSON.stringify(allHelp));
+            showToast('Sync complete!');
+        }
+    });
 
     function showToast(msg) {
         var t = document.getElementById('toast');
@@ -76,6 +262,13 @@
         t.style.opacity = '1';
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
+
+    // Load initial data
+    async function loadInitialData() {
+        await fetchAllHelpRequests();
+    }
+
+    loadInitialData();
 </script>
 </body>
 </html>
