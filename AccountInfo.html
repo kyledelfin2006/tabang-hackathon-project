@@ -161,27 +161,51 @@
     </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script type="module">
+    import { db, auth } from "./firebase.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    // Expose modal functions globally so inline onclick works with type="module"
+    window.openModal = function(id) { document.getElementById(id).classList.add('show'); }
+    window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); }
+    window.handleOverlayClick = function(e, id) { if (e.target.classList.contains('modal-overlay')) window.closeModal(id); }
+
     document.getElementById('backBtn').onclick = function() { window.location.href = 'index.html'; };
 
-    var user = JSON.parse(localStorage.getItem('tabangUser'));
-    if (user) {
-        document.getElementById('profileName').textContent = user.fullName || user.firstName;
-        document.getElementById('profileEmail').textContent = user.email;
-    }
+    // Sign out
+    document.getElementById('signOutBtn').onclick = async function() {
+        await signOut(auth);
+        window.location.href = 'Login.html';
+    };
 
+    // Load user profile
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const docSnap = await getDoc(doc(db, "users", user.uid));
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('profileName').textContent = data.fullName || data.firstName || 'User';
+                document.getElementById('profileEmail').textContent = data.email || user.email;
+            } else {
+                // Fallback to Firebase Auth email if no Firestore doc
+                document.getElementById('profileEmail').textContent = user.email;
+            }
+        } 
+    });
+
+    // Photo upload
     document.getElementById('photo-input').addEventListener('change', function(e) {
         var file = e.target.files[0];
         if (file) {
             var reader = new FileReader();
             reader.onload = function(ev) {
-                document.getElementById('avatar-circle').innerHTML = '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
+                document.getElementById('avatar-circle').innerHTML =
+                    '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
             };
             reader.readAsDataURL(file);
         }
     });
-
-    function openModal(id) { document.getElementById(id).classList.add('show'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-    function handleOverlayClick(e, id) { if (e.target.classList.contains('modal-overlay')) closeModal(id); }
 </script>
+</body>
+</html>

@@ -30,6 +30,9 @@
 
     <button class="login-btn" id="loginBtn">Login</button>
 
+    <!-- Guest Mode Button -->
+    <button class="guest-btn" id="guestBtn">Continue as Guest</button>
+
     <div style="margin-top: 16px; color: rgba(255,255,255,0.6); font-size: 13px; text-align: center;">
         Don't have an account? <span onclick="window.location.href='signup.html'" style="color: #f5900a; font-weight: 700; cursor: pointer;">Sign Up</span>
     </div>
@@ -50,22 +53,26 @@
         setTimeout(function() { t.style.opacity = '0'; }, 3000);
     }
 
+    // Login with email/password
     document.getElementById('loginBtn').onclick = async function() {
         var input = document.getElementById('emailInput').value.trim();
         var pass  = document.getElementById('passInput').value.trim();
 
-        if (!input) { showToast('⚠️ Please enter your email or username'); return; }
+        if (!input) { showToast('⚠️ Please enter your email'); return; }
         if (!pass)  { showToast('⚠️ Please enter your password'); return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); return; }
 
-        // For email/password login, the input must be the email address
-        // If you allow username as well, you need to resolve it – we'll assume email.
         try {
             await signInWithEmailAndPassword(auth, input, pass);
-            window.location.href = 'home.html';  // or whatever your main page is
+            window.location.href = 'Homepage.html';  // change to your main page
         } catch (err) {
             showToast('⚠️ ' + err.message);
         }
+    };
+
+    // Guest mode – simply go to homepage without authenticating
+    document.getElementById('guestBtn').onclick = function() {
+        window.location.href = 'Homepage.html';
     };
 </script>
 </body>
