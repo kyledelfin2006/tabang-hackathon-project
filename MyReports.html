@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <div class="back-btn" onclick="navigateTo('index.html')"><i class="fas fa-chevron-left"></i></div>
+    <div class="back-btn" onclick="navigateTo('Homepage.html')"><i class="fas fa-chevron-left"></i></div>
     <div class="page-title">All Reports</div>
     <div class="page-subtitle">Community flood reports & help requests</div>
 
@@ -61,7 +61,6 @@
         </div>
     </div>
 </div>
-
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { collection, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -77,6 +76,28 @@
     const filterBtns = document.querySelectorAll('.filter-btn');
     const searchInput = document.getElementById('searchInput');
 
+    // ---------- Helper functions ----------
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function toDate(timestamp) {
+        if (!timestamp) return null;
+        if (timestamp.toDate) return timestamp.toDate(); // Firestore Timestamp
+        const d = new Date(timestamp);
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatDate(timestamp) {
+        const date = toDate(timestamp);
+        if (!date) return '—';
+        return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    }
+
+    // ---------- Authentication ----------
     onAuthStateChanged(auth, (user) => {
         const listDiv = document.getElementById('reportsList');
         if (!user) {
@@ -99,7 +120,7 @@
         renderList();
     });
 
-    // Confirmation modal functions (unchanged)
+    // ---------- Delete confirmation ----------
     document.getElementById('confirmCancel').onclick = () => {
         overlay.classList.remove('show');
         pendingDelete = null;
@@ -125,6 +146,7 @@
         renderList();
     }
 
+    // ---------- Fetch user's reports ----------
     async function getMyFloodReports() {
         if (!currentUser) return [];
         const q = query(collection(db, "floodReports"), where("userId", "==", currentUser.uid));
@@ -139,9 +161,7 @@
         return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
     }
 
-    // Helper functions (escapeHtml, toDate, formatDate) remain unchanged
-    // ...
-
+    // ---------- Filter & search ----------
     function setFilter(filter) {
         if (!currentUser) return;
         currentFilter = filter;
@@ -152,6 +172,7 @@
         renderList();
     }
 
+    // ---------- Render the list of reports ----------
     async function renderList() {
         if (!currentUser) return;
 
@@ -168,10 +189,11 @@
             ...helps.map(r => ({ ...r, owner: r.submittedBy || 'Unknown' }))
         ];
 
-        // Apply filter and search
+        // Apply filter
         if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
         if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');
 
+        // Apply search
         if (queryStr) {
             items = items.filter(r => {
                 const searchable = [r.location||'', r.name||'', r.description||'', r.details||'', r.owner||''].join(' ').toLowerCase();
@@ -179,9 +201,10 @@
             });
         }
 
+        // Sort by date (newest first)
         items.sort((a, b) => {
-            const dateA = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp);
-            const dateB = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp);
+            const dateA = toDate(a.timestamp) || new Date(0);
+            const dateB = toDate(b.timestamp) || new Date(0);
             return dateB - dateA;
         });
 
@@ -196,9 +219,91 @@
         }
 
         let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
+
         items.forEach((r, idx) => {
-            // ... (your existing card HTML, using r.owner, r.id, etc.)
+            const isHelp = r.type === 'help';
+            const cardClass = `report-card${isHelp ? ' help-card' : ''} own-card`;
+            const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
+            const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
+
+            // Badge
+            const badgeHtml = isHelp
+                ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency Request</span>'
+                : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
+
+            // Owner badge
+            const ownerBadge = `<span class="user-badge badge-you"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
+
+            // Delete button
+            const deleteBtn = `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`;
+
+            // Row items
+            let rows = '';
+            if (isHelp) {
+                rows = `
+                    <div class="card-row">
+                        <i class="fas fa-user ${iconClass}"></i>
+                        <div>
+                            <div class="row-label">Name</div>
+                            <div class="row-val">${escapeHtml(r.name || '—')}</div>
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <i class="fas fa-phone ${iconClass}"></i>
+                        <div>
+                            <div class="row-label">Phone</div>
+                            <div class="row-val">${escapeHtml(r.phone || '—')}</div>
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <i class="fas fa-comment-alt ${iconClass}"></i>
+                        <div>
+                            <div class="row-label">Situation</div>
+                            <div class="row-val">${escapeHtml(r.description || '—')}</div>
+                        </div>
+                    </div>`;
+            } else {
+                rows = `
+                    <div class="card-row">
+                        <i class="fas fa-map-marker-alt ${iconClass}"></i>
+                        <div>
+                            <div class="row-label">Location</div>
+                            <div class="row-val">${escapeHtml(r.location || '—')}</div>
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <i class="fas fa-info-circle ${iconClass}"></i>
+                        <div>
+                            <div class="row-label">Details</div>
+                            <div class="row-val">${escapeHtml(r.details || '—')}</div>
+                        </div>
+                    </div>`;
+            }
+
+            // Date row (common)
+            rows += `
+                <div class="card-row">
+                    <i class="fas fa-clock ${iconClass}"></i>
+                    <div>
+                        <div class="row-label">Submitted</div>
+                        <div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div>
+                    </div>
+                </div>`;
+
+            // Build the card
+            html += `
+                <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
+                    <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
+                        ${ownerBadge}
+                        ${deleteBtn}
+                    </div>
+                    <div class="${dividerClass}"></div>
+                    ${rows}
+                    <div class="card-footer">${badgeHtml}<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>
+                </div>`;
         });
+
+        html += '<div style="height:14px;"></div>';
         list.innerHTML = html;
 
         // Attach delete button event listeners
@@ -213,6 +318,7 @@
         });
     }
 
+    // Expose functions for inline onclick handlers
     window.navigateTo = navigateTo;
     window.setFilter = setFilter;
 </script>

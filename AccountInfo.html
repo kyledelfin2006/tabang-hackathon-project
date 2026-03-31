@@ -160,47 +160,71 @@
         </div>
     </div>
 </div>
-
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // Expose modal functions globally so inline onclick works with type="module"
-    window.openModal = function(id) { document.getElementById(id).classList.add('show'); }
-    window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); }
-    window.handleOverlayClick = function(e, id) { if (e.target.classList.contains('modal-overlay')) window.closeModal(id); }
-
-    document.getElementById('backBtn').onclick = function() { window.location.href = 'index.html'; };
-
-    // Sign out
-    document.getElementById('signOutBtn').onclick = async function() {
-        await signOut(auth);
-        window.location.href = 'Login.html';
+    // Expose modal functions globally
+    window.openModal = function(id) { document.getElementById(id).classList.add('show'); };
+    window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); };
+    window.handleOverlayClick = function(e, id) { 
+        if (e.target.classList.contains('modal-overlay')) window.closeModal(id); 
     };
+
+    document.getElementById('backBtn').onclick = () => window.location.href = 'Homepage.html';
+
+    // Sign out button (in modal)
+    // The modal's sign out button has class "btn-danger" and onclick redirects directly – we'll override it
+    const signOutBtn = document.querySelector('#modal-signout .btn-danger');
+    if (signOutBtn) {
+        signOutBtn.onclick = async (e) => {
+            e.preventDefault();
+            await signOut(auth);
+            window.location.href = 'Login.html';
+        };
+    }
 
     // Load user profile
     onAuthStateChanged(auth, async (user) => {
+        const nameEl = document.getElementById('profileName');
+        const emailEl = document.getElementById('profileEmail');
+
         if (user) {
-            const docSnap = await getDoc(doc(db, "users", user.uid));
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                document.getElementById('profileName').textContent = data.fullName || data.firstName || 'User';
-                document.getElementById('profileEmail').textContent = data.email || user.email;
-            } else {
-                // Fallback to Firebase Auth email if no Firestore doc
-                document.getElementById('profileEmail').textContent = user.email;
+            try {
+                const docSnap = await getDoc(doc(db, "users", user.uid));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    // Try various possible name fields
+                    let displayName = data.fullName || data.displayName || data.name;
+                    if (!displayName && data.firstName && data.lastName) {
+                        displayName = `${data.firstName} ${data.lastName}`;
+                    }
+                    nameEl.textContent = displayName || 'User';
+                    emailEl.textContent = data.email || user.email;
+                } else {
+                    // No Firestore doc – use auth info
+                    nameEl.textContent = user.displayName || 'User';
+                    emailEl.textContent = user.email;
+                }
+            } catch (err) {
+                console.error("Error loading user data:", err);
+                nameEl.textContent = 'User';
+                emailEl.textContent = user.email;
             }
-        } 
+        } else {
+            nameEl.textContent = 'Guest User';
+            emailEl.textContent = 'No email';
+        }
     });
 
     // Photo upload
-    document.getElementById('photo-input').addEventListener('change', function(e) {
-        var file = e.target.files[0];
+    document.getElementById('photo-input').addEventListener('change', (e) => {
+        const file = e.target.files[0];
         if (file) {
-            var reader = new FileReader();
-            reader.onload = function(ev) {
-                document.getElementById('avatar-circle').innerHTML =
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                document.getElementById('avatar-circle').innerHTML = 
                     '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
             };
             reader.readAsDataURL(file);
