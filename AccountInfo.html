@@ -84,19 +84,20 @@
 </div>
 
 
+<!-- NOTIFICATION -->
 <div class="modal-overlay" id="modal-notif" onclick="handleOverlayClick(event,'modal-notif')">
     <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
             <div class="modal-title"><i class="fas fa-bell" style="color:#1B3D87;margin-right:8px;"></i>Notification Settings</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-notif')">✕</div>
+            <div class="modal-close-btn" onclick="closeModal('modal-notif')">&#x2715;</div>
         </div>
         <div class="modal-body">
             <div class="info-banner">Stay informed during flood events. Turn on the alerts that matter most to you.</div>
-            <div class="toggle-row"><div><div class="toggle-label">🌊 Flood Alerts</div><div class="toggle-sub">Notified when floods are reported near you</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label">📢 Emergency Broadcasts</div><div class="toggle-sub">Critical alerts from local authorities</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label">🏘️ Community Reports</div><div class="toggle-sub">When someone reports near your barangay</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label">🔔 App Updates</div><div class="toggle-sub">New features and improvements</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-water" style="margin-right:6px;"></i>Flood Alerts</div><div class="toggle-sub">Notified when floods are reported near you</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-bullhorn" style="margin-right:6px;"></i>Emergency Broadcasts</div><div class="toggle-sub">Critical alerts from local authorities</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-users" style="margin-right:6px;"></i>Community Reports</div><div class="toggle-sub">When someone reports near your barangay</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-bell" style="margin-right:6px;"></i>App Updates</div><div class="toggle-sub">New features and improvements</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
         </div>
     </div>
 </div>
@@ -107,44 +108,46 @@
         <div class="modal-handle"></div>
         <div class="modal-header">
             <div class="modal-title"><i class="fas fa-headset" style="color:#1B3D87;margin-right:8px;"></i>Help &amp; Support</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-help')">✕</div>
+            <div class="modal-close-btn" onclick="closeModal('modal-help')">&#x2715;</div>
         </div>
         <div class="modal-body">
             <div class="info-banner">We're here to help. Tabang is a community flood response app for Aklan province.</div>
-            <div class="section-title">📋 Frequently Asked Questions</div>
+            <div class="section-title"><i class="fas fa-list-ul" style="margin-right:6px;"></i>Frequently Asked Questions</div>
             <ul>
                 <li><strong>How do I report a flood?</strong> — Go to Report Flood tab and fill in your location and details.</li>
                 <li><strong>Who can see my info?</strong> — Only authorized emergency responders and barangay officials.</li>
                 <li><strong>How do I call for help?</strong> — Use the Request Help tab or call the nearest hotline.</li>
             </ul>
-            <div class="section-title">📞 Contact Us</div>
-            <p>Email: <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="d1a2a4a1a1bea3a591a5b0b3b0bfb6ffb6bea7ffa1b9">[email&#160;protected]</a></strong></p>
+            <div class="section-title"><i class="fas fa-phone" style="margin-right:6px;"></i>Contact Us</div>
+            <p>Email: <strong>support@tabang.app</strong></p>
             <p style="margin-top:5px;">Hotline: <strong>(036) 500-1234</strong></p>
         </div>
     </div>
 </div>
 
+<!-- SETTINGS -->
 <div class="modal-overlay" id="modal-settings" onclick="handleOverlayClick(event,'modal-settings')">
     <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
             <div class="modal-title"><i class="fas fa-cog" style="color:#1B3D87;margin-right:8px;"></i>Settings</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-settings')">✕</div>
+            <div class="modal-close-btn" onclick="closeModal('modal-settings')">&#x2715;</div>
         </div>
         <div class="modal-body">
-            <div class="toggle-row"><div><div class="toggle-label">🌙 Dark Mode</div><div class="toggle-sub">Switch app to dark theme</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label">📍 Location Access</div><div class="toggle-sub">Allow app to detect your location</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label">📱 App Version</div><div class="toggle-sub">v1.0.0 — Up to date</div></div><span style="font-size:11px;color:#aaa;font-weight:700;">Latest</span></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-moon" style="margin-right:6px;"></i>Dark Mode</div><div class="toggle-sub">Switch app to dark theme</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location Access</div><div class="toggle-sub">Allow app to detect your location</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-mobile-alt" style="margin-right:6px;"></i>App Version</div><div class="toggle-sub">v1.0.0 — Up to date</div></div><span style="font-size:11px;color:#aaa;font-weight:700;">Latest</span></div>
         </div>
     </div>
 </div>
 
+<!-- SIGN OUT -->
 <div class="modal-overlay" id="modal-signout" onclick="handleOverlayClick(event,'modal-signout')">
     <div class="modal-sheet">
         <div class="modal-handle"></div>
         <div class="modal-header">
             <div class="modal-title" style="color:#FF4D4D;"><i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>Sign Out</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-signout')">✕</div>
+            <div class="modal-close-btn" onclick="closeModal('modal-signout')">&#x2715;</div>
         </div>
         <div class="modal-body">
             <div class="info-banner" style="border-left-color:#FF4D4D;background:#fff0f0;color:#c0392b;">Are you sure you want to sign out?</div>
@@ -152,57 +155,32 @@
                 <li>Removes your active session from this device</li>
                 <li>Stops all flood alert notifications</li>
             </ul>
-            <button class="btn-danger" onclick="window.location.href='Login.html'">Yes, Sign Out</button>
+            <button class="btn-danger" id="signOutBtn">Yes, Sign Out</button>
             <button class="btn-cancel" onclick="closeModal('modal-signout')">Cancel</button>
         </div>
     </div>
 </div>
+
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-<<<<<<< HEAD
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
-    import { db, auth } from "./firebase.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js"
-
-    
-    document.getElementById('backBtn').onclick = function() { window.location.href = 'Homepage.html'; };
-    onAuthStateChanged(auth, async (user) => {
-
-    if (user) {
-        const docSnap = await getDoc(doc(db, "users", user.uid));
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            document.getElementById('profileName').textContent = data.fullName || data.firstName;
-            document.getElementById('profileEmail').textContent = data.email;
-        }
-    } else {
-        window.location.href = 'Login.html'; // redirect if not logged in
-=======
     // Expose modal functions globally
     window.openModal = function(id) { document.getElementById(id).classList.add('show'); };
     window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); };
-    window.handleOverlayClick = function(e, id) { 
-        if (e.target.classList.contains('modal-overlay')) window.closeModal(id); 
+    window.handleOverlayClick = function(e, id) {
+        if (e.target.classList.contains('modal-overlay')) window.closeModal(id);
     };
 
     document.getElementById('backBtn').onclick = () => window.location.href = 'Homepage.html';
 
-    // Sign out button (in modal)
-    // The modal's sign out button has class "btn-danger" and onclick redirects directly – we'll override it
-    const signOutBtn = document.querySelector('#modal-signout .btn-danger');
-    if (signOutBtn) {
-        signOutBtn.onclick = async (e) => {
-            e.preventDefault();
-            await signOut(auth);
-            window.location.href = 'Login.html';
-        };
->>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
-    }
-});
+    // Sign out
+    document.getElementById('signOutBtn').onclick = async (e) => {
+        e.preventDefault();
+        await signOut(auth);
+        window.location.href = 'Login.html';
+    };
 
     // Load user profile
     onAuthStateChanged(auth, async (user) => {
@@ -214,7 +192,6 @@
                 const docSnap = await getDoc(doc(db, "users", user.uid));
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Try various possible name fields
                     let displayName = data.fullName || data.displayName || data.name;
                     if (!displayName && data.firstName && data.lastName) {
                         displayName = `${data.firstName} ${data.lastName}`;
@@ -222,7 +199,6 @@
                     nameEl.textContent = displayName || 'User';
                     emailEl.textContent = data.email || user.email;
                 } else {
-                    // No Firestore doc – use auth info
                     nameEl.textContent = user.displayName || 'User';
                     emailEl.textContent = user.email;
                 }
@@ -243,7 +219,7 @@
         if (file) {
             const reader = new FileReader();
             reader.onload = (ev) => {
-                document.getElementById('avatar-circle').innerHTML = 
+                document.getElementById('avatar-circle').innerHTML =
                     '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
             };
             reader.readAsDataURL(file);

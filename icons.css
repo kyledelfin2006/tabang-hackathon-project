@@ -241,7 +241,7 @@
     src: url(https://fonts.gstatic.com/s/inter/v20/UcCo3FwrK3iLTcvvYwYL8g.woff2) format('woff2');
     unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
 }
-    @font-face {
+@font-face {
     font-family: 'Inter';
     font-style: normal;
     font-weight: 700;
