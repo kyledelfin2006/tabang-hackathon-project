@@ -55,35 +55,24 @@
     </div>
 </div>
 
-<<<<<<< HEAD
-<script>
-    let selectedImages = [];
-    const MAX_IMAGES = 5;
-    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-    // API Configuration - Replace with your actual API endpoint
-    const API_BASE_URL = 'https://your-api-domain.com/api';
-    const API_ENDPOINTS = {
-        reports: `${API_BASE_URL}/reports`,
-        helpRequests: `${API_BASE_URL}/help-requests`
-    };
-=======
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
->>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
 
     function navigateTo(page) { window.location.href = page; }
 
-    document.getElementById('navRequest').onclick = () => navigateTo('RequestHelp.html');
+    document.getElementById('navRequest').onclick  = () => navigateTo('RequestHelp.html');
     document.getElementById('navHotlines').onclick = () => navigateTo('Hotline.html');
-    document.getElementById('navReport').onclick = () => navigateTo('ReportFlood.html');
-    document.getElementById('navMyReports').onclick = () => navigateTo('MyReports.html');
-    document.getElementById('navAccount').onclick = () => navigateTo('AccountInfo.html');
-    document.getElementById('backBtn').onclick = () => navigateTo('Homepage.html');
+    document.getElementById('navReport').onclick   = () => navigateTo('ReportFlood.html');
+    document.getElementById('navMyReports').onclick= () => navigateTo('MyReports.html');
+    document.getElementById('navAccount').onclick  = () => navigateTo('AccountInfo.html');
+    document.getElementById('backBtn').onclick     = () => navigateTo('Homepage.html');
 
     let currentUser = null;
+    let selectedImages = [];
+    const MAX_IMAGES = 5;
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -97,10 +86,10 @@
     });
 
     // Image upload handling
-    const uploadBox = document.getElementById('uploadBox');
-    const fileInput = document.getElementById('fileInput');
-    const imagePreview = document.getElementById('imagePreview');
-    const imageCount = document.getElementById('imageCount');
+    const uploadBox   = document.getElementById('uploadBox');
+    const fileInput   = document.getElementById('fileInput');
+    const imagePreview= document.getElementById('imagePreview');
+    const imageCount  = document.getElementById('imageCount');
 
     uploadBox.onclick = () => fileInput.click();
 
@@ -117,12 +106,10 @@
                 showToast(`File ${file.name} is too large (max 5MB)`);
                 return;
             }
-
             if (!file.type.startsWith('image/')) {
                 showToast(`File ${file.name} is not an image`);
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = function(evt) {
                 selectedImages.push({
@@ -158,106 +145,22 @@
         updatePreview();
     };
 
-    // Function to submit help request to server
-    async function submitHelpRequestToServer(requestData) {
-        try {
-            const response = await fetch(API_ENDPOINTS.helpRequests, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-                },
-                body: JSON.stringify(requestData)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            return { success: true, data: result };
-        } catch (error) {
-            console.error('Error submitting help request:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    // Function to get all help requests from server
-    async function fetchAllHelpRequests() {
-        try {
-            const response = await fetch(API_ENDPOINTS.helpRequests, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
-                }
-            });
-
-            if (response.ok) {
-                const requests = await response.json();
-                localStorage.setItem('allHelpRequests', JSON.stringify(requests));
-                return requests;
-            }
-        } catch (error) {
-            console.error('Error fetching help requests:', error);
-        }
-        return null;
-    }
-
     document.getElementById('submitBtn').onclick = async function() {
         if (!currentUser) {
             showToast('You must be logged in.');
             return;
         }
 
-        const name = document.getElementById('nameInput').value.trim();
+        const name  = document.getElementById('nameInput').value.trim();
         const phone = document.getElementById('phoneInput').value.trim();
-        const desc = document.getElementById('descInput').value.trim();
+        const desc  = document.getElementById('descInput').value.trim();
 
-        if (!name) { showToast('Please enter your name'); return; }
+        if (!name)  { showToast('Please enter your name'); return; }
         if (!phone) { showToast('Please enter your phone number'); return; }
-        if (!desc) { showToast('Please describe your situation'); return; }
+        if (!desc)  { showToast('Please describe your situation'); return; }
 
-        // Show loading
-        const loadingDiv = document.getElementById('loading');
-        loadingDiv.style.display = 'block';
+        document.getElementById('loading').style.display = 'block';
 
-        // Prepare request data
-        const requestData = {
-            id: 'HLP-' + Date.now().toString().slice(-6),
-            name: name,
-            phone: phone,
-            description: desc,
-            timestamp: new Date().toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }),
-            isoDate: new Date().toISOString(),
-            images: selectedImages.map(img => img.data),
-            hasImages: selectedImages.length > 0,
-            userId: localStorage.getItem('userId') || 'anonymous',
-            status: 'pending'
-        };
-
-        // Try to submit to server
-        const submissionResult = await submitHelpRequestToServer(requestData);
-
-        // Save to localStorage
-        let allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');
-
-        if (submissionResult.success) {
-            requestData.id = submissionResult.data.id || requestData.id;
-            requestData.serverSynced = true;
-            showToast('Help request submitted successfully!');
-        } else {
-            requestData.serverSynced = false;
-            requestData.syncError = submissionResult.error;
-            showToast('Request saved locally. Will sync when online.');
-        }
-
-        allHelp.push(requestData);
-        localStorage.setItem('allHelpRequests', JSON.stringify(allHelp));
-
-        // Hide loading
-        loadingDiv.style.display = 'none';
-
-        navigateTo('MyReports.html');
         try {
             await addDoc(collection(db, "helpRequests"), {
                 name: name,
@@ -270,43 +173,17 @@
             navigateTo('MyReports.html');
         } catch (err) {
             showToast('Error: ' + err.message);
+        } finally {
+            document.getElementById('loading').style.display = 'none';
         }
     };
 
-    // Auto-sync when back online
-    window.addEventListener('online', async () => {
-        const allHelp = JSON.parse(localStorage.getItem('allHelpRequests') || '[]');
-        const unsynced = allHelp.filter(req => !req.serverSynced);
-
-        if (unsynced.length > 0) {
-            showToast(`Syncing ${unsynced.length} requests...`);
-
-            for (const req of unsynced) {
-                const result = await submitHelpRequestToServer(req);
-                if (result.success) {
-                    req.serverSynced = true;
-                    delete req.syncError;
-                }
-            }
-
-            localStorage.setItem('allHelpRequests', JSON.stringify(allHelp));
-            showToast('Sync complete!');
-        }
-    });
-
     function showToast(msg) {
-        var t = document.getElementById('toast');
+        const t = document.getElementById('toast');
         t.textContent = msg;
         t.style.opacity = '1';
         setTimeout(() => t.style.opacity = '0', 3000);
     }
-
-    // Load initial data
-    async function loadInitialData() {
-        await fetchAllHelpRequests();
-    }
-
-    loadInitialData();
 </script>
 </body>
 </html>

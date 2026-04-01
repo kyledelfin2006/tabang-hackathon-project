@@ -152,15 +152,11 @@
         });
         renderList();
     }
-<<<<<<< HEAD
-    items.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-=======
 
     // ---------- Render the list of reports ----------
     async function renderList() {
         const queryStr = document.getElementById('searchInput').value.toLowerCase();
         const list = document.getElementById('reportsList');
->>>>>>> 2bb16d60747dd66255f7e9445f0efa2382ed95ad
 
         list.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
 
@@ -203,7 +199,7 @@
 
         let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
 
-        items.forEach((r, idx) => {
+        items.forEach((r) => {
             const isHelp = r.type === 'help';
             const isOwner = currentUser && r.userId === currentUser.uid;
             const cardClass = `report-card${isHelp ? ' help-card' : ''}`;
