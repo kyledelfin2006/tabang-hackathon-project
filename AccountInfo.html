@@ -9,74 +9,76 @@
     <link rel="stylesheet" href="AccountInfo.css">
 </head>
 <body>
-<input type="file" id="photo-input" accept="image/*" style="display:none;">
+
+<!-- Hidden file input for photo upload, pls don't change -->
+<input type="file" id="photo-input" accept="image/*" aria-label="Upload profile photo" style="display:none;">
 
 <div class="phone">
 
     <div class="status-bar">
         <span>9:41</span>
         <div class="status-icons">
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
-            <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="white" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
+            <svg width="16" height="12" viewBox="0 0 16 12" fill="white" aria-hidden="true"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
+            <svg width="22" height="12" viewBox="0 0 22 12" fill="white" aria-hidden="true"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
         </div>
     </div>
 
-    <div class="back-btn" id="backBtn">&#8249;</div>
+    <button class="back-btn" id="backBtn" aria-label="Go back">
+        <i class="fas fa-chevron-left" style="font-size:11px;" aria-hidden="true"></i> Back
+    </button>
 
     <div class="profile-section">
-        <div class="avatar-wrapper" onclick="document.getElementById('photo-input').click()">
+        <!-- FIX: use a <button> for accessibility; onclick moved to JS -->
+        <button class="avatar-wrapper" id="avatarWrapper" aria-label="Change profile photo">
             <div class="avatar-circle" id="avatar-circle">
-                <svg viewBox="0 0 88 88" width="88" height="88">
-                    <rect width="88" height="88" rx="44" fill="#2c5282"/>
-                    <ellipse cx="44" cy="74" rx="26" ry="18" fill="#4a3728"/>
-                    <circle cx="44" cy="36" r="18" fill="#7a5c4a"/>
-                    <ellipse cx="44" cy="22" rx="18" ry="10" fill="#2a1a0a"/>
-                </svg>
+                <!-- FIX: initials avatar shown by default; replaced by photo or SVG in JS -->
+                <div class="avatar-initials" id="avatar-initials">?</div>
             </div>
-            <div class="camera-badge">
+            <div class="camera-badge" aria-hidden="true">
                 <i class="fas fa-camera" style="font-size:10px;color:white;"></i>
             </div>
-        </div>
+        </button>
 
         <div class="profile-info">
             <div class="profile-name-row">
-                <img src="tabang-badge.png" class="badge-img" onerror="this.style.display='none'">
-                <div class="profile-name" id="profileName">Guest User</div>
+                <!-- FIX: badge image hidden by default; shown only if it loads successfully -->
+                <img src="tabang-badge.png" class="badge-img" id="badgeImg" alt="Verified badge" style="display:none;">
+                <div class="profile-name" id="profileName">Loading...</div>
             </div>
-            <div class="profile-address" id="profileEmail">No email</div>
+            <div class="profile-address" id="profileEmail">Loading...</div>
         </div>
     </div>
 
     <div class="divider"></div>
 
     <div class="menu-group">
-        <div class="menu-item" onclick="openModal('modal-notif')">
-            <div class="menu-icon"><i class="fas fa-bell"></i></div>
+        <div class="menu-item" id="menu-notif" role="button" tabindex="0" aria-label="Notification settings">
+            <div class="menu-icon"><i class="fas fa-bell" aria-hidden="true"></i></div>
             <span class="menu-label">Notification</span>
-            <i class="fas fa-chevron-right menu-arrow"></i>
+            <i class="fas fa-chevron-right menu-arrow" aria-hidden="true"></i>
         </div>
-        <div class="menu-item" onclick="openModal('modal-help')">
-            <div class="menu-icon"><i class="fas fa-headset"></i></div>
+        <div class="menu-item" id="menu-help" role="button" tabindex="0" aria-label="Help and Support">
+            <div class="menu-icon"><i class="fas fa-headset" aria-hidden="true"></i></div>
             <span class="menu-label">Help &amp; Support</span>
-            <i class="fas fa-chevron-right menu-arrow"></i>
+            <i class="fas fa-chevron-right menu-arrow" aria-hidden="true"></i>
         </div>
-        <div class="menu-item" onclick="window.location.href='VerAcc.html'">
-            <div class="menu-icon"><i class="fas fa-user-check"></i></div>
+        <div class="menu-item" id="menu-verify" role="button" tabindex="0" aria-label="Verify Account">
+            <div class="menu-icon"><i class="fas fa-user-check" aria-hidden="true"></i></div>
             <span class="menu-label">Verify Account</span>
-            <i class="fas fa-chevron-right menu-arrow"></i>
+            <i class="fas fa-chevron-right menu-arrow" aria-hidden="true"></i>
         </div>
     </div>
 
     <div class="divider"></div>
 
     <div class="menu-group">
-        <div class="menu-item" onclick="openModal('modal-settings')">
-            <div class="menu-icon settings-icon"><i class="fas fa-cog"></i></div>
+        <div class="menu-item" id="menu-settings" role="button" tabindex="0" aria-label="Settings">
+            <div class="menu-icon settings-icon"><i class="fas fa-cog" aria-hidden="true"></i></div>
             <span class="menu-label">Settings</span>
         </div>
-        <div class="menu-item" onclick="openModal('modal-signout')">
-            <div class="menu-icon signout-icon"><i class="fas fa-sign-out-alt"></i></div>
+        <div class="menu-item" id="menu-signout" role="button" tabindex="0" aria-label="Sign Out">
+            <div class="menu-icon signout-icon"><i class="fas fa-sign-out-alt" aria-hidden="true"></i></div>
             <span class="menu-label signout-label">Sign Out</span>
         </div>
     </div>
@@ -84,79 +86,135 @@
 </div>
 
 
-<!-- NOTIFICATION -->
-<div class="modal-overlay" id="modal-notif" onclick="handleOverlayClick(event,'modal-notif')">
+<!-- NOTIFICATION MODAL -->
+<div class="modal-overlay" id="modal-notif" role="dialog" aria-modal="true" aria-labelledby="notif-title">
     <div class="modal-sheet">
-        <div class="modal-handle"></div>
+        <div class="modal-handle" aria-hidden="true"></div>
         <div class="modal-header">
-            <div class="modal-title"><i class="fas fa-bell" style="color:#1B3D87;margin-right:8px;"></i>Notification Settings</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-notif')">&#x2715;</div>
+            <div class="modal-title" id="notif-title">
+                <i class="fas fa-bell" style="color:#1B3D87;margin-right:8px;" aria-hidden="true"></i>Notification Settings
+            </div>
+            <button class="modal-close-btn" data-close="modal-notif" aria-label="Close notification settings">&#x2715;</button>
         </div>
         <div class="modal-body">
             <div class="info-banner">Stay informed during flood events. Turn on the alerts that matter most to you.</div>
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-water" style="margin-right:6px;"></i>Flood Alerts</div><div class="toggle-sub">Notified when floods are reported near you</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-bullhorn" style="margin-right:6px;"></i>Emergency Broadcasts</div><div class="toggle-sub">Critical alerts from local authorities</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-users" style="margin-right:6px;"></i>Community Reports</div><div class="toggle-sub">When someone reports near your barangay</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-bell" style="margin-right:6px;"></i>App Updates</div><div class="toggle-sub">New features and improvements</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+
+            <div class="toggle-row" role="group" aria-label="Flood Alerts">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-water" style="margin-right:6px;" aria-hidden="true"></i>Flood Alerts</div>
+                    <div class="toggle-sub">Notified when floods are reported near you</div>
+                </div>
+                <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Flood Alerts"></div>
+            </div>
+
+            <div class="toggle-row" role="group" aria-label="Emergency Broadcasts">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-bullhorn" style="margin-right:6px;" aria-hidden="true"></i>Emergency Broadcasts</div>
+                    <div class="toggle-sub">Critical alerts from local authorities</div>
+                </div>
+                <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Emergency Broadcasts"></div>
+            </div>
+
+            <div class="toggle-row" role="group" aria-label="Community Reports">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-users" style="margin-right:6px;" aria-hidden="true"></i>Community Reports</div>
+                    <div class="toggle-sub">When someone reports near your barangay</div>
+                </div>
+                <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Community Reports"></div>
+            </div>
+
+            <div class="toggle-row" role="group" aria-label="App Updates">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-bell" style="margin-right:6px;" aria-hidden="true"></i>App Updates</div>
+                    <div class="toggle-sub">New features and improvements</div>
+                </div>
+                <div class="toggle" role="switch" aria-checked="false" tabindex="0" aria-label="App Updates"></div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- HELP -->
-<div class="modal-overlay" id="modal-help" onclick="handleOverlayClick(event,'modal-help')">
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="modal-help" role="dialog" aria-modal="true" aria-labelledby="help-title">
     <div class="modal-sheet">
-        <div class="modal-handle"></div>
+        <div class="modal-handle" aria-hidden="true"></div>
         <div class="modal-header">
-            <div class="modal-title"><i class="fas fa-headset" style="color:#1B3D87;margin-right:8px;"></i>Help &amp; Support</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-help')">&#x2715;</div>
+            <div class="modal-title" id="help-title">
+                <i class="fas fa-headset" style="color:#1B3D87;margin-right:8px;" aria-hidden="true"></i>Help &amp; Support
+            </div>
+            <button class="modal-close-btn" data-close="modal-help" aria-label="Close help">&#x2715;</button>
         </div>
         <div class="modal-body">
             <div class="info-banner">We're here to help. Tabang is a community flood response app for Aklan province.</div>
-            <div class="section-title"><i class="fas fa-list-ul" style="margin-right:6px;"></i>Frequently Asked Questions</div>
+            <div class="section-title"><i class="fas fa-list-ul" style="margin-right:6px;" aria-hidden="true"></i>Frequently Asked Questions</div>
             <ul>
                 <li><strong>How do I report a flood?</strong> — Go to Report Flood tab and fill in your location and details.</li>
                 <li><strong>Who can see my info?</strong> — Only authorized emergency responders and barangay officials.</li>
                 <li><strong>How do I call for help?</strong> — Use the Request Help tab or call the nearest hotline.</li>
             </ul>
-            <div class="section-title"><i class="fas fa-phone" style="margin-right:6px;"></i>Contact Us</div>
+            <div class="section-title"><i class="fas fa-phone" style="margin-right:6px;" aria-hidden="true"></i>Contact Us</div>
             <p>Email: <strong>support@tabang.app</strong></p>
             <p style="margin-top:5px;">Hotline: <strong>(036) 500-1234</strong></p>
         </div>
     </div>
 </div>
 
-<!-- SETTINGS -->
-<div class="modal-overlay" id="modal-settings" onclick="handleOverlayClick(event,'modal-settings')">
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="modal-settings" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="modal-sheet">
-        <div class="modal-handle"></div>
+        <div class="modal-handle" aria-hidden="true"></div>
         <div class="modal-header">
-            <div class="modal-title"><i class="fas fa-cog" style="color:#1B3D87;margin-right:8px;"></i>Settings</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-settings')">&#x2715;</div>
+            <div class="modal-title" id="settings-title">
+                <i class="fas fa-cog" style="color:#1B3D87;margin-right:8px;" aria-hidden="true"></i>Settings
+            </div>
+            <button class="modal-close-btn" data-close="modal-settings" aria-label="Close settings">&#x2715;</button>
         </div>
         <div class="modal-body">
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-moon" style="margin-right:6px;"></i>Dark Mode</div><div class="toggle-sub">Switch app to dark theme</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-map-marker-alt" style="margin-right:6px;"></i>Location Access</div><div class="toggle-sub">Allow app to detect your location</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-            <div class="toggle-row"><div><div class="toggle-label"><i class="fas fa-mobile-alt" style="margin-right:6px;"></i>App Version</div><div class="toggle-sub">v1.0.0 — Up to date</div></div><span style="font-size:11px;color:#aaa;font-weight:700;">Latest</span></div>
+            <div class="toggle-row" role="group" aria-label="Dark Mode">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-moon" style="margin-right:6px;" aria-hidden="true"></i>Dark Mode</div>
+                    <div class="toggle-sub">Switch app to dark theme</div>
+                </div>
+                <div class="toggle" role="switch" aria-checked="false" tabindex="0" aria-label="Dark Mode"></div>
+            </div>
+            <div class="toggle-row" role="group" aria-label="Location Access">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-map-marker-alt" style="margin-right:6px;" aria-hidden="true"></i>Location Access</div>
+                    <div class="toggle-sub">Allow app to detect your location</div>
+                </div>
+                <div class="toggle on" role="switch" aria-checked="true" tabindex="0" aria-label="Location Access"></div>
+            </div>
+            <div class="toggle-row">
+                <div>
+                    <div class="toggle-label"><i class="fas fa-mobile-alt" style="margin-right:6px;" aria-hidden="true"></i>App Version</div>
+                    <div class="toggle-sub">v1.0.0 — Up to date</div>
+                </div>
+                <span style="font-size:11px;color:#aaa;font-weight:700;">Latest</span>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- SIGN OUT -->
-<div class="modal-overlay" id="modal-signout" onclick="handleOverlayClick(event,'modal-signout')">
+<!-- SIGN OUT MODAL -->
+<div class="modal-overlay" id="modal-signout" role="dialog" aria-modal="true" aria-labelledby="signout-title">
     <div class="modal-sheet">
-        <div class="modal-handle"></div>
+        <div class="modal-handle" aria-hidden="true"></div>
         <div class="modal-header">
-            <div class="modal-title" style="color:#FF4D4D;"><i class="fas fa-sign-out-alt" style="margin-right:8px;"></i>Sign Out</div>
-            <div class="modal-close-btn" onclick="closeModal('modal-signout')">&#x2715;</div>
+            <div class="modal-title" id="signout-title" style="color:#FF4D4D;">
+                <i class="fas fa-sign-out-alt" style="margin-right:8px;" aria-hidden="true"></i>Sign Out
+            </div>
+            <button class="modal-close-btn" data-close="modal-signout" aria-label="Cancel sign out">&#x2715;</button>
         </div>
         <div class="modal-body">
-            <div class="info-banner" style="border-left-color:#FF4D4D;background:#fff0f0;color:#c0392b;">Are you sure you want to sign out?</div>
+            <div class="info-banner" style="border-left-color:#FF4D4D;background:#fff0f0;color:#c0392b;">
+                Are you sure you want to sign out?
+            </div>
             <ul>
                 <li>Removes your active session from this device</li>
                 <li>Stops all flood alert notifications</li>
             </ul>
             <button class="btn-danger" id="signOutBtn">Yes, Sign Out</button>
-            <button class="btn-cancel" onclick="closeModal('modal-signout')">Cancel</button>
+            <button class="btn-cancel" data-close="modal-signout">Cancel</button>
         </div>
     </div>
 </div>
@@ -164,67 +222,200 @@
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // Expose modal functions globally
-    window.openModal = function(id) { document.getElementById(id).classList.add('show'); };
-    window.closeModal = function(id) { document.getElementById(id).classList.remove('show'); };
-    window.handleOverlayClick = function(e, id) {
-        if (e.target.classList.contains('modal-overlay')) window.closeModal(id);
-    };
+    // ─── Modal Helpers ───────────────────────────────────────────────
 
-    document.getElementById('backBtn').onclick = () => window.location.href = 'Homepage.html';
+    function openModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.add('show');
+            // FIX: trap focus on the first focusable element inside
+            const focusable = modal.querySelector('button, [tabindex="0"]');
+            if (focusable) focusable.focus();
+        }
+    }
 
-    // Sign out
-    document.getElementById('signOutBtn').onclick = async (e) => {
-        e.preventDefault();
-        await signOut(auth);
-        window.location.href = 'Login.html';
-    };
+    function closeModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.remove('show');
+    }
 
-    // Load user profile
-    onAuthStateChanged(auth, async (user) => {
-        const nameEl = document.getElementById('profileName');
-        const emailEl = document.getElementById('profileEmail');
+    // FIX: expose to window for any inline usage (none now, but keep for safety)
+    window.openModal = openModal;
+    window.closeModal = closeModal;
 
-        if (user) {
-            try {
-                const docSnap = await getDoc(doc(db, "users", user.uid));
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    let displayName = data.fullName || data.displayName || data.name;
-                    if (!displayName && data.firstName && data.lastName) {
-                        displayName = `${data.firstName} ${data.lastName}`;
-                    }
-                    nameEl.textContent = displayName || 'User';
-                    emailEl.textContent = data.email || user.email;
-                } else {
-                    nameEl.textContent = user.displayName || 'User';
-                    emailEl.textContent = user.email;
-                }
-            } catch (err) {
-                console.error("Error loading user data:", err);
-                nameEl.textContent = 'User';
-                emailEl.textContent = user.email;
-            }
-        } else {
-            nameEl.textContent = 'Guest User';
-            emailEl.textContent = 'No email';
+    // ─── Modal Overlay Click (close on backdrop) ──────────────────────
+
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        // FIX: only close if the direct target is the overlay, not a child
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal(overlay.id);
+        });
+    });
+
+    // ─── Modal Close Buttons ──────────────────────────────────────────
+
+    document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.addEventListener('click', () => closeModal(btn.dataset.close));
+    });
+
+    // ─── Keyboard: close modal on Escape ─────────────────────────────
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay.show').forEach(m => closeModal(m.id));
         }
     });
 
-    // Photo upload
+    // ─── Menu Items ───────────────────────────────────────────────────
+
+    function bindMenuClick(id, action) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const activate = () => action();
+        el.addEventListener('click', activate);
+        // FIX: also support keyboard activation for role="button" elements
+        el.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+    }
+
+    bindMenuClick('menu-notif',    () => openModal('modal-notif'));
+    bindMenuClick('menu-help',     () => openModal('modal-help'));
+    bindMenuClick('menu-settings', () => openModal('modal-settings'));
+    bindMenuClick('menu-signout',  () => openModal('modal-signout'));
+    bindMenuClick('menu-verify',   () => { window.location.href = 'VerAcc.html'; });
+
+    // ─── Back Button ──────────────────────────────────────────────────
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+        window.location.href = 'Homepage.html';
+    });
+
+    // ─── Toggle Switches ─────────────────────────────────────────────
+
+    // FIX: toggles now update aria-checked in sync with visual state
+    document.querySelectorAll('.toggle[role="switch"]').forEach(toggle => {
+        const activate = () => {
+            const isOn = toggle.classList.toggle('on');
+            toggle.setAttribute('aria-checked', isOn.toString());
+        };
+        toggle.addEventListener('click', activate);
+        toggle.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+    });
+
+    // ─── Avatar / Profile Photo ───────────────────────────────────────
+
+    // FIX: clicking avatar triggers file input (moved out of inline onclick)
+    document.getElementById('avatarWrapper').addEventListener('click', () => {
+        document.getElementById('photo-input').click();
+    });
+
+    // FIX: show initials as default avatar fallback
+    function setInitialsAvatar(name) {
+        const initials = name
+            .split(' ')
+            .map(w => w[0])
+            .slice(0, 2)
+            .join('')
+            .toUpperCase() || '?';
+        document.getElementById('avatar-initials').textContent = initials;
+    }
+
+    // FIX: photo upload preview
     document.getElementById('photo-input').addEventListener('change', (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                document.getElementById('avatar-circle').innerHTML =
-                    '<img src="' + ev.target.result + '" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">';
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const circle = document.getElementById('avatar-circle');
+            circle.innerHTML = `<img src="${ev.target.result}" alt="Profile photo" style="width:88px;height:88px;object-fit:cover;border-radius:50%;">`;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ─── Badge Image ──────────────────────────────────────────────────
+
+    // FIX: only show badge image if it actually loads; avoid broken image layout
+    const badgeImg = document.getElementById('badgeImg');
+    badgeImg.addEventListener('load', () => { badgeImg.style.display = ''; });
+    badgeImg.addEventListener('error', () => { badgeImg.style.display = 'none'; });
+
+    // ─── Sign Out ─────────────────────────────────────────────────────
+
+    // FIX: renamed import to firebaseSignOut to avoid name collision with the button ID
+    document.getElementById('signOutBtn').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        btn.disabled = true;
+        btn.textContent = 'Signing out…';
+
+        try {
+            await firebaseSignOut(auth);
+            window.location.href = 'Login.html';
+        } catch (err) {
+            console.error('Sign out failed:', err);
+            btn.disabled = false;
+            btn.textContent = 'Yes, Sign Out';
+            alert('Failed to sign out. Please try again.');
         }
     });
+
+    // ─── Load User Profile ────────────────────────────────────────────
+
+    // FIX: store unsubscribe to prevent memory leak if component unmounts
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        const nameEl  = document.getElementById('profileName');
+        const emailEl = document.getElementById('profileEmail');
+
+        if (!user) {
+            nameEl.textContent  = 'Guest User';
+            emailEl.textContent = 'No email';
+            setInitialsAvatar('Guest User');
+            return;
+        }
+
+        try {
+            const docSnap = await getDoc(doc(db, "users", user.uid));
+
+            let displayName = '';
+            let email       = user.email;
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                // FIX: check all plausible name fields in priority order
+                displayName =
+                    data.fullName    ||
+                    data.displayName ||
+                    data.name        ||
+                    (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : '') ||
+                    user.displayName ||
+                    '';
+
+                email = data.email || user.email;
+            } else {
+                displayName = user.displayName || '';
+            }
+
+            nameEl.textContent  = displayName || 'User';
+            emailEl.textContent = email || 'No email';
+            setInitialsAvatar(displayName || 'U');
+
+        } catch (err) {
+            console.error('Error loading user data:', err);
+            // FIX: graceful fallback — show whatever Auth knows
+            nameEl.textContent  = user.displayName || 'User';
+            emailEl.textContent = user.email        || 'No email';
+            setInitialsAvatar(user.displayName || 'U');
+        }
+    });
+
+    // Clean up listener when page unloads
+    window.addEventListener('beforeunload', () => unsubscribe());
+
 </script>
 </body>
 </html>

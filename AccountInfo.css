@@ -1,5 +1,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+/* FIX: hide file input — it was rendering visibly on the page */
+#photo-input { display: none; }
+
 body {
     font-family: 'Inter', sans-serif;
     background: #0a1f4e;
@@ -21,11 +24,23 @@ body {
 }
 .status-icons { display: flex; gap: 6px; align-items: center; }
 
+/* UPDATED: pill-style back button, left-aligned with grey border */
 .back-btn {
-    color: white; font-size: 32px; font-weight: 300;
-    padding: 0 0 0 20px; cursor: pointer; line-height: 1;
-    flex-shrink: 0; margin-top: 4px;
+    display: inline-flex; align-items: center; gap: 5px;
+    margin: 10px 0 4px 20px;
+    padding: 6px 14px 6px 10px;
+    background: rgba(255,255,255,0.10);
+    border: 1.5px solid rgba(255,255,255,0.28);
+    border-radius: 20px;
+    color: white; font-size: 14px; font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer; line-height: 1;
+    flex-shrink: 0; align-self: flex-start;
+    transition: background 0.2s, border-color 0.2s;
+    letter-spacing: 0.1px;
 }
+.back-btn:hover { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.45); }
+.back-btn:active { background: rgba(255,255,255,0.05); transform: scale(0.97); }
 
 .profile-section {
     display: flex; align-items: center; gap: 16px;
@@ -35,6 +50,18 @@ body {
 
 .avatar-wrapper {
     position: relative; cursor: pointer; flex-shrink: 0;
+    /* FIX: reset <button> default styles so it looks identical to a div */
+    background: none; border: none; padding: 0;
+}
+
+/* FIX: this class was used in HTML but missing from CSS entirely */
+.avatar-initials {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: #1B3D87;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 28px; font-weight: 800;
+    font-family: 'Inter', sans-serif;
+    user-select: none;
 }
 
 .avatar-circle {
@@ -67,12 +94,10 @@ body {
     font-weight: 500; line-height: 1.5;
 }
 
-
 .divider {
     height: 1px; background: rgba(255,255,255,0.15);
     margin: 0 20px; flex-shrink: 0;
 }
-
 
 .menu-group {
     padding: 8px 0; flex-shrink: 0;
@@ -145,6 +170,7 @@ body {
     width: 28px; height: 28px; background: #f0f0f0;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     cursor: pointer; font-size: 13px; color: #555;
+    border: none;
 }
 
 .modal-body {
