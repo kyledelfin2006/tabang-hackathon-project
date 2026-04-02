@@ -5,7 +5,69 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>All Reports</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS & JS for map preview -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="Myreports.css">
+    <style>
+        /* Additional styles for map modal */
+        .map-preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .map-preview-content {
+            width: 90%;
+            max-width: 500px;
+            background: #1c1c1e;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .map-preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #2c2c2e;
+            color: white;
+            font-weight: 600;
+        }
+        .map-preview-header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #previewMap {
+            height: 400px;
+            width: 100%;
+        }
+        .card-location-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #66ccff;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        .card-location-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
 </head>
 <body>
 <div class="phone">
@@ -69,6 +131,17 @@
     <img id="previewImg" class="preview-img">
 </div>
 
+<!-- Map Preview Modal -->
+<div id="mapPreviewModal" class="map-preview-modal">
+    <div class="map-preview-content">
+        <div class="map-preview-header">
+            <span><i class="fas fa-map-pin"></i> Incident Location</span>
+            <button onclick="closeMapPreview()">&times;</button>
+        </div>
+        <div id="previewMap"></div>
+    </div>
+</div>
+
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -78,11 +151,14 @@
     let currentFilter = 'all';
     let pendingDelete = null;
     let currentUser = null;
+    let previewMap = null;
+    let previewMarker = null;
 
     const overlay      = document.getElementById('confirmOverlay');
     const filterBtns   = document.querySelectorAll('.filter-btn');
     const searchInput  = document.getElementById('searchInput');
     const reportsList  = document.getElementById('reportsList');
+    const mapModal     = document.getElementById('mapPreviewModal');
 
     // ─── Utility helpers ─────────────────────────────────────────────────────
     function navigateTo(page) {
@@ -109,6 +185,36 @@
         return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
+    // ─── Map preview functions ───────────────────────────────────────────────
+    function openMapPreview(lat, lng, title) {
+        // Show modal
+        mapModal.style.display = 'flex';
+        // Wait for modal to be visible, then init map
+        setTimeout(() => {
+            const container = document.getElementById('previewMap');
+            if (!container) return;
+            // Destroy previous map instance if exists
+            if (previewMap) {
+                previewMap.remove();
+                previewMap = null;
+            }
+            previewMap = L.map(container).setView([lat, lng], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(previewMap);
+            previewMarker = L.marker([lat, lng], { draggable: false }).addTo(previewMap);
+            previewMarker.bindPopup(title).openPopup();
+        }, 100);
+    }
+
+    function closeMapPreview() {
+        mapModal.style.display = 'none';
+        if (previewMap) {
+            previewMap.remove();
+            previewMap = null;
+        }
+    }
+
     // ─── Image preview ───────────────────────────────────────────────────────
     function openImagePreview(src) {
         const modal = document.getElementById('imagePreview');
@@ -122,7 +228,6 @@
         document.getElementById('imagePreview').style.display = 'none';
     }
 
-    // Toggle zoom on the preview image
     document.getElementById('previewImg').addEventListener('click', function () {
         this.classList.toggle('zoomed');
     });
@@ -186,11 +291,9 @@
     // ─── Build image gallery HTML ─────────────────────────────────────────────
     function buildImageGallery(imageUrls) {
         if (!imageUrls || imageUrls.length === 0) return '';
-
         const maxVisible    = 4;
         const visibleImages = imageUrls.slice(0, maxVisible);
         const extraCount    = imageUrls.length - maxVisible;
-
         const thumbnails = visibleImages.map(url => `
             <img class="gallery-thumb"
                  src="${escapeHtml(url)}"
@@ -198,11 +301,7 @@
                  loading="lazy"
                  onclick="openImagePreview('${escapeHtml(url)}')">
         `).join('');
-
-        const moreLabel = extraCount > 0
-            ? `<div class="gallery-more">+${extraCount}</div>`
-            : '';
-
+        const moreLabel = extraCount > 0 ? `<div class="gallery-more">+${extraCount}</div>` : '';
         return `<div class="image-gallery">${thumbnails}${moreLabel}</div>`;
     }
 
@@ -210,6 +309,7 @@
     function buildCard(r) {
         const isHelp    = r.type === 'help';
         const isOwner   = currentUser && r.userId === currentUser.uid;
+        const hasCoords = r.latitude && r.longitude;
 
         const cardClass   = `report-card${isHelp ? ' help-card' : ''}`;
         const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
@@ -234,6 +334,17 @@
                    <i class="fas fa-trash-alt"></i>
                </button>`
             : '';
+
+        // Location button (if coordinates exist)
+        let locationBtn = '';
+        if (hasCoords) {
+            const lat = r.latitude;
+            const lng = r.longitude;
+            const title = isHelp ? `Help request by ${escapeHtml(r.name || r.submittedBy || 'Anonymous')}` : `Flood report at ${escapeHtml(r.location || 'unknown location')}`;
+            locationBtn = `<button class="card-location-btn" onclick="openMapPreview(${lat}, ${lng}, '${escapeHtml(title)}')">
+                               <i class="fas fa-map-marker-alt"></i> View on map
+                           </button>`;
+        }
 
         // Content rows
         let rows = '';
@@ -264,7 +375,7 @@
                 </div>` : ''}`;
         }
 
-        // Timestamp row (common to both types)
+        // Timestamp row (common)
         rows += `
             <div class="card-row">
                 <i class="fas fa-clock ${iconClass}"></i>
@@ -277,7 +388,10 @@
             <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
                 <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
                     ${ownerBadge}
-                    ${deleteBtn}
+                    <div style="display:flex; gap:8px;">
+                        ${locationBtn}
+                        ${deleteBtn}
+                    </div>
                 </div>
                 <div class="${dividerClass}"></div>
                 ${imageHtml}
@@ -294,16 +408,12 @@
         const queryStr = searchInput.value.toLowerCase();
         reportsList.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
 
-        // Fetch both collections in parallel
         const [floods, helps] = await Promise.all([getAllFloodReports(), getAllHelpRequests()]);
-
         let items = [...floods, ...helps];
 
-        // Filter by type
         if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
         if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');
 
-        // Filter by search query
         if (queryStr) {
             items = items.filter(r => {
                 const searchable = [
@@ -317,14 +427,12 @@
             });
         }
 
-        // Sort newest first
         items.sort((a, b) => {
             const dateA = toDate(a.timestamp) || new Date(0);
             const dateB = toDate(b.timestamp) || new Date(0);
             return dateB - dateA;
         });
 
-        // Empty state
         if (items.length === 0) {
             reportsList.innerHTML = `
                 <div class="empty-state">
@@ -335,7 +443,6 @@
             return;
         }
 
-        // Build HTML
         let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
         html += items.map(buildCard).join('');
         html += '<div style="height:14px;"></div>';
@@ -359,6 +466,8 @@
     window.setFilter        = setFilter;
     window.openImagePreview = openImagePreview;
     window.closeImagePreview = closeImagePreview;
+    window.openMapPreview   = openMapPreview;
+    window.closeMapPreview  = closeMapPreview;
 </script>
 </body>
 </html>

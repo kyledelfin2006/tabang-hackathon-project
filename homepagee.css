@@ -530,3 +530,640 @@ body {
 
 /* ── LOADING SPINNER ── */
 .dmap-loading { display: flex; }
+
+#dashOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    display: none;
+}
+#dashOverlay.open {
+    display: block;
+}
+.dashboard-panel.open {
+    z-index: 1001;
+}/* ─────────────────────────────
+   ROOT / RESET
+───────────────────────────── */
+:root {
+  --bg-main: #071852;
+  --bg-grad: linear-gradient(175deg, #1a4599 0%, #0a2470 50%, #071852 100%);
+  --white: #ffffff;
+  --white-soft: rgba(255,255,255,0.7);
+  --white-dim: rgba(255,255,255,0.5);
+  --border: rgba(255,255,255,0.15);
+  --card: rgba(255,255,255,0.08);
+  --card-strong: rgba(255,255,255,0.12);
+  --accent: #55efc4;
+  --danger: #FF4D4D;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --font: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─────────────────────────────
+   BODY
+───────────────────────────── */
+body {
+  font-family: var(--font);
+  background: var(--bg-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────
+   PHONE SHELL
+───────────────────────────── */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg-grad);
+  border-radius: 44px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─────────────────────────────
+   STATUS BAR
+───────────────────────────── */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 28px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* ─────────────────────────────
+   SCROLL
+───────────────────────────── */
+.phone-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.phone-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.phone-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ─────────────────────────────
+   HEADER
+───────────────────────────── */
+.header-curve {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--white);
+}
+
+/* ICON BUTTON */
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+}
+.icon-btn:active {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ─────────────────────────────
+   CARD (Reusable)
+───────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ─────────────────────────────
+   HERO
+───────────────────────────── */
+.hero-card {
+  margin: 12px 20px;
+  padding: 16px;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--white);
+}
+
+.hero-desc {
+  font-size: 13px;
+  color: var(--white-soft);
+  margin: 6px 0 16px;
+}
+
+/* ─────────────────────────────
+   QUICK ACTIONS
+───────────────────────────── */
+.quick-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.quick-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--card-strong);
+  border: 1px solid var(--border);
+  text-align: center;
+  color: var(--white);
+  cursor: pointer;
+}
+.quick-btn:active {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ─────────────────────────────
+   DASHBOARD BUTTON
+───────────────────────────── */
+.dashboard-btn {
+  margin: 10px 20px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* ─────────────────────────────
+   LIST ITEMS
+───────────────────────────── */
+.list-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 24px;
+  cursor: pointer;
+}
+.list-item:active {
+  background: rgba(255,255,255,0.08);
+}
+
+/* ─────────────────────────────
+   BOTTOM NAV
+───────────────────────────── */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background: rgba(255,255,255,0.07);
+  border-top: 1px solid var(--border);
+}
+
+.nav-item {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: var(--white-dim);
+}
+.nav-item.active {
+  color: var(--white);
+}
+
+/* ─────────────────────────────
+   DRAWERS / PANELS
+───────────────────────────── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.3s;
+}
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.side-drawer,
+.notif-panel,
+.dashboard-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--bg-grad);
+  transition: transform 0.3s ease;
+}
+
+/* LEFT */
+.side-drawer {
+  width: 75%;
+  transform: translateX(-100%);
+}
+.side-drawer.open {
+  transform: translateX(0);
+}
+
+/* RIGHT */
+.notif-panel {
+  width: 88%;
+  right: 0;
+  transform: translateX(100%);
+}
+.notif-panel.open {
+  transform: translateX(0);
+}
+
+/* FULL */
+.dashboard-panel {
+  inset: 0;
+  transform: translateX(100%);
+}
+.dashboard-panel.open {
+  transform: translateX(0);
+}
+
+/* ─────────────────────────────
+   MODAL
+───────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+}
+.modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  width: 390px;
+  background: white;
+  border-radius: 28px 28px 0 0;
+  padding: 24px;
+  transform: translateY(100%);
+  transition: 0.3s;
+}
+.modal.active .modal-card {
+  transform: translateY(0);
+}
+
+/* ─────────────────────────────
+   ANIMATIONS
+───────────────────────────── */
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(0.7); }
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}/* ─────────────────────────────
+   ROOT / RESET
+───────────────────────────── */
+:root {
+  --bg-main: #071852;
+  --bg-grad: linear-gradient(175deg, #1a4599 0%, #0a2470 50%, #071852 100%);
+  --white: #ffffff;
+  --white-soft: rgba(255,255,255,0.7);
+  --white-dim: rgba(255,255,255,0.5);
+  --border: rgba(255,255,255,0.15);
+  --card: rgba(255,255,255,0.08);
+  --card-strong: rgba(255,255,255,0.12);
+  --accent: #55efc4;
+  --danger: #FF4D4D;
+  --radius: 16px;
+  --radius-lg: 24px;
+  --font: 'Inter', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─────────────────────────────
+   BODY
+───────────────────────────── */
+body {
+  font-family: var(--font);
+  background: var(--bg-main);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────
+   PHONE SHELL
+───────────────────────────── */
+.phone {
+  width: 390px;
+  height: 844px;
+  background: var(--bg-grad);
+  border-radius: 44px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ─────────────────────────────
+   STATUS BAR
+───────────────────────────── */
+.status-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 28px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* ─────────────────────────────
+   SCROLL
+───────────────────────────── */
+.phone-scroll {
+  flex: 1;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.phone-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.phone-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+}
+
+/* ─────────────────────────────
+   HEADER
+───────────────────────────── */
+.header-curve {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 24px;
+}
+
+.app-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--white);
+}
+
+/* ICON BUTTON */
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white);
+  border: none;
+  cursor: pointer;
+}
+.icon-btn:active {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ─────────────────────────────
+   CARD (Reusable)
+───────────────────────────── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* ─────────────────────────────
+   HERO
+───────────────────────────── */
+.hero-card {
+  margin: 12px 20px;
+  padding: 16px;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--white);
+}
+
+.hero-desc {
+  font-size: 13px;
+  color: var(--white-soft);
+  margin: 6px 0 16px;
+}
+
+/* ─────────────────────────────
+   QUICK ACTIONS
+───────────────────────────── */
+.quick-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.quick-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--card-strong);
+  border: 1px solid var(--border);
+  text-align: center;
+  color: var(--white);
+  cursor: pointer;
+}
+.quick-btn:active {
+  background: rgba(255,255,255,0.25);
+}
+
+/* ─────────────────────────────
+   DASHBOARD BUTTON
+───────────────────────────── */
+.dashboard-btn {
+  margin: 10px 20px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+/* ─────────────────────────────
+   LIST ITEMS
+───────────────────────────── */
+.list-item {
+  display: flex;
+  gap: 14px;
+  padding: 14px 24px;
+  cursor: pointer;
+}
+.list-item:active {
+  background: rgba(255,255,255,0.08);
+}
+
+/* ─────────────────────────────
+   BOTTOM NAV
+───────────────────────────── */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background: rgba(255,255,255,0.07);
+  border-top: 1px solid var(--border);
+}
+
+.nav-item {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  color: var(--white-dim);
+}
+.nav-item.active {
+  color: var(--white);
+}
+
+/* ─────────────────────────────
+   DRAWERS / PANELS
+───────────────────────────── */
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: 0.3s;
+}
+.overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.side-drawer,
+.notif-panel,
+.dashboard-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--bg-grad);
+  transition: transform 0.3s ease;
+}
+
+/* LEFT */
+.side-drawer {
+  width: 75%;
+  transform: translateX(-100%);
+}
+.side-drawer.open {
+  transform: translateX(0);
+}
+
+/* RIGHT */
+.notif-panel {
+  width: 88%;
+  right: 0;
+  transform: translateX(100%);
+}
+.notif-panel.open {
+  transform: translateX(0);
+}
+
+/* FULL */
+.dashboard-panel {
+  inset: 0;
+  transform: translateX(100%);
+}
+.dashboard-panel.open {
+  transform: translateX(0);
+}
+
+/* ─────────────────────────────
+   MODAL
+───────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: flex-end;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+}
+.modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  width: 390px;
+  background: white;
+  border-radius: 28px 28px 0 0;
+  padding: 24px;
+  transform: translateY(100%);
+  transition: 0.3s;
+}
+.modal.active .modal-card {
+  transform: translateY(0);
+}
+
+/* ─────────────────────────────
+   ANIMATIONS
+───────────────────────────── */
+@keyframes pulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(0.7); }
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}

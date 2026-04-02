@@ -61,8 +61,9 @@
             </div>
         </div>
 
-        <!-- DASHBOARD BUTTON -->
-        <button class="dashboard-btn-card" id="openDashboard" aria-label="Open Disaster Dashboard">
+        <!-- DASHBOARD BUTTON — now navigates to Dashboard.html -->
+        <button class="dashboard-btn-card" id="openDashboard" aria-label="Open Disaster Dashboard"
+                onclick="window.location.href='Dashboard.html'">
             <div class="dash-btn-left">
                 <div class="dash-btn-icon"><i class="fas fa-chart-bar" aria-hidden="true"></i></div>
                 <div class="dash-btn-text">
@@ -149,15 +150,15 @@
     <!-- ══ SIDE DRAWER ══ -->
     <div class="side-overlay" id="sideOverlay" aria-hidden="true"></div>
     <div class="side-drawer" id="sideDrawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+        <button class="drawer-close" id="closeMenu" aria-label="Close navigation menu">
+                <i class="fas fa-times" aria-hidden="true"></i>
+        </button>
         <div class="drawer-header">
             <div class="drawer-avatar" id="drawerAvatar"><i class="fas fa-user" aria-hidden="true"></i></div>
             <div class="drawer-user-info">
                 <div class="drawer-name" id="drawerName">Tabang User</div>
                 <div class="drawer-role" id="drawerEmail">Aklan Resident</div>
             </div>
-            <button class="drawer-close" id="closeMenu" aria-label="Close navigation menu">
-                <i class="fas fa-times" aria-hidden="true"></i>
-            </button>
         </div>
 
         <div class="drawer-divider"></div>
@@ -167,7 +168,7 @@
             <button class="drawer-item" data-nav="ReportFlood.html"><i class="fas fa-water" aria-hidden="true"></i><span>Report Flood</span></button>
             <button class="drawer-item" data-nav="RequestHelp.html"><i class="fas fa-hand-holding-heart" aria-hidden="true"></i><span>Request Help</span></button>
             <button class="drawer-item" data-nav="Hotline.html"><i class="fas fa-phone-alt" aria-hidden="true"></i><span>Hotlines</span></button>
-            <button class="drawer-item" data-nav="MyReports.html"><i class="fas fa-clipboard-list" aria-hidden="true"></i><span>My Reports</span></button>
+            <button class="drawer-item" data-nav="MyReports.html"><i class="fas fa-clipboard-list" aria-hidden="true"></i><span>All Reports</span></button>
             <button class="drawer-item" data-nav="AccountInfo.html"><i class="fas fa-user-circle" aria-hidden="true"></i><span>Account Info</span></button>
         </nav>
 
@@ -224,88 +225,8 @@
         </div>
     </div>
 
-
-    <!-- ══ DASHBOARD PANEL ══ -->
-    <div class="dashboard-panel" id="dashPanel" role="dialog" aria-modal="true" aria-label="Disaster Dashboard">
-        <div class="dash-header">
-            <button class="dash-back" id="closeDashboard" aria-label="Close dashboard">
-                <i class="fas fa-chevron-left" style="font-size:11px;" aria-hidden="true"></i> Back
-            </button>
-            <span class="dash-header-title">Disaster Dashboard</span>
-            <div class="dash-header-live"><span class="live-dot" aria-hidden="true"></span>Live</div>
-        </div>
-
-        <div class="dash-body" id="dashBody">
-
-            <div class="kpi-strip">
-                <div class="kpi-item"><div class="kpi-val" style="color:#ff6b6b;">16</div><div class="kpi-lbl">Active</div></div>
-                <div class="kpi-sep"></div>
-                <div class="kpi-item"><div class="kpi-val" style="color:#74b9ff;">128,750</div><div class="kpi-lbl">Affected</div></div>
-                <div class="kpi-sep"></div>
-                <div class="kpi-item"><div class="kpi-val" style="color:#55efc4;">27,450</div><div class="kpi-lbl">Evacuated</div></div>
-                <div class="kpi-sep"></div>
-                <div class="kpi-item"><div class="kpi-val" style="color:#fdcb6e;">45</div><div class="kpi-lbl">Deaths</div></div>
-            </div>
-
-            <div class="dsec-title"><i class="fas fa-map-marked-alt" aria-hidden="true"></i> Disaster Map</div>
-            <div class="dmap-card">
-                <div class="dmap-legend" aria-label="Map legend">
-                    <span class="dleg"><span class="dleg-dot" style="background:#378ADD;" aria-hidden="true"></span>Flood</span>
-                    <span class="dleg"><span class="dleg-dot" style="background:#EF9F27;" aria-hidden="true"></span>Fire</span>
-                    <span class="dleg"><span class="dleg-dot" style="background:#888780;" aria-hidden="true"></span>Quake</span>
-                    <span class="dleg"><span class="dleg-dot" style="background:#33b4a5;" aria-hidden="true"></span>Typhoon</span>
-                    <span class="dleg"><span class="dleg-dot" style="background:#4caf7d;" aria-hidden="true"></span>Evac</span>
-                </div>
-                <div class="dmap-box" id="dashMap" aria-label="Interactive disaster map">
-                    <div class="dmap-loading" id="dashMapLoading">
-                        <i class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-                        <span>Loading map…</span>
-                    </div>
-                    <div class="dmap-tip" id="dashMapTip" role="tooltip" aria-live="polite"></div>
-                </div>
-            </div>
-
-            <div class="dsec-title"><i class="fas fa-exclamation-triangle" aria-hidden="true"></i> Disaster Statistics</div>
-            <div class="dstat-grid">
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(255,107,107,0.15);"><i class="fas fa-exclamation-triangle" style="color:#ff6b6b;" aria-hidden="true"></i></div><div class="dstat-num">16</div><div class="dstat-lbl">Total Active</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(116,185,255,0.15);"><i class="fas fa-water" style="color:#74b9ff;" aria-hidden="true"></i></div><div class="dstat-num">6</div><div class="dstat-lbl">Flood Incidents</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(253,203,110,0.15);"><i class="fas fa-fire" style="color:#fdcb6e;" aria-hidden="true"></i></div><div class="dstat-num">3</div><div class="dstat-lbl">Fire Incidents</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(178,190,195,0.15);"><i class="fas fa-circle-notch" style="color:#b2bec3;" aria-hidden="true"></i></div><div class="dstat-num">2</div><div class="dstat-lbl">Earthquakes</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(85,239,196,0.15);"><i class="fas fa-wind" style="color:#55efc4;" aria-hidden="true"></i></div><div class="dstat-num">5</div><div class="dstat-lbl">Typhoons</div></div>
-                <div class="dstat-card ghost" aria-hidden="true"></div>
-            </div>
-
-            <div class="dsec-title"><i class="fas fa-users" aria-hidden="true"></i> People Statistics</div>
-            <div class="dlist-card">
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(255,107,107,0.15);color:#ff6b6b;"><i class="fas fa-users" aria-hidden="true"></i></span><span class="dlist-lbl">People Affected</span><span class="dlist-val" style="color:#ff6b6b;">128,750</span></div>
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(116,185,255,0.15);color:#74b9ff;"><i class="fas fa-running" aria-hidden="true"></i></span><span class="dlist-lbl">People Evacuated</span><span class="dlist-val" style="color:#74b9ff;">27,450</span></div>
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(253,203,110,0.15);color:#fdcb6e;"><i class="fas fa-question-circle" aria-hidden="true"></i></span><span class="dlist-lbl">Missing Persons</span><span class="dlist-val" style="color:#fdcb6e;">120</span></div>
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(253,203,110,0.15);color:#fdcb6e;"><i class="fas fa-briefcase-medical" aria-hidden="true"></i></span><span class="dlist-lbl">Injured</span><span class="dlist-val" style="color:#fdcb6e;">389</span></div>
-                <div class="dlist-row last"><span class="dlist-ico" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.35);"><i class="fas fa-heart-broken" aria-hidden="true"></i></span><span class="dlist-lbl">Deaths</span><span class="dlist-val" style="color:rgba(255,255,255,0.4);">45</span></div>
-            </div>
-
-            <div class="dsec-title"><i class="fas fa-house-damage" aria-hidden="true"></i> Damage Statistics</div>
-            <div class="dlist-card">
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(255,107,107,0.15);color:#ff6b6b;"><i class="fas fa-home" aria-hidden="true"></i></span><span class="dlist-lbl">Houses Destroyed</span><span class="dlist-val" style="color:#ff6b6b;">2,340</span></div>
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(253,203,110,0.15);color:#fdcb6e;"><i class="fas fa-road" aria-hidden="true"></i></span><span class="dlist-lbl">Roads Damaged</span><span class="dlist-val" style="color:#fdcb6e;">120</span></div>
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(253,203,110,0.15);color:#fdcb6e;"><i class="fas fa-archway" aria-hidden="true"></i></span><span class="dlist-lbl">Bridges Affected</span><span class="dlist-val" style="color:#fdcb6e;">15</span></div>
-                <div class="dlist-row"><span class="dlist-ico" style="background:rgba(116,185,255,0.15);color:#74b9ff;"><i class="fas fa-school" aria-hidden="true"></i></span><span class="dlist-lbl">Schools Damaged</span><span class="dlist-val" style="color:#74b9ff;">28</span></div>
-                <div class="dlist-row last"><span class="dlist-ico" style="background:rgba(85,239,196,0.15);color:#55efc4;"><i class="fas fa-hospital" aria-hidden="true"></i></span><span class="dlist-lbl">Hospitals Affected</span><span class="dlist-val" style="color:#55efc4;">6</span></div>
-            </div>
-
-            <div class="dsec-title"><i class="fas fa-hands-helping" aria-hidden="true"></i> Relief Statistics</div>
-            <div class="dstat-grid">
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(85,239,196,0.15);"><i class="fas fa-box-open" style="color:#55efc4;" aria-hidden="true"></i></div><div class="dstat-num" style="font-size:13px;">185,600</div><div class="dstat-lbl">Food Packs</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(116,185,255,0.15);"><i class="fas fa-tint" style="color:#74b9ff;" aria-hidden="true"></i></div><div class="dstat-num" style="font-size:13px;">95,000</div><div class="dstat-lbl">Water Bottles</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(0,206,201,0.15);"><i class="fas fa-briefcase-medical" style="color:#00cec9;" aria-hidden="true"></i></div><div class="dstat-num" style="font-size:13px;">4,200</div><div class="dstat-lbl">Medical Kits</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(253,203,110,0.15);"><i class="fas fa-hard-hat" style="color:#fdcb6e;" aria-hidden="true"></i></div><div class="dstat-num">84</div><div class="dstat-lbl">Rescue Teams</div></div>
-                <div class="dstat-card"><div class="dstat-ico" style="background:rgba(162,155,254,0.15);"><i class="fas fa-warehouse" style="color:#a29bfe;" aria-hidden="true"></i></div><div class="dstat-num">32</div><div class="dstat-lbl">Evac Centers</div></div>
-                <div class="dstat-card ghost" aria-hidden="true"></div>
-            </div>
-
-            <div style="height:20px;"></div>
-        </div>
-    </div>
+    <!-- NOTE: Dashboard panel and dashOverlay have been removed.
+         The dashboard button now navigates to Dashboard.html directly. -->
 
 </div><!-- end .phone -->
 
@@ -321,26 +242,21 @@
 </div>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
 <script type="module">
     import { auth } from "./firebase.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    // ─── Auth: populate drawer with real user info ────────────────────
+    // ─── Auth ─────────────────────────────────────────────────────────
     onAuthStateChanged(auth, (user) => {
         const drawerName   = document.getElementById('drawerName');
         const drawerEmail  = document.getElementById('drawerEmail');
         const drawerAvatar = document.getElementById('drawerAvatar');
 
         if (user) {
-            // Display name: prefer displayName, fall back to email prefix
             const name = user.displayName
                 || (user.email ? user.email.split('@')[0] : 'Tabang User');
             drawerName.textContent  = name;
             drawerEmail.textContent = user.email || 'Aklan Resident';
-
-            // Show initials in avatar instead of generic icon
             const initials = name.split(/\s+/).map(w => w[0].toUpperCase()).slice(0, 2).join('');
             drawerAvatar.innerHTML  = initials;
             drawerAvatar.style.fontSize = '16px';
@@ -393,7 +309,6 @@
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (infoModal.classList.contains('active')) closeInfoModal();
-            if (dashPanel.classList.contains('open')) closeDashboard();
             if (document.getElementById('sideDrawer').classList.contains('open')) closeMenu();
             if (document.getElementById('notifPanel').classList.contains('open')) closeNotif();
         }
@@ -437,7 +352,7 @@
         item.addEventListener('click', () => navigateTo(item.dataset.nav));
     });
 
-    // Notification Demonstrations
+    // ─── Notification Panel ───────────────────────────────────────────
     const notifPanel   = document.getElementById('notifPanel');
     const notifOverlay = document.getElementById('notifOverlay');
     const notifBadge   = document.getElementById('notifBadge');
@@ -466,114 +381,8 @@
     document.getElementById('closeNotif').addEventListener('click', closeNotif);
     notifOverlay.addEventListener('click', closeNotif);
 
-    // ─── Dashboard Panel ──────────────────────────────────────────────
-    const dashPanel = document.getElementById('dashPanel');
-    let mapState = 'idle';
-
-    function openDashboard() {
-        dashPanel.classList.add('open');
-        document.getElementById('dashBody').scrollTop = 0;
-        if (mapState === 'idle' || mapState === 'error') buildMap();
-        document.getElementById('closeDashboard').focus();
-    }
-    function closeDashboard() {
-        dashPanel.classList.remove('open');
-        document.getElementById('openDashboard').focus();
-    }
-
-    document.getElementById('openDashboard').addEventListener('click', openDashboard);
-    document.getElementById('closeDashboard').addEventListener('click', closeDashboard);
-
-    // MAP, PURE DEMONSTRATION ONLY - KYLE
-    const incidents = [
-        {name:'Flood — Palo, Leyte',  lat:11.15, lng:124.99, type:'flood',   detail:'1,200 affected'},
-        {name:'Flood — Ormoc City',   lat:11.00, lng:124.61, type:'flood',   detail:'Roads submerged'},
-        {name:'Typhoon landfall',      lat:11.40, lng:125.10, type:'typhoon', detail:'Signal 3 · 4,200 affected'},
-        {name:'Typhoon — Samar',       lat:11.65, lng:125.00, type:'typhoon', detail:'Coastal flooding'},
-        {name:'Flood — Capiz',         lat:11.35, lng:122.63, type:'flood',   detail:'River 78% full'},
-        {name:'Fire — Iloilo City',    lat:10.72, lng:122.57, type:'fire',    detail:'3 barangays hit'},
-        {name:'Fire — Roxas City',     lat:11.59, lng:122.75, type:'fire',    detail:'Contained'},
-        {name:'Earthquake — Negros',   lat:10.20, lng:122.98, type:'quake',   detail:'Magnitude 4.2'},
-        {name:'Typhoon — Antique',     lat:11.00, lng:121.95, type:'typhoon', detail:'Gusts 95kph'},
-        {name:'Flood — Aklan',         lat:11.82, lng:122.49, type:'flood',   detail:'Low-lying inundated'},
-        {name:'Typhoon — Romblon',     lat:12.58, lng:122.27, type:'typhoon', detail:'Signal 2'},
-        {name:'Flood — S. Leyte',      lat:10.30, lng:124.97, type:'flood',   detail:'600 displaced'},
-        {name:'Evac — Iloilo',         lat:10.69, lng:122.55, type:'evac',    detail:'680 evacuees'},
-        {name:'Evac — Ormoc',          lat:11.01, lng:124.59, type:'evac',    detail:'420 evacuees'},
-        {name:'Evac — Kalibo',         lat:11.71, lng:122.37, type:'evac',    detail:'310 evacuees'},
-        {name:'Earthquake — Cebu',     lat:10.31, lng:123.89, type:'quake',   detail:'Magnitude 3.8'},
-        {name:'Fire — Bacolod',        lat:10.67, lng:122.95, type:'fire',    detail:'Controlled'},
-        {name:'Typhoon — Mindoro',     lat:13.05, lng:121.12, type:'typhoon', detail:'Signal 1'},
-    ];
-    const cmap = {flood:'#378ADD', fire:'#EF9F27', quake:'#888780', typhoon:'#33b4a5', evac:'#4caf7d'};
-
-    function buildMap() {
-        mapState = 'loading';
-        const container = document.getElementById('dashMap');
-        const loadingEl = document.getElementById('dashMapLoading');
-        const tip       = document.getElementById('dashMapTip');
-        if (loadingEl) loadingEl.style.display = 'flex';
-        const existingSvg = container.querySelector('svg');
-        if (existingSvg) existingSvg.remove();
-        const W = container.offsetWidth || 320;
-        const H = 200;
-        container.style.height = H + 'px';
-        const svg = d3.select('#dashMap').append('svg')
-            .attr('width', W).attr('height', H).style('display', 'block');
-        svg.append('rect').attr('width', W).attr('height', H).attr('fill', '#0d3060');
-        const proj    = d3.geoMercator().center([122.5, 11.2]).scale(W * 7).translate([W / 2, H / 2]);
-        const pathGen = d3.geoPath(proj);
-        d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
-            .then(world => {
-                svg.append('g').selectAll('path')
-                    .data(topojson.feature(world, world.objects.countries).features)
-                    .join('path').attr('d', pathGen)
-                    .attr('fill', '#1a4a7a').attr('stroke', '#2d6a9f').attr('stroke-width', 0.5);
-                placeMarkers(svg, proj, W, H, tip, container);
-                mapState = 'done';
-                if (loadingEl) loadingEl.style.display = 'none';
-            })
-            .catch(err => {
-                console.warn('Map geo data failed:', err);
-                placeMarkers(svg, proj, W, H, tip, container);
-                mapState = 'error';
-                if (loadingEl) {
-                    loadingEl.innerHTML = '<span style="color:#fdcb6e;font-size:11px;">Map tiles unavailable. Showing incident markers.</span>';
-                    loadingEl.style.display = 'flex';
-                    setTimeout(() => { loadingEl.style.display = 'none'; }, 3000);
-                }
-            });
-    }
-
-    function placeMarkers(svg, proj, W, H, tip, container) {
-        incidents.forEach(inc => {
-            const [px, py] = proj([inc.lng, inc.lat]);
-            if (px < 0 || px > W || py < 0 || py > H) return;
-            const r = inc.type === 'typhoon' ? 8 : 6;
-            const g = svg.append('g').style('cursor', 'pointer').attr('role', 'button').attr('tabindex', 0);
-            if (inc.type === 'typhoon' || inc.type === 'flood') {
-                g.append('circle').attr('cx', px).attr('cy', py).attr('r', r + 5)
-                    .attr('fill', cmap[inc.type]).attr('opacity', 0.18);
-            }
-            g.append('circle').attr('cx', px).attr('cy', py).attr('r', r)
-                .attr('fill', cmap[inc.type]).attr('stroke', 'white').attr('stroke-width', 1.5);
-            if (inc.type === 'evac') {
-                g.append('text').attr('x', px).attr('y', py + 4)
-                    .attr('text-anchor', 'middle').attr('font-size', 8)
-                    .attr('fill', 'white').attr('font-weight', 'bold').text('+');
-            }
-            function showTip(clientX, clientY) {
-                const rect = container.getBoundingClientRect();
-                tip.style.display = 'block';
-                tip.style.left = Math.min(clientX - rect.left + 10, W - 140) + 'px';
-                tip.style.top  = (clientY - rect.top - 38) + 'px';
-                tip.innerHTML  = '<strong>' + inc.name + '</strong><br>' + inc.detail;
-            }
-            g.on('touchstart', function(e) { e.preventDefault(); const t = e.touches[0]; showTip(t.clientX, t.clientY); });
-            g.on('mousemove', function(e) { showTip(e.clientX, e.clientY); });
-            g.on('mouseleave touchend', () => { tip.style.display = 'none'; });
-        });
-    }
+    // ─── Dashboard button navigates to Dashboard.html ─────────────────
+    // (onclick is already set directly on the button above)
 </script>
 </body>
 </html>

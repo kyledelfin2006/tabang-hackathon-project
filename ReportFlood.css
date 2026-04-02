@@ -201,14 +201,16 @@ body {
     border: none;
     border-radius: 16px;
     height: 54px;
-    color: #fff;
+    color: #ffffff;
     font-size: 16px;
     font-weight: 700;
     font-family: 'Inter', sans-serif;
     cursor: pointer;
-    box-shadow: 0 4px 0px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 0px rgba(0,0,0,0.2);
     transition: all 0.15s;
+    margin-top: 14px;
     letter-spacing: 0.3px;
+    padding: 12px 20px;
 }
 .submit-btn:active {
     transform: translateY(3px);

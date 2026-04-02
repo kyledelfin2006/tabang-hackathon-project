@@ -9,7 +9,79 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Leaflet CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="RequestHelp.css">
+    <style>
+        /* Additional styles for collapsible map picker */
+        .map-picker-wrapper {
+            margin: 16px 0;
+        }
+        .toggle-map-btn {
+            background: #007aff;
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .map-container {
+            display: none;
+            margin-top: 12px;
+        }
+        .map-container.visible {
+            display: block;
+        }
+        #locationMap {
+            height: 280px;
+            width: 100%;
+            border-radius: 16px;
+            border: 1px solid #2c2c2e;
+            background: #1c1c1e;
+            margin-bottom: 8px;
+        }
+        .gps-btn {
+            background: #34c759;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .coord-hint {
+            font-size: 11px;
+            color: #888;
+            margin-top: 6px;
+        }
+        .location-status {
+            font-size: 12px;
+            color: #34c759;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        /* Ensure bottom nav stays above content */
+        .bottom-nav {
+            position: relative;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
 <div class="phone">
@@ -25,11 +97,31 @@
         <img src="898e29a7d024f10f6596d065b412cb43.png" style="width:100%;height:100%;object-fit:cover;object-position:center;" alt="Helping people in Disaster">
     </div>
     <div style="height:14px;"></div>
+    
+    <!-- Name field -->
     <div class="field-label">Name</div>
     <div class="input-box"><input type="text" id="nameInput" placeholder="Enter your name"></div>
+    
+    <!-- Phone field -->
     <div class="details-label">Phone Number</div>
     <div class="input-box"><input type="tel" id="phoneInput" placeholder="Enter your number"></div>
 
+    <!-- COLLAPSIBLE MAP PICKER (added) -->
+    <div class="map-picker-wrapper">
+        <button type="button" class="toggle-map-btn" id="toggleMapBtn">
+            <i class="fas fa-map-pin"></i> Pin your exact location on map
+        </button>
+        <div class="map-container" id="mapContainer">
+            <div id="locationMap"></div>
+            <button type="button" class="gps-btn" id="gpsBtn"><i class="fas fa-location-dot"></i> Use my current location</button>
+            <div class="coord-hint" id="coordHint">Tap the map or use GPS to set marker. Drag to adjust.</div>
+        </div>
+        <div id="locationStatus" class="location-status" style="display: none;">
+            <i class="fas fa-check-circle"></i> <span id="statusText">Location pinned</span>
+        </div>
+    </div>
+
+    <!-- Image upload (original) -->
     <div class="image-upload-area">
         <div class="field-label">Upload Photos (Optional)</div>
         <div class="upload-box" id="uploadBox">
@@ -41,11 +133,17 @@
         <div class="image-count" id="imageCount">0 image(s) selected</div>
     </div>
 
+    <!-- Description -->
     <div class="details-label">Description</div>
     <div class="textarea-box"><textarea id="descInput" placeholder="Describe situation..."></textarea></div>
+    
+    <!-- Submit button -->
     <button class="submit-btn" id="submitBtn">Request Help</button>
+    
     <div class="toast" id="toast"></div>
     <div class="loading" id="loading">Submitting...</div>
+    
+    <!-- Bottom navigation -->
     <div class="bottom-nav">
         <button class="nav-item active" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
         <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
@@ -54,6 +152,7 @@
         <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
 </div>
+
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -61,6 +160,7 @@
 
     function navigateTo(page) { window.location.href = page; }
 
+    // Navigation
     document.getElementById('navRequest').onclick  = () => navigateTo('RequestHelp.html');
     document.getElementById('navHotlines').onclick = () => navigateTo('Hotline.html');
     document.getElementById('navReport').onclick   = () => navigateTo('ReportFlood.html');
@@ -68,27 +168,91 @@
     document.getElementById('navAccount').onclick  = () => navigateTo('AccountInfo.html');
     document.getElementById('backBtn').onclick     = () => navigateTo('Homepage.html');
 
+    // Cloudinary config (replace with your own)
+    const CLOUD_NAME = 'your_cloud_name';      // e.g., 'd1a2b3c4d'
+    const UPLOAD_PRESET = 'tabang_uploads';    // your unsigned upload preset
+
     let currentUser = null;
     let selectedImages = [];
     const MAX_IMAGES = 5;
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-    // Cloudinary configuration – replace with your own values
-    const CLOUD_NAME = 'your_cloud_name';      // e.g., 'd1a2b3c4d'
-    const UPLOAD_PRESET = 'tabang_uploads';    // your unsigned upload preset
+    // ----- MAP LOGIC (lazy initialization) -----
+    let map = null;
+    let marker = null;
+    let selectedLat = null;
+    let selectedLng = null;
+    let mapInitialized = false;
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('submitBtn').disabled = false;
-        } else {
-            currentUser = null;
-            document.getElementById('submitBtn').disabled = true;
-            showToast('Please log in to request help.');
+    function initMap() {
+        if (mapInitialized) return;
+        const container = document.getElementById('locationMap');
+        if (!container) return;
+
+        const defaultCenter = [11.6, 122.4]; // Aklan, Philippines
+        map = L.map(container).setView(defaultCenter, 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        marker = L.marker(defaultCenter, { draggable: true }).addTo(map);
+        
+        marker.on('dragend', () => updateCoords(marker.getLatLng()));
+        map.on('click', (e) => {
+            marker.setLatLng(e.latlng);
+            updateCoords(e.latlng);
+        });
+
+        updateCoords({ lat: defaultCenter[0], lng: defaultCenter[1] });
+        mapInitialized = true;
+    }
+
+    function updateCoords(latlng) {
+        selectedLat = latlng.lat;
+        selectedLng = latlng.lng;
+        document.getElementById('coordHint').innerHTML = `📍 Marker at: ${selectedLat.toFixed(5)}, ${selectedLng.toFixed(5)}`;
+        const statusDiv = document.getElementById('locationStatus');
+        statusDiv.style.display = 'flex';
+        document.getElementById('statusText').innerHTML = `Location pinned (${selectedLat.toFixed(4)}, ${selectedLng.toFixed(4)})`;
+    }
+
+    function useGPS() {
+        if (!navigator.geolocation) {
+            showToast("Geolocation not supported");
+            return;
         }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                if (!mapInitialized) initMap();
+                map.setView([lat, lng], 14);
+                marker.setLatLng([lat, lng]);
+                updateCoords({ lat, lng });
+                showToast("Location updated");
+            },
+            (error) => {
+                let msg = "Could not get location. ";
+                if (error.code === 1) msg += "Permission denied.";
+                else msg += "Try again later.";
+                showToast(msg);
+            }
+        );
+    }
+
+    // Toggle map visibility
+    const toggleBtn = document.getElementById('toggleMapBtn');
+    const mapContainer = document.getElementById('mapContainer');
+    toggleBtn.addEventListener('click', () => {
+        const isVisible = mapContainer.classList.toggle('visible');
+        if (isVisible && !mapInitialized) {
+            initMap();
+            setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+        }
+        toggleBtn.innerHTML = isVisible ? '<i class="fas fa-chevron-up"></i> Hide map' : '<i class="fas fa-map-pin"></i> Pin your exact location on map';
     });
 
-    // Image upload handling
+    // ----- Image upload handling (unchanged) -----
     const uploadBox   = document.getElementById('uploadBox');
     const fileInput   = document.getElementById('fileInput');
     const imagePreview= document.getElementById('imagePreview');
@@ -98,12 +262,10 @@
 
     fileInput.onchange = function(e) {
         const files = Array.from(e.target.files);
-
         if (selectedImages.length + files.length > MAX_IMAGES) {
             showToast(`Maximum ${MAX_IMAGES} images allowed`);
             return;
         }
-
         files.forEach(file => {
             if (file.size > MAX_FILE_SIZE) {
                 showToast(`File ${file.name} is too large (max 5MB)`);
@@ -125,7 +287,6 @@
             };
             reader.readAsDataURL(file);
         });
-
         fileInput.value = '';
     };
 
@@ -148,35 +309,27 @@
         updatePreview();
     };
 
-    // Helper: upload a single file to Cloudinary
+    // Cloudinary upload
     async function uploadToCloudinary(file) {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', UPLOAD_PRESET);
-        // Optional: add folder, tags, etc.
-        // formData.append('folder', 'tabang_help_requests');
-
         const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData
-        });
-
+        const response = await fetch(url, { method: 'POST', body: formData });
         if (!response.ok) {
             const error = await response.json();
             throw new Error(error.error?.message || 'Upload failed');
         }
         const data = await response.json();
-        return data.secure_url; // Cloudinary returns the secure URL
+        return data.secure_url;
     }
 
+    // ----- Submit help request with coordinates -----
     document.getElementById('submitBtn').onclick = async function() {
         if (!currentUser) {
             showToast('You must be logged in.');
             return;
         }
-
         const name  = document.getElementById('nameInput').value.trim();
         const phone = document.getElementById('phoneInput').value.trim();
         const desc  = document.getElementById('descInput').value.trim();
@@ -184,6 +337,11 @@
         if (!name)  { showToast('Please enter your name'); return; }
         if (!phone) { showToast('Please enter your phone number'); return; }
         if (!desc)  { showToast('Please describe your situation'); return; }
+        
+        if (!selectedLat || !selectedLng) {
+            showToast('Please pin your exact location on the map (click "Pin your exact location" button)');
+            return;
+        }
 
         const loadingDiv = document.getElementById('loading');
         loadingDiv.style.display = 'block';
@@ -192,7 +350,6 @@
         try {
             let imageUrls = [];
             if (selectedImages.length > 0) {
-                // Upload all images in parallel
                 const uploadPromises = selectedImages.map(img => uploadToCloudinary(img.file));
                 imageUrls = await Promise.all(uploadPromises);
             }
@@ -201,10 +358,13 @@
                 name: name,
                 phone: phone,
                 description: desc,
+                latitude: selectedLat,
+                longitude: selectedLng,
                 timestamp: new Date(),
                 userId: currentUser.uid,
                 submittedBy: currentUser.email || currentUser.displayName || name,
-                imageUrls: imageUrls   // store array of Cloudinary URLs
+                imageUrls: imageUrls,
+                type: "help"
             });
             navigateTo('MyReports.html');
         } catch (err) {
@@ -222,6 +382,21 @@
         t.style.opacity = '1';
         setTimeout(() => t.style.opacity = '0', 3000);
     }
+
+    // Auth
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('submitBtn').disabled = false;
+        } else {
+            currentUser = null;
+            document.getElementById('submitBtn').disabled = true;
+            showToast('Please log in to request help.');
+        }
+    });
+
+    // GPS button inside map container
+    document.getElementById('gpsBtn').onclick = useGPS;
 </script>
 </body>
 </html>

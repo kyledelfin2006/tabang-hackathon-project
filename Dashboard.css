@@ -1,0 +1,235 @@
+ * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+        body {
+            background: #071852;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+ 
+        .phone-dashboard {
+            width: 390px;
+            min-height: 844px;
+            background: linear-gradient(175deg, #1a4599 0%, #0a2470 50%, #071852 100%);
+            border-radius: 44px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            position: relative;
+        }
+ 
+        /* ── Back Button ── */
+        .back-to-home {
+            position: sticky;
+            top: 0;
+            background: rgba(10, 36, 112, 0.97);
+            backdrop-filter: blur(8px);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .back-to-home i { font-size: 13px; opacity: 0.8; }
+        .back-header-title {
+            flex: 1;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+        }
+        .back-header-live {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #55efc4;
+        }
+        .live-dot {
+            width: 7px; height: 7px;
+            background: #55efc4;
+            border-radius: 50%;
+            animation: livePulse 1.4s ease-in-out infinite;
+        }
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+ 
+        /* ── KPI Strip ── */
+        .kpi-strip {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 16px 12px;
+            background: rgba(255,255,255,0.05);
+            margin: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .kpi-item { text-align: center; }
+        .kpi-val {
+            font-size: 18px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+        .kpi-lbl {
+            font-size: 10px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .kpi-sep {
+            width: 1px;
+            height: 30px;
+            background: rgba(255,255,255,0.12);
+        }
+ 
+        /* ── Section Title ── */
+        .dsec-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.55);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px 20px 8px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .dsec-title i { color: rgba(255,255,255,0.35); }
+ 
+        /* ── Map ── */
+        .dmap-card {
+            margin: 0 16px 16px;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: #0d3060;
+        }
+        .dmap-legend {
+            display: flex;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.2);
+            flex-wrap: wrap;
+        }
+        .dleg {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.6);
+        }
+        .dleg-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+        }
+        .dmap-box {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+        .dmap-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            background: #0d3060;
+            z-index: 2;
+        }
+        .dmap-tip {
+            position: absolute;
+            display: none;
+            background: rgba(10,20,60,0.95);
+            color: white;
+            font-size: 11px;
+            padding: 6px 9px;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 10;
+            max-width: 140px;
+            border: 1px solid rgba(255,255,255,0.12);
+            line-height: 1.4;
+        }
+ 
+        /* ── Stat Grid ── */
+        .dstat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin: 0 16px 16px;
+        }
+        .dstat-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 14px;
+            padding: 12px 8px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+        .dstat-card.ghost { opacity: 0; pointer-events: none; }
+        .dstat-ico {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 8px;
+            font-size: 14px;
+        }
+        .dstat-num {
+            font-size: 16px;
+            font-weight: 800;
+            color: white;
+            line-height: 1.1;
+        }
+        .dstat-lbl {
+            font-size: 9px;
+            color: rgba(255,255,255,0.45);
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+ 
+        /* ── List Card ── */
+        .dlist-card {
+            margin: 0 16px 16px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.07);
+            overflow: hidden;
+        }
+        .dlist-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .dlist-row.last { border-bottom: none; }
+        .dlist-ico {
+            width: 32px; height: 32px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px;
+            flex-shrink: 0;
+        }
+        .dlist-lbl {
+            flex: 1;
+            font-size: 13px;
+            color: rgba(255,255,255,0.75);
+        }
+        .dlist-val {
+            font-size: 13px;
+            font-weight: 700;
+        }

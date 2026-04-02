@@ -21,7 +21,7 @@ body {
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    padding: 0 20px 100px;
+    padding: 0 20px 20px;  /* reduced bottom padding, footer will handle spacing */
     scrollbar-width: none;
 }
 .phone::-webkit-scrollbar { display: none; }
@@ -146,6 +146,7 @@ body {
     box-shadow: 0 4px 0px rgba(0,0,0,0.2);
     transition: all 0.15s;
     margin-top: 14px;
+    margin-bottom: 16px;  /* space before footer */
     letter-spacing: 0.3px;
 }
 .submit-btn:active {
@@ -156,8 +157,9 @@ body {
 
 /* ── TOAST ── */
 .toast {
-    position: absolute;
-    bottom: 100px; left: 50%;
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
     transform: translateX(-50%);
     background: rgba(5,20,50,0.92);
     border: 1px solid rgba(255,255,255,0.15);
@@ -191,10 +193,8 @@ body {
     display: none;
 }
 
-/* ── BOTTOM NAV ── */
+/* ── BOTTOM NAV (now part of flex flow) ── */
 .bottom-nav {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -202,7 +202,10 @@ body {
     background: rgba(255,255,255,0.07);
     border-top: 1px solid rgba(255,255,255,0.12);
     border-radius: 0 0 44px 44px;
-    z-index: 50;
+    margin-top: auto;  /* pushes footer to bottom */
+    width: calc(100% + 40px); /* compensate parent padding */
+    margin-left: -20px;
+    margin-right: -20px;
 }
 .nav-item {
     display: flex;
