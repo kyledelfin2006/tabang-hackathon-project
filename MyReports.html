@@ -50,6 +50,7 @@
     </div>
 </div>
 
+<!-- Delete Confirmation Modal -->
 <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
         <div class="confirm-icon"><i class="fas fa-trash-alt"></i></div>
@@ -61,22 +62,33 @@
         </div>
     </div>
 </div>
+
+<!-- Image Preview Modal -->
+<div id="imagePreview" class="image-preview">
+    <span class="close-btn" onclick="closeImagePreview()">&times;</span>
+    <img id="previewImg" class="preview-img">
+</div>
+
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-    function navigateTo(page) { window.location.href = page; }
-
+    // ─── State ───────────────────────────────────────────────────────────────
     let currentFilter = 'all';
     let pendingDelete = null;
-    const overlay = document.getElementById('confirmOverlay');
     let currentUser = null;
 
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const searchInput = document.getElementById('searchInput');
+    const overlay      = document.getElementById('confirmOverlay');
+    const filterBtns   = document.querySelectorAll('.filter-btn');
+    const searchInput  = document.getElementById('searchInput');
+    const reportsList  = document.getElementById('reportsList');
 
-    // Helper functions (same as before)
+    // ─── Utility helpers ─────────────────────────────────────────────────────
+    function navigateTo(page) {
+        window.location.href = page;
+    }
+
     function escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -97,28 +109,46 @@
         return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     }
 
-    // ---------- Authentication ----------
-    onAuthStateChanged(auth, (user) => {
-        currentUser = user;
-        // Enable filters and search regardless of login state
-        filterBtns.forEach(btn => btn.disabled = false);
-        if (searchInput) searchInput.disabled = false;
-        renderList(); // Always fetch and render reports
+    // ─── Image preview ───────────────────────────────────────────────────────
+    function openImagePreview(src) {
+        const modal = document.getElementById('imagePreview');
+        const img   = document.getElementById('previewImg');
+        img.src = src;
+        img.classList.remove('zoomed');
+        modal.style.display = 'flex';
+    }
+
+    function closeImagePreview() {
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+
+    // Toggle zoom on the preview image
+    document.getElementById('previewImg').addEventListener('click', function () {
+        this.classList.toggle('zoomed');
     });
 
-    // ---------- Delete confirmation (unchanged) ----------
-    document.getElementById('confirmCancel').onclick = () => {
+    // ─── Auth ────────────────────────────────────────────────────────────────
+    onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        filterBtns.forEach(btn => btn.disabled = false);
+        if (searchInput) searchInput.disabled = false;
+        renderList();
+    });
+
+    // ─── Delete confirmation ──────────────────────────────────────────────────
+    document.getElementById('confirmCancel').addEventListener('click', () => {
         overlay.classList.remove('show');
         pendingDelete = null;
-    };
-    document.getElementById('confirmDelete').onclick = () => {
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', () => {
         overlay.classList.remove('show');
         if (!pendingDelete) return;
         const { id, isFlood, cardEl } = pendingDelete;
         pendingDelete = null;
         cardEl.classList.add('deleting');
         setTimeout(() => deleteEntry(id, isFlood), 300);
-    };
+    });
 
     function showConfirm(id, isFlood, cardEl) {
         pendingDelete = { id, isFlood, cardEl };
@@ -127,23 +157,23 @@
     }
 
     async function deleteEntry(id, isFlood) {
-        const collectionName = isFlood ? "floodReports" : "helpRequests";
+        const collectionName = isFlood ? 'floodReports' : 'helpRequests';
         await deleteDoc(doc(db, collectionName, id));
         renderList();
     }
 
-    // ---------- Fetch ALL reports (no user filter) ----------
+    // ─── Data fetching ────────────────────────────────────────────────────────
     async function getAllFloodReports() {
-        const snap = await getDocs(collection(db, "floodReports"));
+        const snap = await getDocs(collection(db, 'floodReports'));
         return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
     }
 
     async function getAllHelpRequests() {
-        const snap = await getDocs(collection(db, "helpRequests"));
+        const snap = await getDocs(collection(db, 'helpRequests'));
         return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
     }
 
-    // ---------- Filter & search ----------
+    // ─── Filter ───────────────────────────────────────────────────────────────
     function setFilter(filter) {
         currentFilter = filter;
         ['All', 'Flood', 'Help'].forEach(type => {
@@ -153,42 +183,150 @@
         renderList();
     }
 
-    // ---------- Render the list of reports ----------
+    // ─── Build image gallery HTML ─────────────────────────────────────────────
+    function buildImageGallery(imageUrls) {
+        if (!imageUrls || imageUrls.length === 0) return '';
+
+        const maxVisible    = 4;
+        const visibleImages = imageUrls.slice(0, maxVisible);
+        const extraCount    = imageUrls.length - maxVisible;
+
+        const thumbnails = visibleImages.map(url => `
+            <img class="gallery-thumb"
+                 src="${escapeHtml(url)}"
+                 alt="Report image"
+                 loading="lazy"
+                 onclick="openImagePreview('${escapeHtml(url)}')">
+        `).join('');
+
+        const moreLabel = extraCount > 0
+            ? `<div class="gallery-more">+${extraCount}</div>`
+            : '';
+
+        return `<div class="image-gallery">${thumbnails}${moreLabel}</div>`;
+    }
+
+    // ─── Build a single card's HTML ───────────────────────────────────────────
+    function buildCard(r) {
+        const isHelp    = r.type === 'help';
+        const isOwner   = currentUser && r.userId === currentUser.uid;
+
+        const cardClass   = `report-card${isHelp ? ' help-card' : ''}`;
+        const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
+        const iconClass   = isHelp ? 'row-icon help-row-icon' : 'row-icon';
+
+        // Type badge
+        const badgeHtml = isHelp
+            ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency Request</span>'
+            : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
+
+        // Owner badge
+        const ownerName       = escapeHtml(r.submittedBy || 'Unknown');
+        const ownerBadgeClass = isOwner ? 'badge-you' : 'badge-other';
+        const ownerBadge      = `<span class="user-badge ${ownerBadgeClass}"><i class="fas fa-user"></i> ${ownerName}</span>`;
+
+        // Delete button (only for own entries)
+        const deleteBtn = isOwner
+            ? `<button class="card-delete-btn"
+                       data-id="${escapeHtml(r.id)}"
+                       data-isflood="${r.type === 'flood'}"
+                       title="Delete">
+                   <i class="fas fa-trash-alt"></i>
+               </button>`
+            : '';
+
+        // Content rows
+        let rows = '';
+        if (isHelp) {
+            rows = `
+                <div class="card-row">
+                    <i class="fas fa-user ${iconClass}"></i>
+                    <div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div>
+                </div>
+                <div class="card-row">
+                    <i class="fas fa-phone ${iconClass}"></i>
+                    <div><div class="row-label">Phone</div><div class="row-val">${escapeHtml(r.phone || '—')}</div></div>
+                </div>
+                <div class="card-row">
+                    <i class="fas fa-comment-alt ${iconClass}"></i>
+                    <div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div>
+                </div>`;
+        } else {
+            rows = `
+                <div class="card-row">
+                    <i class="fas fa-map-marker-alt ${iconClass}"></i>
+                    <div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div>
+                </div>
+                ${r.details ? `
+                <div class="card-row">
+                    <i class="fas fa-info-circle ${iconClass}"></i>
+                    <div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div>
+                </div>` : ''}`;
+        }
+
+        // Timestamp row (common to both types)
+        rows += `
+            <div class="card-row">
+                <i class="fas fa-clock ${iconClass}"></i>
+                <div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div>
+            </div>`;
+
+        const imageHtml = buildImageGallery(r.imageUrls);
+
+        return `
+            <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
+                <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
+                    ${ownerBadge}
+                    ${deleteBtn}
+                </div>
+                <div class="${dividerClass}"></div>
+                ${imageHtml}
+                ${rows}
+                <div class="card-footer">
+                    ${badgeHtml}
+                    <span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span>
+                </div>
+            </div>`;
+    }
+
+    // ─── Main render ──────────────────────────────────────────────────────────
     async function renderList() {
-        const queryStr = document.getElementById('searchInput').value.toLowerCase();
-        const list = document.getElementById('reportsList');
+        const queryStr = searchInput.value.toLowerCase();
+        reportsList.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
 
-        list.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
+        // Fetch both collections in parallel
+        const [floods, helps] = await Promise.all([getAllFloodReports(), getAllHelpRequests()]);
 
-        const floods = await getAllFloodReports();
-        const helps = await getAllHelpRequests();
+        let items = [...floods, ...helps];
 
-        let items = [
-            ...floods.map(r => ({ ...r, owner: r.submittedBy || 'Unknown' })),
-            ...helps.map(r => ({ ...r, owner: r.submittedBy || 'Unknown' }))
-        ];
-
-        // Apply filter
+        // Filter by type
         if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
         if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');
 
-        // Apply search
+        // Filter by search query
         if (queryStr) {
             items = items.filter(r => {
-                const searchable = [r.location||'', r.name||'', r.description||'', r.details||'', r.owner||''].join(' ').toLowerCase();
+                const searchable = [
+                    r.location    || '',
+                    r.name        || '',
+                    r.description || '',
+                    r.details     || '',
+                    r.submittedBy || ''
+                ].join(' ').toLowerCase();
                 return searchable.includes(queryStr);
             });
         }
 
-        // Sort by date (newest first)
+        // Sort newest first
         items.sort((a, b) => {
             const dateA = toDate(a.timestamp) || new Date(0);
             const dateB = toDate(b.timestamp) || new Date(0);
             return dateB - dateA;
         });
 
+        // Empty state
         if (items.length === 0) {
-            list.innerHTML = `
+            reportsList.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-icon"><i class="fas fa-search"></i></div>
                     <div class="empty-title">No Reports Found</div>
@@ -197,77 +335,30 @@
             return;
         }
 
+        // Build HTML
         let html = `<div class="list-count">${items.length} Report${items.length !== 1 ? 's' : ''}</div>`;
-
-        items.forEach((r) => {
-            const isHelp = r.type === 'help';
-            const isOwner = currentUser && r.userId === currentUser.uid;
-            const cardClass = `report-card${isHelp ? ' help-card' : ''}`;
-            const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
-            const iconClass = isHelp ? 'row-icon help-row-icon' : 'row-icon';
-
-            // Badge
-            const badgeHtml = isHelp
-                ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency Request</span>'
-                : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
-
-            // Owner badge – different style if it's the current user's report
-            const ownerBadgeClass = isOwner ? 'badge-you' : 'badge-other';
-            const ownerBadge = `<span class="user-badge ${ownerBadgeClass}"><i class="fas fa-user"></i> ${escapeHtml(r.owner)}</span>`;
-
-            // Delete button only if owner and logged in
-            const deleteBtn = (currentUser && isOwner)
-                ? `<button class="card-delete-btn" data-id="${escapeHtml(r.id)}" data-isflood="${r.type === 'flood'}" title="Delete"><i class="fas fa-trash-alt"></i></button>`
-                : '';
-
-            // Row items
-            let rows = '';
-            if (isHelp) {
-                rows = `
-                    <div class="card-row"><i class="fas fa-user ${iconClass}"></i><div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div></div>
-                    <div class="card-row"><i class="fas fa-phone ${iconClass}"></i><div><div class="row-label">Phone</div><div class="row-val">${escapeHtml(r.phone || '—')}</div></div></div>
-                    <div class="card-row"><i class="fas fa-comment-alt ${iconClass}"></i><div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div></div>`;
-            } else {
-                rows = `
-                    <div class="card-row"><i class="fas fa-map-marker-alt ${iconClass}"></i><div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div></div>
-                    ${r.details ? `<div class="card-row"><i class="fas fa-info-circle ${iconClass}"></i><div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div></div>` : ''}`;
-            }
-
-            // Date row (common)
-            rows += `
-                <div class="card-row"><i class="fas fa-clock ${iconClass}"></i><div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div></div>`;
-
-            // Build the card
-            html += `
-                <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
-                    <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
-                        ${ownerBadge}
-                        ${deleteBtn}
-                    </div>
-                    <div class="${dividerClass}"></div>
-                    ${rows}
-                    <div class="card-footer">${badgeHtml}<span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span></div>
-                </div>`;
-        });
-
+        html += items.map(buildCard).join('');
         html += '<div style="height:14px;"></div>';
-        list.innerHTML = html;
 
-        // Attach delete button event listeners (only for buttons that exist)
-        list.querySelectorAll('.card-delete-btn').forEach(btn => {
+        reportsList.innerHTML = html;
+
+        // Attach delete button listeners
+        reportsList.querySelectorAll('.card-delete-btn').forEach(btn => {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
-                const id = btn.getAttribute('data-id');
+                const id      = btn.getAttribute('data-id');
                 const isFlood = btn.getAttribute('data-isflood') === 'true';
-                const cardEl = btn.closest('.report-card');
+                const cardEl  = btn.closest('.report-card');
                 showConfirm(id, isFlood, cardEl);
             });
         });
     }
 
-    // Expose functions for inline onclick handlers
-    window.navigateTo = navigateTo;
-    window.setFilter = setFilter;
+    // ─── Expose globals for inline onclick handlers ───────────────────────────
+    window.navigateTo       = navigateTo;
+    window.setFilter        = setFilter;
+    window.openImagePreview = openImagePreview;
+    window.closeImagePreview = closeImagePreview;
 </script>
 </body>
 </html>

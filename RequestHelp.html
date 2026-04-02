@@ -54,7 +54,6 @@
         <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
 </div>
-
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -73,6 +72,10 @@
     let selectedImages = [];
     const MAX_IMAGES = 5;
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    // Cloudinary configuration – replace with your own values
+    const CLOUD_NAME = 'your_cloud_name';      // e.g., 'd1a2b3c4d'
+    const UPLOAD_PRESET = 'tabang_uploads';    // your unsigned upload preset
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -145,6 +148,29 @@
         updatePreview();
     };
 
+    // Helper: upload a single file to Cloudinary
+    async function uploadToCloudinary(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        // Optional: add folder, tags, etc.
+        // formData.append('folder', 'tabang_help_requests');
+
+        const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Upload failed');
+        }
+        const data = await response.json();
+        return data.secure_url; // Cloudinary returns the secure URL
+    }
+
     document.getElementById('submitBtn').onclick = async function() {
         if (!currentUser) {
             showToast('You must be logged in.');
@@ -159,22 +185,34 @@
         if (!phone) { showToast('Please enter your phone number'); return; }
         if (!desc)  { showToast('Please describe your situation'); return; }
 
-        document.getElementById('loading').style.display = 'block';
+        const loadingDiv = document.getElementById('loading');
+        loadingDiv.style.display = 'block';
+        document.getElementById('submitBtn').disabled = true;
 
         try {
+            let imageUrls = [];
+            if (selectedImages.length > 0) {
+                // Upload all images in parallel
+                const uploadPromises = selectedImages.map(img => uploadToCloudinary(img.file));
+                imageUrls = await Promise.all(uploadPromises);
+            }
+
             await addDoc(collection(db, "helpRequests"), {
                 name: name,
                 phone: phone,
                 description: desc,
                 timestamp: new Date(),
                 userId: currentUser.uid,
-                submittedBy: currentUser.email || currentUser.displayName || name
+                submittedBy: currentUser.email || currentUser.displayName || name,
+                imageUrls: imageUrls   // store array of Cloudinary URLs
             });
             navigateTo('MyReports.html');
         } catch (err) {
+            console.error(err);
             showToast('Error: ' + err.message);
         } finally {
-            document.getElementById('loading').style.display = 'none';
+            loadingDiv.style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
         }
     };
 

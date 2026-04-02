@@ -62,7 +62,6 @@
     <div class="toast" id="toast"></div>
     <div class="loading" id="loading">Submitting...</div>
 </div>
-
 <script type="module">
     import { db, auth } from "./firebase.js";
     import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -77,6 +76,10 @@
     document.getElementById('navReport').onclick = () => navigateTo('ReportFlood.html');
     document.getElementById('navMyReports').onclick = () => navigateTo('MyReports.html');
     document.getElementById('navAccount').onclick = () => navigateTo('AccountInfo.html');
+
+    // Cloudinary
+    const CLOUD_NAME = 'dz9edwf4q';    
+    const UPLOAD_PRESET = 'tabang_uploads';    
 
     let currentUser = null;
     let selectedImages = [];
@@ -153,6 +156,29 @@
         updatePreview();
     };
 
+    // Helper: upload a single file to Cloudinary
+    async function uploadToCloudinary(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        // Optional: add folder, tags, etc.
+        // formData.append('folder', 'tabang_reports');
+
+        const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error?.message || 'Upload failed');
+        }
+        const data = await response.json();
+        return data.secure_url; // Cloudinary returns the secure URL
+    }
+
     document.getElementById('submitBtn').onclick = async function() {
         if (!currentUser) {
             showToast('You must be logged in.');
@@ -167,21 +193,36 @@
             return;
         }
 
-        document.getElementById('loading').style.display = 'block';
+        // Show loading indicator
+        const loadingDiv = document.getElementById('loading');
+        loadingDiv.style.display = 'block';
+        document.getElementById('submitBtn').disabled = true;
 
         try {
+            let imageUrls = [];
+            if (selectedImages.length > 0) {
+                // Upload all images in parallel
+                const uploadPromises = selectedImages.map(img => uploadToCloudinary(img.file));
+                imageUrls = await Promise.all(uploadPromises);
+            }
+
+            // Save report with image URLs
             await addDoc(collection(db, "floodReports"), {
                 location: loc,
                 details: det || 'No additional details provided.',
                 timestamp: new Date(),
                 userId: currentUser.uid,
-                submittedBy: currentUser.email || currentUser.displayName || 'Unknown'
+                submittedBy: currentUser.email || currentUser.displayName || 'Unknown',
+                imageUrls: imageUrls   // store the array of Cloudinary URLs
             });
+
             navigateTo('MyReports.html');
         } catch (err) {
+            console.error(err);
             showToast('Error: ' + err.message);
         } finally {
-            document.getElementById('loading').style.display = 'none';
+            loadingDiv.style.display = 'none';
+            document.getElementById('submitBtn').disabled = false;
         }
     };
 

@@ -467,3 +467,104 @@ body {
     color: #fff;
 }
 .nav-item:active { background: rgba(255,255,255,0.1); }
+/* Image Gallery Styles */
+.image-gallery {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+}
+.image-gallery::-webkit-scrollbar {
+    height: 4px;
+}
+.image-gallery::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+}
+.image-gallery::-webkit-scrollbar-thumb {
+    background: #f5900a;
+    border-radius: 2px;
+}
+.gallery-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+.gallery-thumb:hover {
+    transform: scale(1.05);
+}
+.gallery-more {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+.preview-img {
+    max-width: 90%;
+    max-height: 90%;
+    margin-top: 40px;
+    transition: transform 0.3s ease;
+    cursor: zoom-in;
+}
+
+.preview-img.zoomed {
+    transform: scale(2);
+    cursor: zoom-out;
+}
+
+.close-btn {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+}
+/* Image preview modal overlay */
+.image-preview {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.image-preview .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+    z-index: 2001;
+}
+.preview-img {
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    transition: transform 0.3s;
+    cursor: zoom-in;
+}
+.preview-img.zoomed {
+    transform: scale(1.5);
+    cursor: zoom-out;
+}
