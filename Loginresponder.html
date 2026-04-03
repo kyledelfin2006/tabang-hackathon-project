@@ -39,38 +39,49 @@
     <div class="home-indicator"></div>
     <div class="toast" id="toast"></div>
 </div>
-<script type="module">
-    import { auth } from "./firebase.js";
-    import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
+<script>
     function showToast(msg) {
         var t = document.getElementById('toast');
         t.textContent = msg;
         t.style.opacity = '1';
-        setTimeout(function() { t.style.opacity = '0'; }, 3000);
+        setTimeout(function() { t.style.opacity = '0'; }, 3500);
     }
 
-    document.getElementById('loginBtn').onclick = async function() {
+    function markInvalid(id) {
+        const el = document.getElementById(id);
+        el.style.boxShadow = '0 0 0 2px #ff3b30';
+        el.addEventListener('input', () => el.style.boxShadow = '', { once: true });
+    }
+
+    document.getElementById('loginBtn').onclick = function() {
         var emailOrUser = document.getElementById('emailInput').value.trim();
         var pass        = document.getElementById('passInput').value.trim();
 
-        if (!emailOrUser) { showToast('Please enter your email or username'); return; }
-        if (emailOrUser.includes('@') && !emailOrUser.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            showToast('Please enter a valid email'); return;
-        }
-        if (!pass) { showToast('Please enter your password'); return; }
-        if (pass.length < 6) { showToast('Password must be at least 6 characters'); return; }
+        /* field presence checks */
+        if (!emailOrUser) { showToast('⚠️ Please enter your email or username'); markInvalid('emailInput'); return; }
+        if (!pass)        { showToast('⚠️ Please enter your password');           markInvalid('passInput');  return; }
+        if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); markInvalid('passInput'); return; }
 
-        try {
-            await signInWithEmailAndPassword(auth, emailOrUser, pass);
-            window.location.href = 'Homepage.html';
-        } catch (err) {
-            showToast(err.message);
+        /* look up user in localStorage */
+        const users = JSON.parse(localStorage.getItem('responder_users') || '[]');
+        const user  = users.find(u =>
+            (u.email === emailOrUser || u.username === emailOrUser) && u.password === pass
+        );
+
+        if (!user) {
+            showToast('⚠️ Incorrect email/username or password');
+            markInvalid('emailInput');
+            markInvalid('passInput');
+            return;
         }
+
+        /* success → go to dashboard */
+        localStorage.setItem('responder_current_user', JSON.stringify(user));
+        window.location.href = 'responderlogin.html';
     };
 
     document.getElementById('guestBtn').onclick = function() {
-        window.location.href = 'Homepage.html';
+        window.location.href = 'responderlogin.html';
     };
 </script>
 </body>

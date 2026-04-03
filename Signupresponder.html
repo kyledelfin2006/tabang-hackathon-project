@@ -1,193 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>Create Account – Responder</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="Signupresponder.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Create Account – Responder</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="Signupresponder.css">
 </head>
 <body>
 
 <div class="phone">
 
-    <div class="status-bar">
-        <span>9:41</span>
-        <div class="status-icons">
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
-            <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
-            <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
-        </div>
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-icons">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
+      <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
     </div>
+  </div>
 
-    <a class="back-btn" href="Loginresponder.html">← Back to Login</a>
+  <a class="back-btn" href="Loginresponder.html">← Back to Login</a>
 
-    <div class="page-title">Create Account</div>
-    <div class="page-subtitle">Sign up to get started</div>
+  <div class="page-title">Create Account</div>
+  <div class="page-subtitle">Sign up to get started</div>
 
-    <div class="form-card">
-        <div class="name-row">
-            <input class="input-field" id="firstNameInput" type="text" placeholder="Rescuer First Name">
-            <input class="input-field" id="lastNameInput"  type="text" placeholder="Rescuer Last Name">
-        </div>
-        <input class="input-field" id="usernameInput" type="text"     placeholder="Username">
-        <input class="input-field" id="emailInput"    type="email"    placeholder="Email Address">
-        <input class="input-field" id="phoneInput"    type="tel"      placeholder="Phone Number">
-        <input class="input-field" id="passInput"     type="password" placeholder="Password">
-        <input class="input-field" id="confirmInput"  type="password" placeholder="Confirm Password" style="margin-bottom:0">
-
-        <div class="divider">or</div>
-
-        <button class="google-btn" onclick="handleGoogle()">
-            <svg width="20" height="20" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.1 0 5.8 1.1 7.9 2.9l5.9-5.9C34.5 3.4 29.6 1.5 24 1.5 14.9 1.5 7.1 7 3.4 14.8l6.9 5.4C12 14.6 17.5 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.5 24c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7C43.6 37.1 46.5 31 46.5 24z"/>
-                <path fill="#FBBC05" d="M10.3 28.8A14.6 14.6 0 019.5 24c0-1.7.3-3.3.8-4.8l-6.9-5.4A22.5 22.5 0 001.5 24c0 3.6.9 7 2.4 10l6.4-5.2z"/>
-                <path fill="#34A853" d="M24 46.5c5.5 0 10.2-1.8 13.6-4.9l-7.4-5.7c-1.9 1.3-4.2 2-6.2 2-6.5 0-12-5.1-13.7-11.9l-6.4 5.2C7.1 41 14.9 46.5 24 46.5z"/>
-            </svg>
-            Continue with Google
-        </button>
+  <div class="form-card">
+    <div class="name-row">
+      <input class="input-field" id="firstNameInput" type="text" placeholder="Rescuer First Name">
+      <input class="input-field" id="lastNameInput"  type="text" placeholder="Rescuer Last Name">
     </div>
+    <input class="input-field" id="usernameInput" type="text"     placeholder="Username">
+    <input class="input-field" id="emailInput"    type="email"    placeholder="Email Address">
+    <input class="input-field" id="phoneInput"    type="tel"      placeholder="Phone Number">
+    <input class="input-field" id="passInput"     type="password" placeholder="Password">
+    <input class="input-field" id="confirmInput"  type="password" placeholder="Confirm Password" style="margin-bottom:0">
 
-    <div class="responder-toggle" onclick="toggleResponder()">
-        <div class="toggle-switch" id="responderToggle"></div>
-        <div class="toggle-text">
-            <strong>Register as a Responder</strong>
-            <small>Enable to fill in your responder details</small>
-        </div>
-        <div class="flag-icon"><div class="f1"></div><div class="f2"></div></div>
+    <div class="divider">or</div>
+
+    <button class="google-btn" onclick="handleGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48">
+        <path fill="#EA4335" d="M24 9.5c3.1 0 5.8 1.1 7.9 2.9l5.9-5.9C34.5 3.4 29.6 1.5 24 1.5 14.9 1.5 7.1 7 3.4 14.8l6.9 5.4C12 14.6 17.5 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.5 24c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.4 5.7C43.6 37.1 46.5 31 46.5 24z"/>
+        <path fill="#FBBC05" d="M10.3 28.8A14.6 14.6 0 019.5 24c0-1.7.3-3.3.8-4.8l-6.9-5.4A22.5 22.5 0 001.5 24c0 3.6.9 7 2.4 10l6.4-5.2z"/>
+        <path fill="#34A853" d="M24 46.5c5.5 0 10.2-1.8 13.6-4.9l-7.4-5.7c-1.9 1.3-4.2 2-6.2 2-6.5 0-12-5.1-13.7-11.9l-6.4 5.2C7.1 41 14.9 46.5 24 46.5z"/>
+      </svg>
+      Continue with Google
+    </button>
+  </div>
+
+  <div class="responder-toggle" onclick="toggleResponder()">
+    <div class="toggle-switch" id="responderToggle"></div>
+    <div class="toggle-text">
+      <strong>Register as a Responder</strong>
+      <small>Enable to fill in your responder details</small>
     </div>
+    <div class="flag-icon"><div class="f1"></div><div class="f2"></div></div>
+  </div>
 
-    <div class="responder-section" id="responderSection">
-        <div class="section-label">Responder Information</div>
-        <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)">
-        <input class="input-field" id="orgInput"        type="text" placeholder="Organization / Agency">
-        <input class="input-field" id="badgeInput"      type="text" placeholder="ID / Badge Number">
-        <input class="input-field" id="barangayInput"   type="text" placeholder="Barangay">
-        <select class="select-field" id="municipalityInput" style="margin-bottom:0">
-            <option value="" disabled selected>Municipality</option>
-            <option>Altavas</option>
-            <option>Balete</option>
-            <option>Banga</option>
-            <option>Batan</option>
-            <option>Buruanga</option>
-            <option>Ibajay</option>
-            <option>Kalibo</option>
-            <option>Lezo</option>
-            <option>Libacao</option>
-            <option>Madalag</option>
-            <option>Makato</option>
-            <option>Malay</option>
-            <option>Malinao</option>
-            <option>Nabas</option>
-            <option>New Washington</option>
-            <option>Numancia</option>
-            <option>Tangalan</option>
-        </select>
-        <input class="input-field province-field" type="text" value="Aklan" readonly style="margin-top:10px;margin-bottom:0">
-    </div>
+  <div class="responder-section" id="responderSection">
+    <div class="section-label">Responder Information</div>
+    <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)">
+    <select class="select-field" id="orgInput">
+      <option value="" selected>Organization / Agency (Optional)</option>
+      <option>LNDRRMO</option>
+      <option>BFP</option>
+      <option>PNP</option>
+      <option>Local Health Office/RHU</option>
+      <option>CSWDO/MSWDO</option>
+    </select>
+    <input class="input-field" id="badgeInput"      type="text" placeholder="ID / Badge Number">
+    <input class="input-field" id="barangayInput"   type="text" placeholder="Barangay">
+    <select class="select-field" id="municipalityInput" style="margin-bottom:0">
+      <option value="" disabled selected>Municipality</option>
+      <option>Altavas</option>
+      <option>Balete</option>
+      <option>Banga</option>
+      <option>Batan</option>
+      <option>Buruanga</option>
+      <option>Ibajay</option>
+      <option>Kalibo</option>
+      <option>Lezo</option>
+      <option>Libacao</option>
+      <option>Madalag</option>
+      <option>Makato</option>
+      <option>Malay</option>
+      <option>Malinao</option>
+      <option>Nabas</option>
+      <option>New Washington</option>
+      <option>Numancia</option>
+      <option>Tangalan</option>
+    </select>
+    <input class="input-field province-field" type="text" value="Aklan" readonly style="margin-top:10px;margin-bottom:0">
+  </div>
 
-    <button class="signup-btn" id="signupBtn">Create Account</button>
+  <button class="signup-btn" id="signupBtn">Create Account</button>
 
-    <div class="login-link">Already have an account? <a href="Loginresponder.html">Log In</a></div>
+  <div class="login-link">Already have an account? <a href="Loginresponder.html">Log In</a></div>
 
-    <div class="home-indicator"></div>
-    <div class="toast" id="toast"></div>
+  <div class="home-indicator"></div>
+  <div class="toast" id="toast"></div>
 </div>
 
-<script type="module">
-    import { auth, db } from "./firebase.js";
-    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+<script>
+  let responderOn = true;
 
-    let responderOn = true;
 
-    function showToast(msg, success = false) {
-        var t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = 'toast' + (success ? ' success' : '');
-        t.style.opacity = '1';
-        setTimeout(() => { t.style.opacity = '0'; }, 3000);
+  function showToast(msg, success = false) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (success ? ' success' : '');
+    t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; }, 3500);
+  }
+
+  function markInvalid(id) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.boxShadow = '0 0 0 2px #ff3b30';
+      el.addEventListener('input', () => el.style.boxShadow = '', { once: true });
+    }
+  }
+
+  function val(id)    { return document.getElementById(id).value.trim(); }
+  function selVal(id) { return document.getElementById(id).value; }
+
+
+  window.toggleResponder = function() {
+    responderOn = !responderOn;
+    const toggle  = document.getElementById('responderToggle');
+    const section = document.getElementById('responderSection');
+    if (responderOn) {
+      toggle.classList.remove('off');
+      section.style.display = 'block';
+    } else {
+      toggle.classList.add('off');
+      section.style.display = 'none';
+    }
+  };
+
+  window.handleGoogle = function() {
+    showToast('🔄 Google sign-up not yet connected.', false);
+  };
+
+  document.getElementById('signupBtn').onclick = function () {
+    const firstName = val('firstNameInput');
+    const lastName  = val('lastNameInput');
+    const username  = val('usernameInput');
+    const email     = val('emailInput');
+    const phone     = val('phoneInput');
+    const pass      = val('passInput');
+    const confirm   = val('confirmInput');
+
+
+    if (!firstName)           { showToast('⚠️ Please enter your first name');         markInvalid('firstNameInput'); return; }
+    if (!lastName)            { showToast('⚠️ Please enter your last name');          markInvalid('lastNameInput');  return; }
+    if (!username)            { showToast('⚠️ Please enter a username');              markInvalid('usernameInput');  return; }
+    if (!email)               { showToast('⚠️ Please enter your email');             markInvalid('emailInput');     return; }
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      showToast('⚠️ Please enter a valid email address');   markInvalid('emailInput');     return; }
+    if (!phone)               { showToast('⚠️ Please enter your phone number');      markInvalid('phoneInput');     return; }
+    if (!/^[\d\s\+\-\(\)]{7,15}$/.test(phone)) {
+      showToast('⚠️ Please enter a valid phone number');    markInvalid('phoneInput');     return; }
+    if (!pass)                { showToast('⚠️ Please enter a password');             markInvalid('passInput');      return; }
+    if (pass.length < 6)      { showToast('⚠️ Password must be at least 6 characters'); markInvalid('passInput'); return; }
+    if (!confirm)             { showToast('⚠️ Please confirm your password');        markInvalid('confirmInput');   return; }
+    if (pass !== confirm)     { showToast('⚠️ Passwords do not match');              markInvalid('confirmInput');   return; }
+
+    let responderData = null;
+    if (responderOn) {
+      const status       = val('responderStatus');
+      const org          = val('orgInput');
+      const badge        = val('badgeInput');
+      const barangay     = val('barangayInput');
+      const municipality = selVal('municipalityInput');
+
+      if (!status)       { showToast('⚠️ Please enter your responder status');      markInvalid('responderStatus');    return; }
+      if (!org)          { showToast('⚠️ Please enter your organization / agency'); markInvalid('orgInput');           return; }
+      if (!badge)        { showToast('⚠️ Please enter your ID / Badge Number');     markInvalid('badgeInput');         return; }
+      if (!barangay)     { showToast('⚠️ Please enter your barangay');              markInvalid('barangayInput');      return; }
+      if (!municipality) { showToast('⚠️ Please select your municipality');
+        document.getElementById('municipalityInput').style.boxShadow = '0 0 0 2px #ff3b30';
+        document.getElementById('municipalityInput').addEventListener('change', () => {
+          document.getElementById('municipalityInput').style.boxShadow = '';
+        }, { once: true });
+        return;
+      }
+      responderData = { status, org, badge, barangay, municipality, province: 'Aklan' };
     }
 
-    window.toggleResponder = function() {
-        responderOn = !responderOn;
-        const toggle = document.getElementById('responderToggle');
-        const section = document.getElementById('responderSection');
-        if (responderOn) {
-            toggle.classList.remove('off');
-            section.style.display = 'block';
-        } else {
-            toggle.classList.add('off');
-            section.style.display = 'none';
-        }
+
+    const existing = JSON.parse(localStorage.getItem('responder_users') || '[]');
+    if (existing.find(u => u.email === email)) {
+      showToast('⚠️ An account with this email already exists'); markInvalid('emailInput'); return;
+    }
+    if (existing.find(u => u.username === username)) {
+      showToast('⚠️ That username is already taken'); markInvalid('usernameInput'); return;
+    }
+
+
+    const newUser = {
+      firstName, lastName,
+      fullName: firstName + ' ' + lastName,
+      username, email, phone,
+      password: pass,
+      isResponder: responderOn,
+      responder: responderData,
+      createdAt: new Date().toISOString()
     };
+    existing.push(newUser);
+    localStorage.setItem('responder_users', JSON.stringify(existing));
+    localStorage.setItem('responder_current_email', email);
 
-    window.handleGoogle = function() {
-        showToast('🔄 Redirecting to Google...', true);
-        // TODO: implement signInWithPopup
-    };
-
-    document.getElementById('signupBtn').onclick = async function () {
-        const firstName = document.getElementById('firstNameInput').value.trim();
-        const lastName  = document.getElementById('lastNameInput').value.trim();
-        const username  = document.getElementById('usernameInput').value.trim();
-        const email     = document.getElementById('emailInput').value.trim();
-        const phone     = document.getElementById('phoneInput').value.trim();
-        const pass      = document.getElementById('passInput').value.trim();
-        const confirm   = document.getElementById('confirmInput').value.trim();
-
-        // --- Basic field validation ---
-        if (!firstName)            { showToast('⚠️ Please enter your first name'); return; }
-        if (!lastName)             { showToast('⚠️ Please enter your last name'); return; }
-        if (!username)             { showToast('⚠️ Please enter a username'); return; }
-        if (!email)                { showToast('⚠️ Please enter your email'); return; }
-        if (!email.includes('@'))  { showToast('⚠️ Please enter a valid email'); return; }
-        if (!phone)                { showToast('⚠️ Please enter your phone number'); return; }
-        if (!pass)                 { showToast('⚠️ Please enter a password'); return; }
-        if (pass.length < 6)       { showToast('⚠️ Password must be at least 6 characters'); return; }
-        if (pass !== confirm)      { showToast('⚠️ Passwords do not match'); return; }
-
-        // --- Responder field validation (only if toggle is ON) ---
-        let responderData = null;
-        if (responderOn) {
-            const status       = document.getElementById('responderStatus').value.trim();
-            const org          = document.getElementById('orgInput').value.trim();
-            const badge        = document.getElementById('badgeInput').value.trim();
-            const barangay     = document.getElementById('barangayInput').value.trim();
-            const municipality = document.getElementById('municipalityInput').value;
-
-            if (!status)       { showToast('⚠️ Please enter your responder status'); return; }
-            if (!org)          { showToast('⚠️ Please enter your organization'); return; }
-            if (!badge)        { showToast('⚠️ Please enter your ID / Badge Number'); return; }
-            if (!barangay)     { showToast('⚠️ Please enter your barangay'); return; }
-            if (!municipality) { showToast('⚠️ Please select your municipality'); return; }
-
-            responderData = { status, org, badge, barangay, municipality, province: 'Aklan' };
-        }
-
-        try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
-            const user = userCredential.user;
-
-            await setDoc(doc(db, "users", user.uid), {
-                firstName,
-                lastName,
-                fullName: firstName + ' ' + lastName,
-                username,
-                email,
-                phone,
-                isResponder: responderOn,
-                responder: responderData,
-                createdAt: new Date()
-            });
-
-            showToast('✅ Account created! Redirecting...', true);
-            setTimeout(() => { window.location.href = 'Loginresponder.html'; }, 1500);
-        } catch (err) {
-            showToast('⚠️ ' + err.message);
-        }
-    };
+    showToast('✅ Account created! Redirecting to login…', true);
+    setTimeout(() => { window.location.href = 'Loginresponder.html'; }, 1600);
+  };
 </script>
 </body>
 </html>
