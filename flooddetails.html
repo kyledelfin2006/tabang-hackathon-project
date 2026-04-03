@@ -10,7 +10,6 @@
         .nav-item.active .nav-icon i { color: #4ade80; }
     </style>
     <title>Flood Details | Brgy. Poblacion</title>
-
 </head>
 <body>
 
@@ -89,45 +88,45 @@
 
         <div class="glass-card">
             <div class="detail-row">
-        <span class="detail-key">
-          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.5" fill="#6a80b0"/></svg>
-          Urgency
-        </span>
+                <span class="detail-key">
+                    <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.5" fill="#6a80b0"/></svg>
+                    Urgency
+                </span>
                 <span class="detail-val orange">HIGH</span>
             </div>
             <div class="detail-row">
-        <span class="detail-key">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          Reported At
-        </span>
+                <span class="detail-key">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Reported At
+                </span>
                 <span class="detail-val">9:30 AM · Apr 2</span>
             </div>
             <div class="detail-row">
-        <span class="detail-key">
-          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          Location
-        </span>
+                <span class="detail-key">
+                    <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Location
+                </span>
                 <span class="detail-val">Brgy. Poblacion</span>
             </div>
             <div class="detail-row">
-        <span class="detail-key">
-          <svg viewBox="0 0 24 24"><path d="M20 17.58A5 5 0 0018 8h-1.26A8 8 0 104 16.25"/><line x1="8" y1="16" x2="8" y2="21"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="16" y1="16" x2="16" y2="21"/></svg>
-          Weather
-        </span>
+                <span class="detail-key">
+                    <svg viewBox="0 0 24 24"><path d="M20 17.58A5 5 0 0018 8h-1.26A8 8 0 104 16.25"/><line x1="8" y1="16" x2="8" y2="21"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="16" y1="16" x2="16" y2="21"/></svg>
+                    Weather
+                </span>
                 <span class="detail-val">Heavy Rain</span>
             </div>
             <div class="detail-row">
-        <span class="detail-key">
-          <svg viewBox="0 0 24 24"><path d="M12 2C6 2 4 7 4 10c0 5 8 12 8 12s8-7 8-12c0-3-2-8-8-8z"/></svg>
-          Water Depth
-        </span>
+                <span class="detail-key">
+                    <svg viewBox="0 0 24 24"><path d="M12 2C6 2 4 7 4 10c0 5 8 12 8 12s8-7 8-12c0-3-2-8-8-8z"/></svg>
+                    Water Depth
+                </span>
                 <span class="detail-val orange">~60 cm (Knee Deep)</span>
             </div>
             <div class="detail-row">
-        <span class="detail-key">
-          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          Current Status
-        </span>
+                <span class="detail-key">
+                    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    Current Status
+                </span>
                 <span class="detail-val success"><span class="pulse-dot"></span>Ongoing</span>
             </div>
         </div>
@@ -170,16 +169,16 @@
 
     </div>
 
-    <!-- Bottom Nav -->
+    <!-- ✅ FIXED Bottom Nav — each button now navigates to the correct page -->
     <nav class="bottom-nav">
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='flood.html'">
             <div class="nav-icon">
                 <i class="fas fa-hand-holding-water"></i>
             </div>
             <span>Request</span>
             <div class="nav-dot"></div>
         </div>
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='ResponderHotline.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.38 2 2 0 0 1 3.57 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
@@ -187,7 +186,7 @@
             </div>
             <span>Hotlines</span>
         </div>
-        <div class="nav-item active" onclick="setActive(this)">
+        <div class="nav-item active" onclick="setActive(this); window.location.href='report.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -198,7 +197,7 @@
             <span>Report</span>
             <div class="nav-dot"></div>
         </div>
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='flood.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -210,7 +209,7 @@
             </div>
             <span>Reports</span>
         </div>
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='accountinfo.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>

@@ -10,8 +10,6 @@
         .nav-item.active .nav-icon i { color: #4ade80; }
     </style>
     <title>Flood Response | Active Reports</title>
-
-
 </head>
 <body>
 
@@ -70,7 +68,7 @@
 
         <div class="reports-list">
 
-            <!-- CARD 1: URGENT — San Roque (sorted first) -->
+            <!-- CARD 1: URGENT — San Roque -->
             <div class="report-card is-urgent" data-location="Brgy. San Roque" data-status="active" data-urgency="urgent">
                 <div class="card-visual v3">
                     <div class="sky-layer"></div>
@@ -84,20 +82,16 @@
                     <div class="water-surface">
                         <svg viewBox="0 0 300 6" preserveAspectRatio="none"><path d="M0 4 Q37 1 75 4 Q112 7 150 4 Q187 1 225 4 Q262 7 300 4 L300 6 L0 6Z" fill="rgba(255,255,255,0.15)"/></svg>
                     </div>
-                    <!-- Weather -->
                     <div class="img-weather">
                         <svg viewBox="0 0 24 24"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8" y2="21"/><line x1="8" y1="21" x2="6" y2="19"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="12" y1="23" x2="10" y2="21"/><line x1="16" y1="16" x2="16" y2="21"/><line x1="16" y1="21" x2="14" y2="19"/></svg>
                         Heavy Rain
                     </div>
                     <div class="urgency-tag tag-urgent">URGENT</div>
-                    <!-- Timestamp watermark -->
                     <div class="img-timestamp">Apr 2 · 9:28am</div>
-                    <!-- Reporter count -->
                     <div class="reporter-count">
                         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         5 residents
                     </div>
-                    <!-- Depth scale -->
                     <div class="depth-scale">
                         <div class="depth-bar" style="height:60px;">
                             <div class="depth-fill" style="height:75%;background:rgba(255,59,48,0.7);"></div>
@@ -212,15 +206,16 @@
         </div>
     </div>
 
+    <!-- ✅ FIXED Bottom Nav — each button now navigates to the correct page -->
     <nav class="bottom-nav">
-        <div class="nav-item active" onclick="setActive(this)">
+        <div class="nav-item active" onclick="setActive(this); window.location.href='flood.html'">
             <div class="nav-icon">
                 <i class="fas fa-hand-holding-water"></i>
             </div>
             <span>Request</span>
             <div class="nav-dot"></div>
         </div>
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='ResponderHotline.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.38 2 2 0 0 1 3.57 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
@@ -228,7 +223,7 @@
             </div>
             <span>Hotlines</span>
         </div>
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='report.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -238,7 +233,7 @@
             </div>
             <span>Report</span>
         </div>
-        <div class="nav-item" onclick="setActive(this)">
+        <div class="nav-item" onclick="setActive(this); window.location.href='flood.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -250,7 +245,7 @@
             </div>
             <span>Reports</span>
         </div>
-        <div class="nav-item" onclick="window.location.href='accountinfo.html?from=flood.html'">
+        <div class="nav-item" onclick="setActive(this); window.location.href='accountinfo.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -309,18 +304,15 @@
         window.location.href = 'flooddetails.html';
     }
 
-    // On load: check if a report was just marked as responded
     window.addEventListener('DOMContentLoaded', () => {
         const responded = localStorage.getItem('respondedReport');
         if (responded) {
             localStorage.removeItem('respondedReport');
 
-            // Mark the matching card as responded
             const card = document.querySelector(`.report-card[data-location="${responded}"]`);
             if (card) {
                 card.setAttribute('data-status', 'responded');
 
-                // Add a visual "Responded" badge to the card
                 const cardBody = card.querySelector('.card-body');
                 const existingBadge = cardBody.querySelector('.responded-badge');
                 if (!existingBadge) {
@@ -331,12 +323,10 @@
                     cardBody.insertBefore(badge, cardBody.querySelector('.view-btn'));
                 }
 
-                // Update status line in card
                 const statusLine = card.querySelector('.meta-line');
                 if (statusLine) statusLine.textContent = '✅ Marked as Responded';
             }
 
-            // Switch to Responded tab
             const tabs = document.querySelectorAll('.tab-pill');
             tabs.forEach(t => {
                 t.classList.remove('active');
