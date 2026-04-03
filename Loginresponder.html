@@ -80,7 +80,7 @@
 
         } catch (error) {
             console.error('Login failed', error);
-            showToast('⚠️ ' + (error.message || 'Login failed.'));
+            showToast('⚠️ ' + (error.message || 'Login failed.'));            
             markInvalid('emailInput');
             markInvalid('passInput');
         }
