@@ -5,14 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="stylesheet" href="responderlogin.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <!-- FIX: Leaflet CSS & JS loaded in <head> so it's available before initMap() runs -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <title>Responder Dashboard | Tabang</title>
 </head>
 <body>
 <div class="responder-dashboard">
     <div class="aurora-bg"></div>
 
-
+    <!-- ── HOME VIEW ── -->
     <div class="view-panel active" id="viewHome">
         <div class="dashboard-content">
 
@@ -37,7 +39,7 @@
                     <h2>📍 LIVE INCIDENT MAP</h2>
                     <p>Real-time report locations</p>
                 </div>
-                <div id="incidentMap" style="height: 300px; width: 100%; border-radius: 12px;"></div>
+                <div id="incidentMap" style="height:300px;width:100%;border-radius:12px;"></div>
                 <div class="stats-row">
                     <div class="stat-item">
                         <i class="fas fa-exclamation-triangle"></i>
@@ -57,12 +59,28 @@
                 </div>
             </div>
 
+        </div><!-- /.dashboard-content  FIX: was never closed -->
+    </div><!-- /#viewHome  FIX: was never closed -->
 
-
+    <!-- ── HOTLINES VIEW ── -->
     <div class="view-panel" id="viewHotlines">
+        <!-- FIX: panel was completely empty; hotlines content goes here or is loaded dynamically -->
+        <div class="dashboard-content">
+            <div class="status-bar">
+                <span>9:41</span>
+                <div class="status-icons">
+                    <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
+                    <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
+                </div>
+            </div>
+            <div class="top-header">
+                <div class="brand"><h1>Hotlines</h1></div>
+            </div>
+            <p style="color:rgba(255,255,255,0.6);text-align:center;margin-top:40px;">Hotlines content here.</p>
+        </div>
     </div>
 
-
+    <!-- ── ACCOUNT VIEW ── -->
     <div class="view-panel" id="viewAccount">
         <div class="responder-profile">
             <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;font-size:13px;font-weight:700;color:#eef2ff;">
@@ -139,8 +157,7 @@
         </div>
     </div>
 
-
-
+    <!-- ── BOTTOM NAV ── -->
     <nav class="bottom-nav">
         <div class="nav-item" id="navHotlines" onclick="goHotlines()">
             <div class="nav-icon">
@@ -161,7 +178,6 @@
             <span>All Reports</span>
             <div class="nav-dot"></div>
         </a>
-        <!-- FIX: Account nav now switches to the viewAccount panel instead of navigating away -->
         <div class="nav-item" id="navAccount" onclick="window.location.href='AccountInformation.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -172,7 +188,8 @@
             <span>Account</span>
         </div>
     </nav>
-</div>
+
+</div><!-- /.responder-dashboard -->
 
 <!-- Image preview overlay -->
 <div class="img-preview-overlay" id="imgPreviewOverlay">
@@ -180,16 +197,15 @@
     <img id="imgPreviewEl" src="" alt="Preview">
 </div>
 
-
+<!-- ── FIREBASE MODULE SCRIPT ── -->
 <script type="module">
     import { db, auth } from "./firebase.js";
     import {
-        collection, getDocs, serverTimestamp
+        collection, getDocs
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import {
         onAuthStateChanged, signOut
     } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-
 
     let currentUser = null;
 
@@ -202,14 +218,14 @@
                 if (snap.exists()) {
                     const d = snap.data();
                     const name = d.fullName || d.name || user.displayName || 'Responder';
-                    document.getElementById('accName').textContent     = name;
-                    document.getElementById('accEmail').textContent    = d.email || user.email || '—';
-                    document.getElementById('accPhone').textContent    = d.phone || d.contactNumber || '—';
-                    document.getElementById('accId').textContent       = d.responderId || user.uid.slice(0,8).toUpperCase();
-                    document.getElementById('accUnit').textContent     = d.unit || d.agency || 'MDRRMO Numancia';
-                    document.getElementById('accUnit2').textContent    = d.unit || d.agency || 'MDRRMO Numancia';
-                    document.getElementById('accArea').textContent     = d.area || d.barangay || 'Numancia, Aklan';
-                    document.getElementById('accStatus').textContent   = '● ' + (d.status || 'Active');
+                    document.getElementById('accName').textContent   = name;
+                    document.getElementById('accEmail').textContent  = d.email || user.email || '—';
+                    document.getElementById('accPhone').textContent  = d.phone || d.contactNumber || '—';
+                    document.getElementById('accId').textContent     = d.responderId || user.uid.slice(0,8).toUpperCase();
+                    document.getElementById('accUnit').textContent   = d.unit || d.agency || 'MDRRMO Numancia';
+                    document.getElementById('accUnit2').textContent  = d.unit || d.agency || 'MDRRMO Numancia';
+                    document.getElementById('accArea').textContent   = d.area || d.barangay || 'Numancia, Aklan';
+                    document.getElementById('accStatus').textContent = '● ' + (d.status || 'Active');
                     if (d.createdAt) {
                         const dt = d.createdAt.toDate ? d.createdAt.toDate() : new Date(d.createdAt);
                         document.getElementById('accSince').textContent = dt.toLocaleDateString('en-US', { year:'numeric', month:'long' });
@@ -225,13 +241,6 @@
             }
         }
     });
-
-    function escHtml(t) {
-        if (!t) return '—';
-        const d = document.createElement('div');
-        d.textContent = t;
-        return d.innerHTML;
-    }
 
     function fmtDate(ts) {
         if (!ts) return '—';
@@ -250,10 +259,7 @@
         return `${Math.floor(diff/86400)}d ago`;
     }
 
-    // FIX: Removed the duplicate `let reqFilter = 'all'` that was here.
-    // Track which request IDs have been marked responded (in-session)
-
-    // ── SIGN OUT ─────────────────────────────────────────────────────
+    // ── SIGN OUT ──────────────────────────────────────────────────────
     window.handleSignOut = async function() {
         try {
             await signOut(auth);
@@ -270,51 +276,46 @@
         document.getElementById('imgPreviewOverlay').classList.remove('open');
     };
 
-    // FIX: callPerson now guards against undefined/null/empty in addition to '—'
     window.callPerson = function(phone) {
         if (phone && phone !== '—' && phone.trim() !== '') {
             window.location.href = 'tel:' + phone;
         }
     };
 
-    // ── LEAFLET MAP INITIALIZATION ─────────────────────────────────────
+    // ── MAP INITIALIZATION ────────────────────────────────────────────
+    // FIX: initMap now uses the imported `db` and `getDocs` from this module scope
     window.initMap = function() {
-        // Initialize Leaflet map centered on Philippines
-        const map = L.map('incidentMap').setView([12.8797, 121.7740], 6);
+        const mapEl = document.getElementById('incidentMap');
+        if (!mapEl) return;
 
-        // Add OpenStreetMap tiles
+        const map = L.map(mapEl).setView([12.8797, 121.7740], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Store markers for easy clearing
         let markers = [];
 
-        // Function to update map with live reports
         async function updateMap() {
             try {
-                // Clear existing markers
-                markers.forEach(marker => map.removeLayer(marker));
+                markers.forEach(m => map.removeLayer(m));
                 markers = [];
 
                 let unresolved = 0, responding = 0, resolved = 0;
 
-                // Fetch reports from Firebase using modular syntax
                 const [floodSnap, helpSnap] = await Promise.all([
                     getDocs(collection(db, 'floodReports')),
                     getDocs(collection(db, 'helpRequests'))
                 ]);
 
-                // Process flood reports
-                floodSnap.forEach(doc => {
-                    const data = doc.data();
+                floodSnap.forEach(docSnap => {
+                    const data = docSnap.data();
                     const status = data.status || 'unresolved';
                     if (status === 'unresolved') unresolved++;
                     else if (status === 'responding') responding++;
                     else if (status === 'resolved') resolved++;
 
                     if (data.latitude && data.longitude) {
-                        const marker = L.marker([data.latitude, data.longitude])
+                        const m = L.marker([data.latitude, data.longitude])
                             .addTo(map)
                             .bindPopup(`
                                 <div style="font-size:12px;">
@@ -326,25 +327,20 @@
                                     <button onclick="window.location.href='AllReports.html'" style="margin-top:5px;padding:3px 8px;background:#ff6b6b;color:white;border:none;border-radius:3px;cursor:pointer;">View Details</button>
                                 </div>
                             `);
-                        markers.push(marker);
+                        markers.push(m);
                     }
                 });
 
-                // Process help requests
-                helpSnap.forEach(doc => {
-                    const data = doc.data();
+                helpSnap.forEach(docSnap => {
+                    const data = docSnap.data();
                     const status = data.status || 'unresolved';
                     if (status === 'unresolved') unresolved++;
                     else if (status === 'responding') responding++;
                     else if (status === 'resolved') resolved++;
 
                     if (data.latitude && data.longitude) {
-                        const marker = L.marker([data.latitude, data.longitude], {
-                            icon: L.divIcon({
-                                html: '🆘',
-                                className: 'help-marker',
-                                iconSize: [25, 25]
-                            })
+                        const m = L.marker([data.latitude, data.longitude], {
+                            icon: L.divIcon({ html: '🆘', className: 'help-marker', iconSize: [25, 25] })
                         })
                             .addTo(map)
                             .bindPopup(`
@@ -358,40 +354,37 @@
                                     <button onclick="window.location.href='AllReports.html'" style="margin-top:5px;padding:3px 8px;background:#4ade80;color:white;border:none;border-radius:3px;cursor:pointer;">View Details</button>
                                 </div>
                             `);
-                        markers.push(marker);
+                        markers.push(m);
                     }
                 });
 
-                // Fit map to show all markers if any exist
                 if (markers.length > 0) {
                     const group = new L.featureGroup(markers);
                     map.fitBounds(group.getBounds().pad(0.1));
                 }
 
-                // Update stats
                 document.getElementById('unresolvedCount').textContent = unresolved;
                 document.getElementById('respondingCount').textContent = responding;
-                document.getElementById('resolvedCount').textContent = resolved;
+                document.getElementById('resolvedCount').textContent   = resolved;
 
             } catch (error) {
                 console.error('Error updating map:', error);
             }
         }
 
-        // Initial load
         updateMap();
-
-        // Update map every 30 seconds for live data
         setInterval(updateMap, 30000);
     };
 </script>
+<!-- FIX: removed duplicate stray </script> tag that was here -->
 
-</script>
-
+<!-- ── NON-MODULE SCRIPT (tab switching, DOMContentLoaded) ── -->
 <script>
-    // ── TAB SWITCHING (non-module) ────────────────────────────────────
+    // FIX: tabMap now correctly maps panel IDs to nav IDs
     const tabMap = {
-
+        viewHome:     'navReports',
+        viewHotlines: 'navHotlines',
+        viewAccount:  'navAccount'
     };
 
     window.switchTab = function(panelId) {
@@ -412,44 +405,22 @@
         if (hash && document.getElementById(hash)) {
             window.switchTab(hash);
         }
-        // Initialize map after DOM is loaded
-        if (document.getElementById('incidentMap')) {
-            window.initMap();
-        }
+        // FIX: initMap is defined inside the module, so we call it after a short
+        // delay to ensure the module has finished setting window.initMap
+        setTimeout(function() {
+            if (typeof window.initMap === 'function' && document.getElementById('incidentMap')) {
+                window.initMap();
+            }
+        }, 100);
     });
 </script>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <style>
-    .help-marker {
-        background: transparent !important;
-        border: none !important;
-    }
-    .stats-row {
-        display: flex;
-        justify-content: space-around;
-        margin-top: 15px;
-        padding: 10px 0;
-        border-top: 1px solid rgba(255,255,255,0.1);
-    }
-    .stat-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        color: white;
-        font-size: 12px;
-    }
-    .stat-item i {
-        font-size: 18px;
-        margin-bottom: 4px;
-    }
-    .stat-item span:first-of-type {
-        font-size: 16px;
-        font-weight: bold;
-        margin-bottom: 2px;
-    }
+    .help-marker { background:transparent !important; border:none !important; }
+    .stats-row { display:flex; justify-content:space-around; margin-top:15px; padding:10px 0; border-top:1px solid rgba(255,255,255,0.1); }
+    .stat-item { display:flex; flex-direction:column; align-items:center; color:white; font-size:12px; }
+    .stat-item i { font-size:18px; margin-bottom:4px; }
+    .stat-item span:first-of-type { font-size:16px; font-weight:bold; margin-bottom:2px; }
 </style>
 
 </body>

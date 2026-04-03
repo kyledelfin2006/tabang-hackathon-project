@@ -21,7 +21,7 @@ body {
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    padding: 0 20px 20px;  /* reduced bottom padding, footer will handle spacing */
+    padding: 0 20px 0;
     scrollbar-width: none;
 }
 .phone::-webkit-scrollbar { display: none; }
@@ -33,18 +33,21 @@ body {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 6px;
-    margin-left: 2px;
+    margin: 0 0 6px 2px;
     font-family: 'Inter', sans-serif;
 }
-.details-label {
-    color: rgba(255,255,255,0.7);
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin: 10px 0 6px 2px;
-    font-family: 'Inter', sans-serif;
+
+/* Unified field group spacing — replaces details-label top margins */
+.field-group {
+    margin-top: 12px;
+}
+.field-group:first-of-type {
+    margin-top: 0;
+}
+
+/* Kept for textarea section */
+.textarea-group {
+    margin-top: 12px;
 }
 
 /* ── INPUTS ── */
@@ -56,7 +59,6 @@ body {
     align-items: center;
     padding: 0 14px;
     height: 48px;
-    margin-bottom: 4px;
     gap: 10px;
     transition: border-color 0.2s;
 }
@@ -102,7 +104,7 @@ body {
 .textarea-box textarea::placeholder { color: rgba(255,255,255,0.3); font-weight: 400; }
 
 /* ── IMAGE UPLOAD ── */
-.image-upload-area { margin: 10px 0 8px; }
+.image-upload-area { margin-top: 12px; }
 .upload-box {
     background: rgba(255,255,255,0.07);
     border: 1.5px dashed rgba(255,255,255,0.25);
@@ -131,13 +133,18 @@ body {
     margin-top: 5px; font-family: 'Inter', sans-serif;
 }
 
-/* ── SUBMIT BUTTON ── */
+.submit-btn-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0 18px;
+}
+
 .submit-btn {
-    width: 100%;
     background: #f5900a;
     border: none;
     border-radius: 16px;
-    height: 54px;
+    height: 50px;
+    width: 200px;           /* fixed width instead of 100% */
     color: #ffffff;
     font-size: 16px;
     font-weight: 700;
@@ -145,8 +152,6 @@ body {
     cursor: pointer;
     box-shadow: 0 4px 0px rgba(0,0,0,0.2);
     transition: all 0.15s;
-    margin-top: 14px;
-    margin-bottom: 16px;  /* space before footer */
     letter-spacing: 0.3px;
 }
 .submit-btn:active {
@@ -193,19 +198,20 @@ body {
     display: none;
 }
 
-/* ── BOTTOM NAV (now part of flex flow) ── */
+/* ── BOTTOM NAV ── */
 .bottom-nav {
     display: flex;
     justify-content: space-around;
     align-items: center;
-    padding: 10px 8px 14px;
+    padding: 10px 8px 18px;
     background: rgba(255,255,255,0.07);
     border-top: 1px solid rgba(255,255,255,0.12);
     border-radius: 0 0 44px 44px;
-    margin-top: auto;  /* pushes footer to bottom */
-    width: calc(100% + 40px); /* compensate parent padding */
+    margin-top: auto;
+    width: calc(100% + 40px);
     margin-left: -20px;
     margin-right: -20px;
+    flex-shrink: 0;
 }
 .nav-item {
     display: flex;
