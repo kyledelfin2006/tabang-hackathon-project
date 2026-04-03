@@ -63,7 +63,7 @@
     <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)">
     <select class="select-field" id="orgInput">
       <option value="" selected>Organization / Agency (Optional)</option>
-      <option>LNDRRMO</option>
+      <option>MNDRRMO</option>
       <option>BFP</option>
       <option>PNP</option>
       <option>Local Health Office/RHU</option>
@@ -102,9 +102,12 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script>
-  let responderOn = true;
+<script type="module">
+  import { auth, db } from './firebase.js';
+  import { createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+  let responderOn = true;
 
   function showToast(msg, success = false) {
     var t = document.getElementById('toast');
@@ -125,7 +128,6 @@
   function val(id)    { return document.getElementById(id).value.trim(); }
   function selVal(id) { return document.getElementById(id).value; }
 
-
   window.toggleResponder = function() {
     responderOn = !responderOn;
     const toggle  = document.getElementById('responderToggle');
@@ -143,7 +145,7 @@
     showToast('🔄 Google sign-up not yet connected.', false);
   };
 
-  document.getElementById('signupBtn').onclick = function () {
+  document.getElementById('signupBtn').onclick = async function () {
     const firstName = val('firstNameInput');
     const lastName  = val('lastNameInput');
     const username  = val('usernameInput');
@@ -151,7 +153,6 @@
     const phone     = val('phoneInput');
     const pass      = val('passInput');
     const confirm   = val('confirmInput');
-
 
     if (!firstName)           { showToast('⚠️ Please enter your first name');         markInvalid('firstNameInput'); return; }
     if (!lastName)            { showToast('⚠️ Please enter your last name');          markInvalid('lastNameInput');  return; }
@@ -189,31 +190,36 @@
       responderData = { status, org, badge, barangay, municipality, province: 'Aklan' };
     }
 
+    showToast('🔄 Creating account...', true);
 
-    const existing = JSON.parse(localStorage.getItem('responder_users') || '[]');
-    if (existing.find(u => u.email === email)) {
-      showToast('⚠️ An account with this email already exists'); markInvalid('emailInput'); return;
+    try {
+      // We rely on Firebase Auth email uniqueness; username collisions are checked in localStorage
+      const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+      const uid = userCredential.user.uid;
+
+      const userDoc = {
+        uid,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
+        username,
+        email,
+        phone,
+        isResponder: responderOn,
+        responder: responderData,
+        createdAt: new Date().toISOString(),
+      };
+
+      // Write user document to path covered by your security rules
+      await setDoc(doc(db, 'users', uid), userDoc);
+
+      showToast('✅ Account created! Redirecting to login…', true);
+      setTimeout(() => { window.location.href = 'Loginresponder.html'; }, 1500);
+
+    } catch (error) {
+      console.error('Sign-up failed', error);
+      showToast('⚠️ ' + (error.message || 'Sign-up failed'));
     }
-    if (existing.find(u => u.username === username)) {
-      showToast('⚠️ That username is already taken'); markInvalid('usernameInput'); return;
-    }
-
-
-    const newUser = {
-      firstName, lastName,
-      fullName: firstName + ' ' + lastName,
-      username, email, phone,
-      password: pass,
-      isResponder: responderOn,
-      responder: responderData,
-      createdAt: new Date().toISOString()
-    };
-    existing.push(newUser);
-    localStorage.setItem('responder_users', JSON.stringify(existing));
-    localStorage.setItem('responder_current_email', email);
-
-    showToast('✅ Account created! Redirecting to login…', true);
-    setTimeout(() => { window.location.href = 'Loginresponder.html'; }, 1600);
   };
 </script>
 </body>

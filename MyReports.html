@@ -144,7 +144,7 @@
 
 <script type="module">
     import { db, auth } from "./firebase.js";
-    import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { collection, getDocs, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     // ─── State ───────────────────────────────────────────────────────────────
@@ -278,6 +278,42 @@
         return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
     }
 
+    async function enrichReportNames(items) {
+        const cache = new Map();
+        const promises = items.map(async item => {
+            if (!item.userId) return;
+            if (cache.has(item.userId)) {
+                item.reporterName = cache.get(item.userId);
+                return;
+            }
+            try {
+                const userRef = doc(db, 'users', item.userId);
+                const userSnap = await getDoc(userRef);
+                let name = null;
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    name = data.name || data.fullName || data.displayName || null;
+                }
+                if (!name) {
+                    const responderRef = doc(db, 'responders', item.userId);
+                    const responderSnap = await getDoc(responderRef);
+                    if (responderSnap.exists()) {
+                        const data = responderSnap.data();
+                        name = data.fullName || data.name || data.displayName || null;
+                    }
+                }
+                if (!name && item.submittedBy && item.submittedBy.includes('@')) {
+                    name = item.submittedBy.split('@')[0];
+                }
+                cache.set(item.userId, name);
+                item.reporterName = name;
+            } catch (err) {
+                console.warn('Could not enrich reporter name', err);
+            }
+        });
+        await Promise.all(promises);
+    }
+
     // ─── Filter ───────────────────────────────────────────────────────────────
     function setFilter(filter) {
         currentFilter = filter;
@@ -321,7 +357,8 @@
             : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
 
         // Owner badge
-        const ownerName       = escapeHtml(r.submittedBy || 'Unknown');
+        const ownerName       = escapeHtml(r.reporterName || r.name || r.submittedBy || 'Unknown');
+        const ownerDetail     = escapeHtml(r.submittedBy || r.email || '');
         const ownerBadgeClass = isOwner ? 'badge-you' : 'badge-other';
         const ownerBadge      = `<span class="user-badge ${ownerBadgeClass}"><i class="fas fa-user"></i> ${ownerName}</span>`;
 
@@ -378,6 +415,10 @@
         // Timestamp row (common)
         rows += `
             <div class="card-row">
+                <i class="fas fa-user ${iconClass}"></i>
+                <div><div class="row-label">Reporter</div><div class="row-val">${ownerName}${ownerDetail ? ` (${ownerDetail})` : ''}</div></div>
+            </div>
+            <div class="card-row">
                 <i class="fas fa-clock ${iconClass}"></i>
                 <div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div>
             </div>`;
@@ -410,6 +451,7 @@
 
         const [floods, helps] = await Promise.all([getAllFloodReports(), getAllHelpRequests()]);
         let items = [...floods, ...helps];
+        await enrichReportNames(items);
 
         if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
         if (currentFilter === 'help')  items = items.filter(i => i.type === 'help');

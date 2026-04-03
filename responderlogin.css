@@ -748,3 +748,21 @@ body {
     text-align: center; padding: 24px 0;
     color: rgba(255,255,255,0.4); font-size: 13px;
 }
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 30px;
+    padding: 7px 14px 7px 10px;
+    color: #93c5fd;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+}
+.back-btn:active { background: rgba(255,255,255,0.15); }
+.back-btn svg { width: 16px; height: 16px; stroke: #93c5fd; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }

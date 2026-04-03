@@ -30,7 +30,6 @@
 
     <button class="login-btn" id="loginBtn">Login</button>
 
-    <button class="guest-btn" id="guestBtn">Continue as Guest</button>
 
     <div style="margin-top: 16px; color: rgba(255,255,255,0.6); font-size: 13px; text-align: center;">
         Don't have an account? <span onclick="window.location.href='Signupresponder.html'" style="color: #f5900a; font-weight: 700; cursor: pointer;">Sign Up</span>
@@ -39,7 +38,10 @@
     <div class="home-indicator"></div>
     <div class="toast" id="toast"></div>
 </div>
-<script>
+<script type="module">
+    import { auth } from './firebase.js';
+    import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
     function showToast(msg) {
         var t = document.getElementById('toast');
         t.textContent = msg;
@@ -53,36 +55,37 @@
         el.addEventListener('input', () => el.style.boxShadow = '', { once: true });
     }
 
-    document.getElementById('loginBtn').onclick = function() {
+    document.getElementById('loginBtn').onclick = async function() {
         var emailOrUser = document.getElementById('emailInput').value.trim();
         var pass        = document.getElementById('passInput').value.trim();
 
-        /* field presence checks */
         if (!emailOrUser) { showToast('⚠️ Please enter your email or username'); markInvalid('emailInput'); return; }
         if (!pass)        { showToast('⚠️ Please enter your password');           markInvalid('passInput');  return; }
         if (pass.length < 6) { showToast('⚠️ Password must be at least 6 characters'); markInvalid('passInput'); return; }
 
-        /* look up user in localStorage */
-        const users = JSON.parse(localStorage.getItem('responder_users') || '[]');
-        const user  = users.find(u =>
-            (u.email === emailOrUser || u.username === emailOrUser) && u.password === pass
-        );
+        showToast('🔄 Signing in...', true);
 
-        if (!user) {
-            showToast('⚠️ Incorrect email/username or password');
+        try {
+            // Login using email address only (responder usernames require extra Firestore read rules)
+            if (!emailOrUser.includes('@')) {
+                throw new Error('Please log in using email address');
+            }
+
+            await signInWithEmailAndPassword(auth, emailOrUser, pass);
+            showToast('✅ Login successful! Redirecting...', true);
+
+            setTimeout(() => {
+                window.location.href = 'responderhomepage.html';
+            }, 1000);
+
+        } catch (error) {
+            console.error('Login failed', error);
+            showToast('⚠️ ' + (error.message || 'Login failed.'));            
             markInvalid('emailInput');
             markInvalid('passInput');
-            return;
         }
-
-        /* success → go to dashboard */
-        localStorage.setItem('responder_current_user', JSON.stringify(user));
-        window.location.href = 'responderlogin.html';
     };
 
-    document.getElementById('guestBtn').onclick = function() {
-        window.location.href = 'responderlogin.html';
-    };
 </script>
 </body>
 </html>

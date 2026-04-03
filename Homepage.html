@@ -243,18 +243,39 @@
 
 
 <script type="module">
-    import { auth } from "./firebase.js";
+    import { auth, db } from "./firebase.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     // ─── Auth ─────────────────────────────────────────────────────────
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         const drawerName   = document.getElementById('drawerName');
         const drawerEmail  = document.getElementById('drawerEmail');
         const drawerAvatar = document.getElementById('drawerAvatar');
 
         if (user) {
-            const name = user.displayName
-                || (user.email ? user.email.split('@')[0] : 'Tabang User');
+            let name = user.displayName || null;
+
+            try {
+                const userId = user.uid;
+                const userDoc = await getDoc(doc(db, 'users', userId));
+                if (userDoc.exists()) {
+                    const data = userDoc.data();
+                    name = name || data.name || data.fullName || data.displayName || null;
+                }
+
+                if (!name) {
+                    const responderDoc = await getDoc(doc(db, 'responders', userId));
+                    if (responderDoc.exists()) {
+                        const data = responderDoc.data();
+                        name = name || data.fullName || data.name || data.displayName || null;
+                    }
+                }
+            } catch (err) {
+                console.warn('Failed to load profile name from Firestore:', err);
+            }
+
+            name = name || (user.email ? user.email.split('@')[0] : 'Tabang User');
             drawerName.textContent  = name;
             drawerEmail.textContent = user.email || 'Aklan Resident';
             const initials = name.split(/\s+/).map(w => w[0].toUpperCase()).slice(0, 2).join('');

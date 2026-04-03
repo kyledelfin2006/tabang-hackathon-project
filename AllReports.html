@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="stylesheet" href="responderlogin.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <title>All Reports | Tabang Responder</title>
+    <style>
+        .card-actions {
+            margin-top: 12px;
+            text-align: right;
+        }
+        .respond-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .respond-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+        .respond-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+<div class="responder-dashboard">
+    <div class="aurora-bg"></div>
+
+    <div class="view-panel active" id="viewReports">
+        <div class="panel-header" style="padding-top:20px;">
+            <button class="back-btn" onclick="window.location.href='responderhomepage.html'">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                    Back
+                </button>
+
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div class="panel-title">All Reports</div>
+                    <div class="panel-subtitle">View &amp; comment on community reports</div>
+                </div>
+                <div style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);padding:3px 12px;border-radius:30px;font-size:11px;font-weight:700;margin-top:4px;">LIVE</div>
+            </div>
+        </div>
+        <div class="filter-row" style="margin-top:10px;">
+            <button class="filter-pill active" id="repFilterAll" onclick="setRepFilter('all',this)">All</button>
+            <button class="filter-pill" id="repFilterFlood" onclick="setRepFilter('flood',this)">🌊 Floods</button>
+            <button class="filter-pill" id="repFilterHelp" onclick="setRepFilter('help',this)">🆘 Help</button>
+        </div>
+        <div class="search-wrap">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="repSearch" placeholder="Search reports..." oninput="renderFloodReports()">
+            </div>
+        </div>
+        <div class="panel-scroll" id="reportsList">
+            <div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading reports...</div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+    
+        <div class="nav-item" onclick="window.location.href='responderhotline.html'">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.38 2 2 0 0 1 3.57 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+                </svg>
+            </div>
+            <span>Hotlines</span>
+        </div>
+        <div class="nav-item active">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <span>All Reports</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='AccountInformation.html'">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <span>Account</span>
+        </div>
+    </nav>
+
+    <script type="module">
+        import { db, auth } from './firebase.js';
+        import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+        import { collection, getDocs, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+        let currentUser = null;
+        let repFilter = 'all';
+
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = 'responderlogin.html';
+                return;
+            }
+            currentUser = user;
+            renderFloodReports();
+        });
+
+
+        function setRepFilter(filter, btn) {
+            repFilter = filter;
+            document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderFloodReports();
+        }
+
+        window.setRepFilter = setRepFilter;
+
+        async function updateStatus(id, type, currentStatus) {
+            let newStatus;
+            if (currentStatus === 'unresolved') {
+                newStatus = 'responding';
+            } else if (currentStatus === 'responding') {
+                newStatus = 'resolved';
+            } else {
+                return; // already resolved
+            }
+            try {
+                const collectionName = type === 'flood' ? 'floodReports' : 'helpRequests';
+                await updateDoc(doc(db, collectionName, id), { status: newStatus });
+                renderFloodReports(); // re-render to update button
+            } catch (e) {
+                alert('Failed to update status: ' + e.message);
+            }
+        }
+
+        window.updateStatus = updateStatus;
+
+        function getButtonText(status) {
+            if (status === 'unresolved') return 'Respond';
+            if (status === 'responding') return 'Responding';
+            return 'Resolved';
+        }
+
+        async function renderFloodReports() {
+            const container = document.getElementById('reportsList');
+            if (!container) return;
+            container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+            try {
+                const [fSnap, hSnap] = await Promise.all([
+                    getDocs(collection(db, 'floodReports')),
+                    getDocs(collection(db, 'helpRequests'))
+                ]);
+                let floods = fSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+                let helps  = hSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
+                let items  = repFilter === 'flood' ? floods : repFilter === 'help' ? helps : [...floods, ...helps];
+
+                const q = (document.getElementById('repSearch')?.value || '').toLowerCase();
+                if (q) items = items.filter(r => (r.location + r.name + r.description + r.details + r.submittedBy).toLowerCase().includes(q));
+
+                items.sort((a,b) => {
+                    const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp||0);
+                    const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp||0);
+                    return tb - ta;
+                });
+
+                if (!items.length) {
+                    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-water"></i></div><div class="empty-title">No Reports</div><div class="empty-sub">No matching reports found.</div></div>`;
+                    return;
+                }
+
+                container.innerHTML = `<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${items.length} Report${items.length !== 1 ? 's' : ''}</div>` +
+                    items.map(r => {
+                        const isHelp = r.type === 'help';
+                        const rows = isHelp
+                            ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
+                   <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
+                            : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
+                   ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
+                        return `
+            <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
+                <div class="card-top-row">
+                    <span class="type-badge ${isHelp ? 'badge-help' : 'badge-flood'}">
+                        ${isHelp ? '<i class="fas fa-ambulance"></i> Help Request' : '<i class="fas fa-water"></i> Flood Report'}
+                    </span>
+                    <span class="card-time">${timeAgo(r.timestamp)}</span>
+                </div>
+                <div class="card-row">
+                    <i class="fas fa-user row-icon"></i>
+                    <div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(r.submittedBy)}</div></div>
+                </div>
+                ${rows}
+                <div class="card-row">
+                    <i class="fas fa-clock row-icon"></i>
+                    <div><div class="row-label">Submitted</div><div class="row-val">${fmtDate(r.timestamp)}</div></div>
+                </div>
+                <div class="card-actions">
+                    <button class="respond-btn" onclick="updateStatus('${r.id}', '${r.type}', '${r.status || 'unresolved'}')">${getButtonText(r.status || 'unresolved')}</button>
+                </div>
+            
+            </div>`;
+                    }).join('') + '<div style="height:12px;"></div>';
+
+            } catch(e) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error Loading</div><div class="empty-sub">${e.message}</div></div>`;
+            }
+        }
+
+        function timeAgo(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            return `${diffDays}d ago`;
+        }
+
+        function fmtDate(timestamp) {
+            if (!timestamp) return 'Unknown';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString();
+        }
+
+        function escHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function viewReport(id, type) {
+            // Placeholder for viewing report details
+            alert(`Viewing ${type} report ${id}`);
+        }
+
+        window.viewReport = viewReport;
+    </script>
+</div>
+</body>
+</html>
