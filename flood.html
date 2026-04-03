@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <link rel="stylesheet" href="flood.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <style>
+        .nav-icon i { font-size: 20px; color: #8fa8d0; transition: color 0.2s ease; }
+        .nav-item.active .nav-icon i { color: #4ade80; }
+    </style>
+    <title>Flood Response | Active Reports</title>
+
+
+</head>
+<body>
+
+<div class="phone">
+    <div class="aurora-bg"></div>
+    <div class="dashboard-content">
+
+        <div class="status-bar">
+            <span style="font-weight:700;">9:41</span>
+            <div class="status-icons">
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
+            </div>
+        </div>
+
+        <div class="top-header">
+            <div class="brand">
+                <h1>Flood</h1>
+                <span class="brand-badge">LIVE</span>
+            </div>
+            <div class="bell-btn">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <div class="notif-dot"></div>
+            </div>
+        </div>
+
+        <div class="tabs-bar">
+            <div class="tab-pill active" onclick="switchTab(this)">All</div>
+            <div class="tab-pill" onclick="switchTab(this)">Nearby</div>
+            <div class="tab-pill" onclick="switchTab(this)">Urgent</div>
+            <div class="tab-pill" onclick="switchTab(this)">Responded</div>
+        </div>
+
+        <div class="map-card">
+            <div class="map-inner">
+                <div class="map-label">Live Map</div>
+                <div class="map-pin urgent"></div>
+                <div class="map-pin high"></div>
+                <div class="map-pin moderate"></div>
+                <div class="map-legend">
+                    <span><span class="legend-dot" style="background:#ff3b30;"></span>Urgent</span>
+                    <span><span class="legend-dot" style="background:#ff8800;"></span>High</span>
+                    <span><span class="legend-dot" style="background:#ffd600;"></span>Moderate</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <div class="section-title">⚠️ ACTIVE FLOOD REPORTS</div>
+            <div class="live-badge">LIVE</div>
+        </div>
+
+        <div class="reports-list">
+
+            <!-- CARD 1: URGENT — San Roque (sorted first) -->
+            <div class="report-card is-urgent" data-location="Brgy. San Roque" data-status="active" data-urgency="urgent">
+                <div class="card-visual v3">
+                    <div class="sky-layer"></div>
+                    <div class="buildings">
+                        <div class="bldg"><div class="window-row"><div class="win dark"></div><div class="win dark"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win dark"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win dark"></div><div class="win dark"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win dark"></div><div class="win dark"></div></div></div>
+                    </div>
+                    <div class="water-layer"></div>
+                    <div class="water-surface">
+                        <svg viewBox="0 0 300 6" preserveAspectRatio="none"><path d="M0 4 Q37 1 75 4 Q112 7 150 4 Q187 1 225 4 Q262 7 300 4 L300 6 L0 6Z" fill="rgba(255,255,255,0.15)"/></svg>
+                    </div>
+                    <!-- Weather -->
+                    <div class="img-weather">
+                        <svg viewBox="0 0 24 24"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8" y2="21"/><line x1="8" y1="21" x2="6" y2="19"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="12" y1="23" x2="10" y2="21"/><line x1="16" y1="16" x2="16" y2="21"/><line x1="16" y1="21" x2="14" y2="19"/></svg>
+                        Heavy Rain
+                    </div>
+                    <div class="urgency-tag tag-urgent">URGENT</div>
+                    <!-- Timestamp watermark -->
+                    <div class="img-timestamp">Apr 2 · 9:28am</div>
+                    <!-- Reporter count -->
+                    <div class="reporter-count">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        5 residents
+                    </div>
+                    <!-- Depth scale -->
+                    <div class="depth-scale">
+                        <div class="depth-bar" style="height:60px;">
+                            <div class="depth-fill" style="height:75%;background:rgba(255,59,48,0.7);"></div>
+                        </div>
+                        <div class="depth-label">~90cm<br/>deep</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-location">Brgy. San Roque</div>
+                    <div class="card-desc">Evacuation Needed · Waist Deep</div>
+                    <div class="card-meta">
+                        <div class="card-info">
+                            <div class="meta-line">🕐 3 mins ago · 9:28am</div>
+                            <div class="meta-line">Reported by: <b>5 Residents</b></div>
+                        </div>
+                        <div class="reporter-av">👤</div>
+                    </div>
+                    <button class="view-btn" onclick="handleView('Brgy. San Roque')">View Details →</button>
+                </div>
+            </div>
+
+            <!-- CARD 2: HIGH — Poblacion -->
+            <div class="report-card" data-location="Brgy. Poblacion" data-status="active">
+                <div class="card-visual v1">
+                    <div class="sky-layer"></div>
+                    <div class="buildings">
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win dark"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win dark"></div><div class="win"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win dark"></div></div></div>
+                    </div>
+                    <div class="water-layer"></div>
+                    <div class="water-surface">
+                        <svg viewBox="0 0 300 6" preserveAspectRatio="none"><path d="M0 3 Q37 0 75 3 Q112 6 150 3 Q187 0 225 3 Q262 6 300 3 L300 6 L0 6Z" fill="rgba(255,255,255,0.12)"/></svg>
+                    </div>
+                    <div class="img-weather">
+                        <svg viewBox="0 0 24 24"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8" y2="21"/><line x1="8" y1="21" x2="6" y2="19"/><line x1="12" y1="18" x2="12" y2="23"/><line x1="12" y1="23" x2="10" y2="21"/><line x1="16" y1="16" x2="16" y2="21"/><line x1="16" y1="21" x2="14" y2="19"/></svg>
+                        Heavy Rain
+                    </div>
+                    <div class="urgency-tag tag-high">HIGH</div>
+                    <div class="img-timestamp">Apr 2 · 9:30am</div>
+                    <div class="reporter-count">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        3 residents
+                    </div>
+                    <div class="depth-scale">
+                        <div class="depth-bar" style="height:60px;">
+                            <div class="depth-fill" style="height:55%;background:rgba(255,136,0,0.7);"></div>
+                        </div>
+                        <div class="depth-label">~60cm<br/>deep</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-location">Brgy. Poblacion</div>
+                    <div class="card-desc">Knee Deep Flooding</div>
+                    <div class="card-meta">
+                        <div class="card-info">
+                            <div class="meta-line">🕐 5 mins ago · 9:30am</div>
+                            <div class="meta-line">Reported by: <b>3 Residents</b></div>
+                        </div>
+                        <div class="reporter-av">👤</div>
+                    </div>
+                    <button class="view-btn" onclick="handleView('Brgy. Poblacion')">View Details →</button>
+                </div>
+            </div>
+
+            <!-- CARD 3: MODERATE — San Isidro -->
+            <div class="report-card" data-location="Brgy. San Isidro" data-status="active" data-urgency="moderate">
+                <div class="card-visual v2">
+                    <div class="sky-layer"></div>
+                    <div class="buildings">
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win dark"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win dark"></div><div class="win"></div></div></div>
+                        <div class="bldg"><div class="window-row"><div class="win"></div><div class="win"></div></div></div>
+                    </div>
+                    <div class="water-layer"></div>
+                    <div class="water-surface">
+                        <svg viewBox="0 0 300 6" preserveAspectRatio="none"><path d="M0 3 Q37 1 75 3 Q112 5 150 3 Q187 1 225 3 Q262 5 300 3 L300 6 L0 6Z" fill="rgba(255,255,255,0.1)"/></svg>
+                    </div>
+                    <div class="img-weather">
+                        <svg viewBox="0 0 24 24"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+                        Overcast
+                    </div>
+                    <div class="urgency-tag tag-moderate">MODERATE</div>
+                    <div class="img-timestamp">Apr 2 · 9:30am</div>
+                    <div class="reporter-count">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        2 residents
+                    </div>
+                    <div class="depth-scale">
+                        <div class="depth-bar" style="height:60px;">
+                            <div class="depth-fill" style="height:30%;background:rgba(255,214,0,0.7);"></div>
+                        </div>
+                        <div class="depth-label">~30cm<br/>deep</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="card-location">Brgy. San Isidro</div>
+                    <div class="card-desc">Ankle to Feet Deep Flooding</div>
+                    <div class="card-meta">
+                        <div class="card-info">
+                            <div class="meta-line">🕐 12 mins ago · 9:30am</div>
+                            <div class="meta-line">Reported by: <b>2 Residents</b></div>
+                        </div>
+                        <div class="reporter-av">👤</div>
+                    </div>
+                    <button class="view-btn" onclick="handleView('Brgy. San Isidro')">View Details →</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="setActive(this)">
+            <div class="nav-icon">
+                <i class="fas fa-hand-holding-water"></i>
+            </div>
+            <span>Request</span>
+            <div class="nav-dot"></div>
+        </div>
+        <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.38 2 2 0 0 1 3.57 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+                </svg>
+            </div>
+            <span>Hotlines</span>
+        </div>
+        <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+            </div>
+            <span>Report</span>
+        </div>
+        <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+            </div>
+            <span>Reports</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='accountinfo.html?from=flood.html'">
+            <div class="nav-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            </div>
+            <span>Account</span>
+        </div>
+    </nav>
+</div>
+
+<script>
+    function switchTab(el) {
+        document.querySelectorAll('.tab-pill').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        filterCards(el.textContent.trim());
+    }
+
+    function filterCards(tab) {
+        const cards = document.querySelectorAll('.report-card');
+        const sectionTitle = document.querySelector('.section-title');
+        const liveBadge = document.querySelector('.live-badge');
+
+        cards.forEach(card => {
+            const status = card.getAttribute('data-status');
+            const urgency = card.getAttribute('data-urgency');
+
+            let show = false;
+            if (tab === 'All') {
+                show = true;
+            } else if (tab === 'Responded') {
+                show = status === 'responded';
+            } else if (tab === 'Urgent') {
+                show = status === 'active' && urgency === 'urgent';
+            } else if (tab === 'Nearby') {
+                show = status === 'active';
+            }
+            card.style.display = show ? '' : 'none';
+        });
+
+        if (tab === 'Responded') {
+            sectionTitle.textContent = '✅ RESPONDED REPORTS';
+            liveBadge.style.display = 'none';
+        } else {
+            sectionTitle.textContent = '⚠️ ACTIVE FLOOD REPORTS';
+            liveBadge.style.display = '';
+        }
+    }
+
+    function setActive(el) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    function handleView(location) {
+        window.location.href = 'flooddetails.html';
+    }
+
+    // On load: check if a report was just marked as responded
+    window.addEventListener('DOMContentLoaded', () => {
+        const responded = localStorage.getItem('respondedReport');
+        if (responded) {
+            localStorage.removeItem('respondedReport');
+
+            // Mark the matching card as responded
+            const card = document.querySelector(`.report-card[data-location="${responded}"]`);
+            if (card) {
+                card.setAttribute('data-status', 'responded');
+
+                // Add a visual "Responded" badge to the card
+                const cardBody = card.querySelector('.card-body');
+                const existingBadge = cardBody.querySelector('.responded-badge');
+                if (!existingBadge) {
+                    const badge = document.createElement('div');
+                    badge.className = 'responded-badge';
+                    badge.innerHTML = '✅ Responded';
+                    badge.style.cssText = 'display:inline-block;margin-top:6px;padding:3px 10px;border-radius:20px;background:rgba(74,222,128,0.15);color:#4ade80;font-size:11px;font-weight:700;letter-spacing:0.5px;border:1px solid rgba(74,222,128,0.3);';
+                    cardBody.insertBefore(badge, cardBody.querySelector('.view-btn'));
+                }
+
+                // Update status line in card
+                const statusLine = card.querySelector('.meta-line');
+                if (statusLine) statusLine.textContent = '✅ Marked as Responded';
+            }
+
+            // Switch to Responded tab
+            const tabs = document.querySelectorAll('.tab-pill');
+            tabs.forEach(t => {
+                t.classList.remove('active');
+                if (t.textContent.trim() === 'Responded') t.classList.add('active');
+            });
+            filterCards('Responded');
+        }
+    });
+</script>
+</body>
+</html>

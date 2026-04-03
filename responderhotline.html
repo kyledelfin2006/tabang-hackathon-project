@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><!DOCTYPE html>
+        <html lang="en">
+        <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <title>Emergency Hotlines | Responder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="ResponderHotline.css">
+</head>
+<body>
+<div class="phone">
+    <div class="aurora-bg"></div>
+
+  
+    <div class="view active" id="hotlinesView">
+
+        <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
+                <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
+            </div>
+        </div>
+
+        <div class="header">
+            <div class="header-top">
+                <button class="back-btn" onclick="window.location.href='responderlogin.html'">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                    Back
+                </button>
+                <div class="bell-btn">
+                    <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <div class="notif-dot"></div>
+                </div>
+            </div>
+            <div class="header-title">Emergency Hotlines</div>
+            <div class="header-subtitle">Review and rate Emergency Hotlines in Aklan</div>
+        </div>
+
+        <div class="search-wrap">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search hotlines..." oninput="filterCards()">
+            </div>
+        </div>
+
+        <div class="content" id="cardList">
+
+            <div class="section-label">🚨 Emergency Services</div>
+
+            <!-- BFP -->
+            <div class="card" data-id="bfp" data-search="bfp aklan provincial fire office fire 09517831223">
+                <div class="card-header">
+                    <div class="card-icon fire">
+                        <svg viewBox="0 0 32 32" fill="none" width="26" height="26">
+                            <path d="M16 6c0 0-2 3-2 6 0 1.1.9 2 2 2s2-.9 2-2c0-1-.4-2-.4-2S20 12 20 16c0 2.2-1.8 4-4 4s-4-1.8-4-4c0-3 2-6 2-6s-3 2-3 5c0 3.3 2.7 6 6 6s6-2.7 6-6c0-5-5-9-7-10z" fill="#ff6b6b"/>
+                        </svg>
+                    </div>
+                    <div class="card-title-wrap">
+                        <div class="card-title">BFP Aklan Provincial Fire Office</div>
+                        <div class="card-type">🔥 Fire & Rescue</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <span>09517831223</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-clock"></i></div>
+                        <span>24/7 Emergency Response</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Kalibo, Aklan</span>
+                    </div>
+                    <button class="call-btn" onclick="window.location.href='tel:09517831223'">
+                        <i class="fas fa-phone-alt"></i> Call Now
+                    </button>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="bfp">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">12</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="bfp">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">2</span>
+                        </button>
+                        <button class="comment-btn" data-card="bfp" data-name="BFP Aklan Provincial Fire Office">
+                            <i class="fas fa-comment-dots"></i> Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kalibo Police -->
+            <div class="card" data-id="kalibo" data-search="kalibo police station pnp 0939 916 7066">
+                <div class="card-header">
+                    <div class="card-icon police">
+                        <svg viewBox="0 0 32 32" fill="none" width="26" height="26">
+                            <path d="M16 5l-8 3v7c0 4.4 3.4 8.5 8 9.5 4.6-1 8-5.1 8-9.5V8l-8-3z" fill="#93c5fd" opacity="0.9"/>
+                            <path d="M13 15l2 2 4-4" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-title-wrap">
+                        <div class="card-title">Kalibo Police Station</div>
+                        <div class="card-type">🚔 Law Enforcement</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <span>0939 916 7066</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-clock"></i></div>
+                        <span>24/7 Emergency Response</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Kalibo, Aklan</span>
+                    </div>
+                    <button class="call-btn" onclick="window.location.href='tel:09399167066'">
+                        <i class="fas fa-phone-alt"></i> Call Now
+                    </button>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="kalibo">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">8</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="kalibo">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">1</span>
+                        </button>
+                        <button class="comment-btn" data-card="kalibo" data-name="Kalibo Police Station">
+                            <i class="fas fa-comment-dots"></i> Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MDRRMO -->
+            <div class="card" data-id="mdrrmo" data-search="mdrrmo numancia disaster risk reduction 0931 775 8445">
+                <div class="card-header">
+                    <div class="card-icon mdrrmo">
+                        <svg viewBox="0 0 32 32" fill="none" width="26" height="26">
+                            <rect x="13" y="8" width="6" height="16" rx="1.5" fill="#4ade80"/>
+                            <rect x="8" y="13" width="16" height="6" rx="1.5" fill="#4ade80"/>
+                        </svg>
+                    </div>
+                    <div class="card-title-wrap">
+                        <div class="card-title">MDRRMO Numancia</div>
+                        <div class="card-type">🆘 Disaster Response</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <span>0931 775 8445</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-clock"></i></div>
+                        <span>Mon – Fri, 8:00 AM – 5:00 PM</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Numancia, Aklan</span>
+                    </div>
+                    <button class="call-btn" onclick="window.location.href='tel:09317758445'">
+                        <i class="fas fa-phone-alt"></i> Call Now
+                    </button>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="mdrrmo">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">15</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="mdrrmo">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">0</span>
+                        </button>
+                        <button class="comment-btn" data-card="mdrrmo" data-name="MDRRMO Numancia">
+                            <i class="fas fa-comment-dots"></i> Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-label">🏥 Medical & Relief</div>
+
+            <!-- Coast Guard -->
+            <div class="card" data-id="coastguard" data-search="philippine coast guard aklan maritime rescue">
+                <div class="card-header">
+                    <div class="card-icon coast">
+                        <svg viewBox="0 0 32 32" fill="none" width="26" height="26">
+                            <path d="M4 20c3-2 5 2 8 0s5-2 8 0 5 2 8 0" stroke="#67e8f9" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M16 6v10M12 10l4-4 4 4" stroke="#67e8f9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="card-title-wrap">
+                        <div class="card-title">Philippine Coast Guard – Aklan</div>
+                        <div class="card-type">⚓ Maritime Rescue</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <span>(036) 268-5501</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-clock"></i></div>
+                        <span>24/7 Emergency Response</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Kalibo, Aklan</span>
+                    </div>
+                    <button class="call-btn" onclick="window.location.href='tel:0362685501'">
+                        <i class="fas fa-phone-alt"></i> Call Now
+                    </button>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="coastguard">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">6</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="coastguard">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">0</span>
+                        </button>
+                        <button class="comment-btn" data-card="coastguard" data-name="Philippine Coast Guard – Aklan">
+                            <i class="fas fa-comment-dots"></i> Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Red Cross -->
+            <div class="card" data-id="redcross" data-search="red cross aklan chapter relief medical">
+                <div class="card-header">
+                    <div class="card-icon pnrc">
+                        <svg viewBox="0 0 32 32" fill="none" width="26" height="26">
+                            <rect x="13" y="7" width="6" height="18" rx="1.5" fill="#f87171"/>
+                            <rect x="7" y="13" width="18" height="6" rx="1.5" fill="#f87171"/>
+                        </svg>
+                    </div>
+                    <div class="card-title-wrap">
+                        <div class="card-title">Red Cross – Aklan Chapter</div>
+                        <div class="card-type">🩸 Medical & Relief</div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-phone"></i></div>
+                        <span>(036) 262-4979</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-clock"></i></div>
+                        <span>Mon – Fri, 8:00 AM – 5:00 PM</span>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <span>Kalibo, Aklan</span>
+                    </div>
+                    <button class="call-btn" onclick="window.location.href='tel:0362624979'">
+                        <i class="fas fa-phone-alt"></i> Call Now
+                    </button>
+                    <div class="divider"></div>
+                    <div class="reaction-row">
+                        <button class="reaction-btn upvote" data-card="redcross">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>
+                            <span class="upvote-count">10</span>
+                        </button>
+                        <button class="reaction-btn downvote" data-card="redcross">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M15 3H6c-.83 0-1.54.5-1.84 1.22l-3.02 7.05c-.09.23-.14.47-.14.73v2c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L9.83 23l6.59-6.59c.36-.36.58-.86.58-1.41V5c0-1.1-.9-2-2-2zm4 0v12h4V3h-4z"/></svg>
+                            <span class="downvote-count">1</span>
+                        </button>
+                        <button class="comment-btn" data-card="redcross" data-name="Red Cross – Aklan Chapter">
+                            <i class="fas fa-comment-dots"></i> Review
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end content -->
+
+        <nav class="bottom-nav">
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="nav-icon">
+                    <i class="fas fa-hand-holding-water"></i>
+                </div>
+                <span>Request</span>
+                <div class="nav-dot"></div>
+            </div>
+            <div class="nav-item active" onclick="setActive(this)">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.38 2 2 0 0 1 3.57 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+                    </svg>
+                </div>
+                <span>Hotlines</span>
+                <div class="nav-dot"></div>
+            </div>
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                        <line x1="12" y1="9" x2="12" y2="13"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                </div>
+                <span>Report</span>
+                <div class="nav-dot"></div>
+            </div>
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="16" y1="13" x2="8" y2="13"/>
+                        <line x1="16" y1="17" x2="8" y2="17"/>
+                        <polyline points="10 9 9 9 8 9"/>
+                    </svg>
+                </div>
+                <span>Reports</span>
+                <div class="nav-dot"></div>
+            </div>
+            <div class="nav-item" onclick="setActive(this)">
+                <div class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                </div>
+                <span>Account</span>
+                <div class="nav-dot"></div>
+            </div>
+        </nav>
+    </div><!-- end hotlinesView -->
+
+    <!-- ── COMMENT VIEW ── -->
+    <div class="view" id="commentView">
+        <div class="status-bar" style="padding-top:14px;">
+            <span>9:41</span>
+            <div class="status-icons">
+                <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
+                <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
+            </div>
+        </div>
+        <div class="comment-header">
+            <div class="comment-header-top">
+                <button class="comment-back-btn" id="commentBackBtn">&#8249;</button>
+                <div class="comment-header-info">
+                    <div class="comment-header-title" id="commentTitle">Comments</div>
+                    <div class="comment-header-sub" id="commentSub">Share your review</div>
+                </div>
+            </div>
+        </div>
+        <div class="comments-list" id="commentsList"></div>
+        <div class="comment-input-bar">
+            <div class="comment-input-wrap">
+                <textarea class="comment-input" id="commentInput" placeholder="Write a comment or review..." rows="1"></textarea>
+            </div>
+            <button class="comment-send-btn" id="commentSendBtn">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+</div><!-- end phone -->
+
+<script>
+    const votes = {
+        bfp:       { up: 12, down: 2,  userVote: null },
+        kalibo:    { up: 8,  down: 1,  userVote: null },
+        mdrrmo:    { up: 15, down: 0,  userVote: null },
+        coastguard:{ up: 6,  down: 0,  userVote: null },
+        redcross:  { up: 10, down: 1,  userVote: null }
+    };
+    const comments = { bfp:[], kalibo:[], mdrrmo:[], coastguard:[], redcross:[] };
+    let currentCard = null;
+
+    // Votes
+    document.querySelectorAll('.reaction-btn.upvote').forEach(btn =>
+        btn.addEventListener('click', () => handleVote(btn.dataset.card, 'up')));
+    document.querySelectorAll('.reaction-btn.downvote').forEach(btn =>
+        btn.addEventListener('click', () => handleVote(btn.dataset.card, 'down')));
+
+    function handleVote(cardId, type) {
+        const v = votes[cardId];
+        if (!v) return;
+        const upBtn   = document.querySelector(`.reaction-btn.upvote[data-card="${cardId}"]`);
+        const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${cardId}"]`);
+        if (v.userVote === type) {
+            type === 'up' ? v.up-- : v.down--;
+            v.userVote = null;
+            upBtn.classList.remove('voted');
+            downBtn.classList.remove('voted');
+        } else {
+            if (v.userVote === 'up')   { v.up--;   upBtn.classList.remove('voted'); }
+            if (v.userVote === 'down') { v.down--; downBtn.classList.remove('voted'); }
+            if (type === 'up')   { v.up++;   upBtn.classList.add('voted');   pulseBtn(upBtn); }
+            else                 { v.down++; downBtn.classList.add('voted'); pulseBtn(downBtn); }
+            v.userVote = type;
+        }
+        upBtn.querySelector('.upvote-count').textContent   = v.up;
+        downBtn.querySelector('.downvote-count').textContent = v.down;
+    }
+
+    function pulseBtn(btn) {
+        btn.classList.remove('vote-pulse');
+        void btn.offsetWidth;
+        btn.classList.add('vote-pulse');
+        btn.addEventListener('animationend', () => btn.classList.remove('vote-pulse'), { once: true });
+    }
+
+    // Comments
+    document.querySelectorAll('.comment-btn').forEach(btn =>
+        btn.addEventListener('click', () => openComments(btn.dataset.card, btn.dataset.name)));
+
+    function openComments(cardId, cardName) {
+        currentCard = cardId;
+        if (!comments[cardId]) comments[cardId] = [];
+        document.getElementById('commentTitle').textContent = cardName;
+        document.getElementById('commentSub').textContent =
+            `${comments[cardId].length} comment${comments[cardId].length !== 1 ? 's' : ''}`;
+        renderComments(cardId);
+        document.getElementById('hotlinesView').classList.remove('active');
+        document.getElementById('commentView').classList.add('active');
+        document.getElementById('commentInput').value = '';
+        autoResize(document.getElementById('commentInput'));
+    }
+
+    function renderComments(cardId) {
+        const list = document.getElementById('commentsList');
+        const c = comments[cardId] || [];
+        if (!c.length) {
+            list.innerHTML = `<div class="no-comments"><i class="fas fa-comments"></i><span>No comments yet.<br>Be the first to review!</span></div>`;
+            return;
+        }
+        list.innerHTML = c.map(item => `
+            <div class="comment-item">
+                <div class="comment-item-top">
+                    <div class="comment-avatar">${item.initials}</div>
+                    <span class="comment-user">${item.user}</span>
+                    <span class="comment-time">${item.time}</span>
+                </div>
+                <div class="comment-text">${escHtml(item.text)}</div>
+            </div>`).join('');
+        list.scrollTop = list.scrollHeight;
+    }
+
+    document.getElementById('commentSendBtn').addEventListener('click', sendComment);
+    document.getElementById('commentInput').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendComment(); }
+    });
+    document.getElementById('commentInput').addEventListener('input', function() { autoResize(this); });
+
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+    }
+
+    function sendComment() {
+        const input = document.getElementById('commentInput');
+        const text  = input.value.trim();
+        if (!text || !currentCard) return;
+        if (!comments[currentCard]) comments[currentCard] = [];
+        const now  = new Date();
+        const names = ['Responder','Officer','User','Resident'];
+        const user  = names[Math.floor(Math.random()*names.length)] + ' ' + Math.floor(Math.random()*900+100);
+        comments[currentCard].push({
+            user, initials: user[0],
+            text,
+            time: now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
+        });
+        input.value = '';
+        autoResize(input);
+        renderComments(currentCard);
+        const c = comments[currentCard];
+        document.getElementById('commentSub').textContent =
+            `${c.length} comment${c.length !== 1 ? 's' : ''}`;
+    }
+
+    document.getElementById('commentBackBtn').addEventListener('click', () => {
+        document.getElementById('commentView').classList.remove('active');
+        document.getElementById('hotlinesView').classList.add('active');
+        currentCard = null;
+    });
+
+    // Nav
+    function setActive(el) {
+        document.querySelectorAll('#hotlinesView .nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    // Search
+    function filterCards() {
+        const q = document.getElementById('searchInput').value.toLowerCase();
+        document.querySelectorAll('.card').forEach(card => {
+            const searchText = card.dataset.search || '';
+            card.style.display = searchText.includes(q) ? '' : 'none';
+        });
+    }
+
+    function escHtml(t) {
+        const d = document.createElement('div');
+        d.textContent = t;
+        return d.innerHTML;
+    }
+</script>
+</body>
+</html></title>
+</head>
+<body>
+
+</body>
+</html>
