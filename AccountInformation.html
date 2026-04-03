@@ -536,7 +536,7 @@
             const email = localUser ? (localUser.email || user.email) : (user.email || 'No email');
             nameEl.textContent  = name || 'User';
             emailEl.textContent = email;
-            setInitialsAvatar(user.di            if (localUser) populateExtraFields(localUser);
+            if (localUser) populateExtraFields(localUser);
             setInitialsAvatar(name || 'U');
         }
     });

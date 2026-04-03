@@ -2,12 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title><!DOCTYPE html>
-        <html lang="en">
-        <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-        <title>Emergency Hotlines | Responder</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Emergency Hotlines | Responder</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="ResponderHotline.css">
@@ -16,7 +12,6 @@
 <div class="phone">
     <div class="aurora-bg"></div>
 
-  
     <div class="view active" id="hotlinesView">
 
         <div class="status-bar">
@@ -67,7 +62,7 @@
                     </div>
                     <div class="card-title-wrap">
                         <div class="card-title">BFP Aklan Provincial Fire Office</div>
-                        <div class="card-type">🔥 Fire & Rescue</div>
+                        <div class="card-type">🔥 Fire &amp; Rescue</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -197,7 +192,7 @@
                 </div>
             </div>
 
-            <div class="section-label">🏥 Medical & Relief</div>
+            <div class="section-label">🏥 Medical &amp; Relief</div>
 
             <!-- Coast Guard -->
             <div class="card" data-id="coastguard" data-search="philippine coast guard aklan maritime rescue">
@@ -257,7 +252,7 @@
                     </div>
                     <div class="card-title-wrap">
                         <div class="card-title">Red Cross – Aklan Chapter</div>
-                        <div class="card-type">🩸 Medical & Relief</div>
+                        <div class="card-type">🩸 Medical &amp; Relief</div>
                     </div>
                 </div>
                 <div class="card-body">
@@ -296,14 +291,14 @@
         </div><!-- end content -->
 
         <nav class="bottom-nav">
-            <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-item" onclick="window.location.href='responderlogin.html'">
                 <div class="nav-icon">
                     <i class="fas fa-hand-holding-water"></i>
                 </div>
                 <span>Request</span>
                 <div class="nav-dot"></div>
             </div>
-            <div class="nav-item active" onclick="setActive(this)">
+            <div class="nav-item active">
                 <div class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.6 3.38 2 2 0 0 1 3.57 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 5.55 5.55l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
@@ -312,7 +307,7 @@
                 <span>Hotlines</span>
                 <div class="nav-dot"></div>
             </div>
-            <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-item" onclick="window.location.href='responderlogin.html#viewReports'">
                 <div class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -323,7 +318,7 @@
                 <span>Report</span>
                 <div class="nav-dot"></div>
             </div>
-            <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-item" onclick="window.location.href='responderlogin.html#viewAll'">
                 <div class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -336,7 +331,7 @@
                 <span>Reports</span>
                 <div class="nav-dot"></div>
             </div>
-            <div class="nav-item" onclick="setActive(this)">
+            <div class="nav-item" onclick="window.location.href='responderlogin.html#viewAccount'">
                 <div class="nav-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -349,7 +344,7 @@
         </nav>
     </div><!-- end hotlinesView -->
 
-    <!-- ── COMMENT VIEW ── -->
+    <!-- COMMENT VIEW -->
     <div class="view" id="commentView">
         <div class="status-bar" style="padding-top:14px;">
             <span>9:41</span>
@@ -499,12 +494,6 @@
         currentCard = null;
     });
 
-    // Nav
-    function setActive(el) {
-        document.querySelectorAll('#hotlinesView .nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
-    }
-
     // Search
     function filterCards() {
         const q = document.getElementById('searchInput').value.toLowerCase();
@@ -520,10 +509,5 @@
         return d.innerHTML;
     }
 </script>
-</body>
-</html></title>
-</head>
-<body>
-
 </body>
 </html>

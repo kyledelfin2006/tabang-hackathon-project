@@ -311,7 +311,7 @@
             <div class="nav-dot"></div>
         </div>
         <!-- FIX: Account nav now switches to the viewAccount panel instead of navigating away -->
-        <div class="nav-item" id="navAccount" onclick="switchTab('viewAccount')">
+        <div class="nav-item" id="navAccount" onclick="window.location.href='AccountInformation.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -778,6 +778,7 @@
                 return;
             }
 
+
             if (allFilter === 'images') {
                 const allImgs = items.flatMap(r => (r.imageUrls || []).map(url => ({ url, r })));
                 container.innerHTML = `
@@ -901,8 +902,7 @@
         viewRequests: 'navRequests',
         viewReports:  'navReports',
         viewAll:      'navAll',
-        // FIX: Added viewAccount to tabMap so the nav dot highlights correctly
-        viewAccount:  'navAccount',
+
     };
 
     window.switchTab = function(panelId) {
@@ -919,7 +919,7 @@
     };
 
     window.goHotlines = function() {
-        window.location.href = 'Hotline.html';
+        window.location.href = 'responderhotline.html';
     };
 
     window.addEventListener('DOMContentLoaded', function() {
