@@ -98,7 +98,7 @@
                     <div class="map-icon">🗺️</div>
                     <div class="map-text">
                         <h4>Incident Map View</h4>
-                        <p>Purok 4, Pook Port & vicinity</p>
+                        <p>Purok 4, Pook Port &amp; vicinity</p>
                     </div>
                 </div>
                 <div class="navigate-btn">Navigate →</div>
@@ -150,7 +150,7 @@
             <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                 <div>
                     <div class="panel-title">Flood Reports</div>
-                    <div class="panel-subtitle">View & comment on community reports</div>
+                    <div class="panel-subtitle">View &amp; comment on community reports</div>
                 </div>
                 <div style="background:rgba(255,107,107,0.15);color:#ff6b6b;border:1px solid rgba(255,107,107,0.3);padding:3px 12px;border-radius:30px;font-size:11px;font-weight:700;margin-top:4px;">LIVE</div>
             </div>
@@ -176,7 +176,7 @@
         <div class="panel-header" style="padding-top:20px;">
             <div>
                 <div class="panel-title">All Submissions</div>
-                <div class="panel-subtitle">Requests, reports & uploaded images</div>
+                <div class="panel-subtitle">Requests, reports &amp; uploaded images</div>
             </div>
         </div>
         <div class="filter-row" style="margin-top:10px;">
@@ -189,6 +189,7 @@
             <div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading submissions...</div>
         </div>
     </div>
+
     <div class="view-panel" id="viewAccount">
         <div class="responder-profile">
             <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;font-size:13px;font-weight:700;color:#eef2ff;">
@@ -224,7 +225,6 @@
                 </div>
             </div>
 
-
             <div class="profile-section-card">
                 <div class="profile-section-title">Assignment</div>
                 <div class="profile-row">
@@ -244,7 +244,6 @@
                     <span class="profile-row-val" id="accSince">—</span>
                 </div>
             </div>
-
 
             <div class="profile-section-card">
                 <div class="profile-section-title">Stats</div>
@@ -311,7 +310,8 @@
             <span>Reports</span>
             <div class="nav-dot"></div>
         </div>
-        <div class="nav-item" id="navAccount" onclick="window.location.href='accountinfo.html?from=responderlogin.html'">
+        <!-- FIX: Account nav now switches to the viewAccount panel instead of navigating away -->
+        <div class="nav-item" id="navAccount" onclick="switchTab('viewAccount')">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -343,7 +343,12 @@
     let currentUser = null;
     let repFilter   = 'all';
     let allFilter   = 'all';
+
+    // FIX: Moved reqFilter here at module scope — removed the duplicate inner declaration below.
+    let reqFilter   = 'all';
+
     const commentStore = {};
+
     onAuthStateChanged(auth, async (user) => {
         currentUser = user;
         if (user) {
@@ -366,7 +371,6 @@
                         document.getElementById('accSince').textContent = dt.toLocaleDateString('en-US', { year:'numeric', month:'long' });
                     }
                 } else {
-                    // Fallback to auth info
                     document.getElementById('accName').textContent  = user.displayName || user.email || 'Responder';
                     document.getElementById('accEmail').textContent = user.email || '—';
                     document.getElementById('accId').textContent    = user.uid.slice(0,8).toUpperCase();
@@ -380,6 +384,7 @@
         renderFloodReports();
         renderAll();
     });
+
     function escHtml(t) {
         if (!t) return '—';
         const d = document.createElement('div');
@@ -444,7 +449,7 @@
         </div>`;
     }
 
-    let reqFilter = 'all';
+    // FIX: Removed the duplicate `let reqFilter = 'all'` that was here.
     // Track which request IDs have been marked responded (in-session)
     const respondedSet = new Set();
 
@@ -468,7 +473,6 @@
 
     window.markResponded = function(id) {
         respondedSet.add(id);
-        // Update card border/badge in DOM immediately
         const card = document.getElementById('req-card-' + id);
         if (card) {
             card.style.borderColor = 'rgba(74,222,128,0.35)';
@@ -478,7 +482,6 @@
         if (statusEl) statusEl.innerHTML = '<span style="background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);padding:3px 10px;border-radius:30px;font-size:11px;font-weight:700;">✅ Responded</span>';
         const respondBtn = document.getElementById('req-respond-btn-' + id);
         if (respondBtn) { respondBtn.disabled = true; respondBtn.style.opacity = '0.4'; }
-        // Re-render if filter is active
         if (reqFilter !== 'all') renderRequests();
     };
 
@@ -519,12 +522,6 @@
                     <div class="comment-text">${escHtml(c.text)}</div>
                 </div>`).join('');
         }
-        // Update toggle count
-        const toggle = document.getElementById('req-toggle-' + id);
-        if (toggle && document.getElementById('req-detail-' + id)?.style.display !== 'none') {
-            toggle.innerHTML = `<i class="fas fa-chevron-up"></i> Hide Details`;
-        }
-        // Update comment count badge
         const badge = document.getElementById('req-cmtcount-' + id);
         if (badge) badge.textContent = comments.length;
     }
@@ -537,23 +534,19 @@
             const snap = await getDocs(collection(db, 'helpRequests'));
             let items = snap.docs.map(d => ({ ...d.data(), id: d.id }));
 
-            // Apply status filter
             if (reqFilter === 'pending')  items = items.filter(r => !respondedSet.has(r.id));
             if (reqFilter === 'done')     items = items.filter(r =>  respondedSet.has(r.id));
 
-            // Search
             const q = (document.getElementById('reqSearch')?.value || '').toLowerCase();
             if (q) items = items.filter(r =>
                 (r.name + ' ' + r.phone + ' ' + r.description + ' ' + (r.submittedBy||'')).toLowerCase().includes(q));
 
-            // Sort newest first
             items.sort((a,b) => {
                 const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp||0);
                 const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp||0);
                 return tb - ta;
             });
 
-            // Update subtitle count
             const lbl = document.getElementById('reqCountLabel');
             if (lbl) lbl.textContent = `${items.length} request${items.length !== 1 ? 's' : ''} found`;
 
@@ -593,22 +586,15 @@
 
                 return `
                 <div class="entry-card help-card" id="req-card-${r.id}" style="${cardStyle}animation-delay:${idx*0.04}s;">
-
-                    <!-- TOP ROW: badge + time + status -->
                 <div class="card-top-row">
                 <span class="type-badge badge-help"><i class="fas fa-hand-holding-water"></i> Help Request</span>
                 <span class="card-time">${timeAgo(r.timestamp)}</span>
                 </div>
-
-                    <!-- STATUS -->
                 <div style="display:flex;align-items:center;justify-content:space-between;">
                 <div id="req-status-${r.id}">${statusBadge}</div>
                 <span style="font-size:10px;color:rgba(255,255,255,0.3);">#${r.id.slice(-6).toUpperCase()}</span>
                 </div>
-
                 <div class="card-divider"></div>
-
-                    <!-- PREVIEW: name + situation snippet always visible -->
                 <div style="display:flex;gap:12px;align-items:center;">
                 <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,rgba(85,239,196,0.3),rgba(41,121,255,0.3));border:1px solid rgba(85,239,196,0.3);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#55efc4;flex-shrink:0;">
                 ${(r.name||'?')[0].toUpperCase()}
@@ -621,20 +607,12 @@
                 <span style="font-size:12px;color:#55efc4;font-weight:700;"><i class="fas fa-comment-dots" style="font-size:11px;"></i> <span id="req-cmtcount-${r.id}">${comments.length}</span></span>
                 </div>
                 </div>
-
-                    <!-- EXPAND TOGGLE -->
                 <button id="req-toggle-${r.id}" onclick="toggleReqExpand('${r.id}')"
                 style="width:100%;background:rgba(85,239,196,0.07);border:1px solid rgba(85,239,196,0.18);border-radius:14px;color:#55efc4;font-size:12px;font-weight:700;padding:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.2s;">
-                <i class="fas fa-chevron-down"></i> View Details & Comment
+                <i class="fas fa-chevron-down"></i> View Details &amp; Comment
                 </button>
-
-                    <!-- EXPANDABLE DETAIL SECTION (hidden by default) -->
                 <div id="req-detail-${r.id}" style="display:none;flex-direction:column;gap:10px;">
-
-                    <!-- Images -->
                 ${buildImageGallery(r.imageUrls)}
-
-                    <!-- Full detail rows -->
                 <div class="card-row">
                 <i class="fas fa-user row-icon green"></i>
                 <div><div class="row-label">Full Name</div><div class="row-val">${escHtml(r.name)}</div></div>
@@ -669,8 +647,6 @@
                 <i class="fas fa-clock row-icon green"></i>
                 <div><div class="row-label">Submitted</div><div class="row-val">${fmtDate(r.timestamp)}</div></div>
                 </div>
-
-                    <!-- Action buttons -->
                 <div class="card-actions">
                 <button id="req-respond-btn-${r.id}"
                 class="action-btn-sm btn-respond"
@@ -679,24 +655,18 @@
                 <i class="fas fa-check-circle"></i> Mark Responded
                 </button>
                 <button class="action-btn-sm btn-dispatch"
-                onclick="callPerson('${escHtml(r.phone)}')">
+                onclick="callPerson('${escHtml(r.phone || '')}')">
                 <i class="fas fa-phone"></i> Call Now
                 </button>
                 </div>
-
                 <div class="card-divider"></div>
-
-                    <!-- COMMENTS SECTION -->
                 <div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.6px;display:flex;align-items:center;gap:6px;">
                 <i class="fas fa-comments" style="color:#55efc4;"></i>
                 Comments &amp; Notes
                 </div>
-
                 <div id="req-cmts-${r.id}" style="display:flex;flex-direction:column;gap:8px;">
                 ${commentsHtml}
                 </div>
-
-                    <!-- Comment input -->
                 <div class="comment-input-row">
                 <input class="comment-input-field"
                 id="req-cinput-${r.id}"
@@ -706,225 +676,221 @@
                 <i class="fas fa-paper-plane"></i>
                 </button>
                 </div>
-
                 </div><!-- end expandable -->
-
                 </div>`;
             }).join('') + '<div style="height:12px;"></div>';
 
         } catch(e) {
             container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error Loading</div><div class="empty-sub">${e.message}</div></div>`;
-                }
         }
-        window.renderRequests = renderRequests;
+    }
+    window.renderRequests = renderRequests;
 
-        // ── FLOOD REPORTS (with comments) ────────────────────────────────
-        async function renderFloodReports() {
-            const container = document.getElementById('reportsList');
-            if (!container) return;
-            container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
-            try {
-                const [fSnap, hSnap] = await Promise.all([
-                    getDocs(collection(db, 'floodReports')),
-                    getDocs(collection(db, 'helpRequests'))
-                ]);
-                let floods = fSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
-                let helps  = hSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
-                let items  = repFilter === 'flood' ? floods : repFilter === 'help' ? helps : [...floods, ...helps];
+    // ── FLOOD REPORTS ────────────────────────────────────────────────
+    async function renderFloodReports() {
+        const container = document.getElementById('reportsList');
+        if (!container) return;
+        container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+        try {
+            const [fSnap, hSnap] = await Promise.all([
+                getDocs(collection(db, 'floodReports')),
+                getDocs(collection(db, 'helpRequests'))
+            ]);
+            let floods = fSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+            let helps  = hSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
+            let items  = repFilter === 'flood' ? floods : repFilter === 'help' ? helps : [...floods, ...helps];
 
-                const q = (document.getElementById('repSearch')?.value || '').toLowerCase();
-                if (q) items = items.filter(r => (r.location + r.name + r.description + r.details + r.submittedBy).toLowerCase().includes(q));
+            const q = (document.getElementById('repSearch')?.value || '').toLowerCase();
+            if (q) items = items.filter(r => (r.location + r.name + r.description + r.details + r.submittedBy).toLowerCase().includes(q));
 
-                items.sort((a,b) => {
-                    const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp||0);
-                    const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp||0);
-                    return tb - ta;
-                });
-
-                if (!items.length) {
-                    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-water"></i></div><div class="empty-title">No Reports</div><div class="empty-sub">No matching reports found.</div></div>`;
-                    return;
-                }
-
-                container.innerHTML = `<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${items.length} Report${items.length !== 1 ? 's' : ''}</div>` +
-                    items.map(r => {
-                        const isHelp = r.type === 'help';
-                        const rows = isHelp
-                            ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
-                       <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
-                            : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
-                       ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
-                        return `
-                <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
-                    <div class="card-top-row">
-                        <span class="type-badge ${isHelp ? 'badge-help' : 'badge-flood'}">
-                            ${isHelp ? '<i class="fas fa-ambulance"></i> Help Request' : '<i class="fas fa-water"></i> Flood Report'}
-                        </span>
-                        <span class="card-time">${timeAgo(r.timestamp)}</span>
-                    </div>
-                    <div class="card-divider"></div>
-                    ${buildImageGallery(r.imageUrls)}
-                    ${rows}
-                    <div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(r.submittedBy)}</div></div></div>
-                    <div class="card-row"><i class="fas fa-clock row-icon"></i><div><div class="row-label">Date</div><div class="row-val">${fmtDate(r.timestamp)}</div></div></div>
-                    <div class="card-actions">
-                        <button class="action-btn-sm btn-respond"><i class="fas fa-check"></i> Responded</button>
-                        <button class="action-btn-sm btn-dispatch"><i class="fas fa-play"></i> Dispatch</button>
-                    </div>
-                    ${buildCommentSection(r.id)}
-                </div>`;
-                    }).join('') + '<div style="height:12px;"></div>';
-
-            } catch(e) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error</div><div class="empty-sub">${e.message}</div></div>`;
-            }
-        }
-        window.renderFloodReports = renderFloodReports;
-
-        // ── ALL SUBMISSIONS ───────────────────────────────────────────────
-        async function renderAll() {
-            const container = document.getElementById('allList');
-            if (!container) return;
-            container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
-            try {
-                const [fSnap, hSnap] = await Promise.all([
-                    getDocs(collection(db, 'floodReports')),
-                    getDocs(collection(db, 'helpRequests'))
-                ]);
-                let floods = fSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
-                let helps  = hSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
-                let items  = allFilter === 'flood' ? floods : allFilter === 'help' ? helps : [...floods, ...helps];
-
-                // Images-only filter
-                if (allFilter === 'images') {
-                    items = [...floods, ...helps].filter(r => r.imageUrls && r.imageUrls.length > 0);
-                }
-
-                items.sort((a,b) => {
-                    const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp||0);
-                    const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp||0);
-                    return tb - ta;
-                });
-
-                if (!items.length) {
-                    container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-inbox"></i></div><div class="empty-title">Nothing Here</div><div class="empty-sub">No submissions match this filter.</div></div>`;
-                    return;
-                }
-
-                // Image-only grid view
-                if (allFilter === 'images') {
-                    const allImgs = items.flatMap(r => (r.imageUrls || []).map(url => ({ url, r })));
-                    container.innerHTML = `
-                    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${allImgs.length} Image${allImgs.length !== 1 ? 's' : ''}</div>
-                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-                        ${allImgs.map(({url, r}) => `
-                        <div style="position:relative;">
-                            <img src="${escHtml(url)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer;" onclick="openImgPreview('${escHtml(url)}')">
-                            <div style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.6);color:white;font-size:9px;padding:2px 6px;border-radius:8px;">${r.type === 'flood' ? '🌊' : '🆘'}</div>
-                        </div>`).join('')}
-                    </div>
-                    <div style="height:12px;"></div>`;
-                    return;
-                }
-
-                container.innerHTML = `<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${items.length} Submission${items.length !== 1 ? 's' : ''}</div>` +
-                    items.map(r => {
-                        const isHelp = r.type === 'help';
-                        const rows = isHelp
-                            ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
-                       <div class="card-row"><i class="fas fa-phone row-icon"></i><div><div class="row-label">Phone</div><div class="row-val">${escHtml(r.phone)}</div></div></div>
-                       <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
-                            : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
-                       ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
-                        return `
-                <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
-                    <div class="card-top-row">
-                        <span class="type-badge ${isHelp ? 'badge-help' : 'badge-flood'}">
-                            ${isHelp ? '<i class="fas fa-ambulance"></i> Help Request' : '<i class="fas fa-water"></i> Flood Report'}
-                        </span>
-                        <span class="card-time">${timeAgo(r.timestamp)}</span>
-                    </div>
-                    <div class="card-divider"></div>
-                    ${buildImageGallery(r.imageUrls)}
-                    ${rows}
-                    <div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">By</div><div class="row-val">${escHtml(r.submittedBy)}</div></div></div>
-                    <div class="card-row"><i class="fas fa-clock row-icon"></i><div><div class="row-label">Date</div><div class="row-val">${fmtDate(r.timestamp)}</div></div></div>
-                </div>`;
-                    }).join('') + '<div style="height:12px;"></div>';
-
-            } catch(e) {
-                container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error</div><div class="empty-sub">${e.message}</div></div>`;
-            }
-        }
-        window.renderAll = renderAll;
-
-        // ── FILTER SETTERS ────────────────────────────────────────────────
-        window.setRepFilter = function(f, btn) {
-            repFilter = f;
-            document.querySelectorAll('#viewReports .filter-pill').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            renderFloodReports();
-        };
-        window.setAllFilter = function(f, btn) {
-            allFilter = f;
-            document.querySelectorAll('#viewAll .filter-pill').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            renderAll();
-        };
-
-        // ── COMMENTS ─────────────────────────────────────────────────────
-        window.toggleComments = function(id) {
-            const el = document.getElementById('cmts-' + id);
-            if (el) el.classList.toggle('open');
-        };
-
-        window.sendComment = function(id) {
-            const input = document.getElementById('cinput-' + id);
-            if (!input) return;
-            const text = input.value.trim();
-            if (!text) return;
-            if (!commentStore[id]) commentStore[id] = [];
-            const now = new Date();
-            const user = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Responder';
-            commentStore[id].push({
-                user, initials: user[0].toUpperCase(),
-                text,
-                time: now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
+            items.sort((a,b) => {
+                const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp||0);
+                const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp||0);
+                return tb - ta;
             });
-            input.value = '';
-            // Re-render just the comment section
-            const section = input.closest('.comments-section');
-            if (section) {
-                const newSection = document.createElement('div');
-                newSection.innerHTML = buildCommentSection(id);
-                section.replaceWith(newSection.firstElementChild);
-                // Re-open comments
-                const el = document.getElementById('cmts-' + id);
-                if (el) el.classList.add('open');
+
+            if (!items.length) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-water"></i></div><div class="empty-title">No Reports</div><div class="empty-sub">No matching reports found.</div></div>`;
+                return;
             }
-        };
 
-        // ── SIGN OUT ─────────────────────────────────────────────────────
-        window.handleSignOut = async function() {
-            try {
-                await signOut(auth);
-                window.location.href = 'Login.html';
-            } catch(e) { alert('Sign out failed: ' + e.message); }
-        };
+            container.innerHTML = `<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${items.length} Report${items.length !== 1 ? 's' : ''}</div>` +
+                items.map(r => {
+                    const isHelp = r.type === 'help';
+                    const rows = isHelp
+                        ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
+                   <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
+                        : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
+                   ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
+                    return `
+            <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
+                <div class="card-top-row">
+                    <span class="type-badge ${isHelp ? 'badge-help' : 'badge-flood'}">
+                        ${isHelp ? '<i class="fas fa-ambulance"></i> Help Request' : '<i class="fas fa-water"></i> Flood Report'}
+                    </span>
+                    <span class="card-time">${timeAgo(r.timestamp)}</span>
+                </div>
+                <div class="card-divider"></div>
+                ${buildImageGallery(r.imageUrls)}
+                ${rows}
+                <div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(r.submittedBy)}</div></div></div>
+                <div class="card-row"><i class="fas fa-clock row-icon"></i><div><div class="row-label">Date</div><div class="row-val">${fmtDate(r.timestamp)}</div></div></div>
+                <div class="card-actions">
+                    <button class="action-btn-sm btn-respond"><i class="fas fa-check"></i> Responded</button>
+                    <button class="action-btn-sm btn-dispatch"><i class="fas fa-play"></i> Dispatch</button>
+                </div>
+                ${buildCommentSection(r.id)}
+            </div>`;
+                }).join('') + '<div style="height:12px;"></div>';
 
-        // ── IMAGE PREVIEW ─────────────────────────────────────────────────
-        window.openImgPreview = function(url) {
-            document.getElementById('imgPreviewEl').src = url;
-            document.getElementById('imgPreviewOverlay').classList.add('open');
-        };
-        window.closeImgPreview = function() {
-            document.getElementById('imgPreviewOverlay').classList.remove('open');
-        };
+        } catch(e) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error</div><div class="empty-sub">${e.message}</div></div>`;
+        }
+    }
+    window.renderFloodReports = renderFloodReports;
 
-        // ── CALL ─────────────────────────────────────────────────────────
-        window.callPerson = function(phone) {
-            if (phone && phone !== '—') window.location.href = 'tel:' + phone;
-        };
+    // ── ALL SUBMISSIONS ───────────────────────────────────────────────
+    async function renderAll() {
+        const container = document.getElementById('allList');
+        if (!container) return;
+        container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+        try {
+            const [fSnap, hSnap] = await Promise.all([
+                getDocs(collection(db, 'floodReports')),
+                getDocs(collection(db, 'helpRequests'))
+            ]);
+            let floods = fSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+            let helps  = hSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
+            let items  = allFilter === 'flood' ? floods : allFilter === 'help' ? helps : [...floods, ...helps];
+
+            if (allFilter === 'images') {
+                items = [...floods, ...helps].filter(r => r.imageUrls && r.imageUrls.length > 0);
+            }
+
+            items.sort((a,b) => {
+                const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp||0);
+                const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp||0);
+                return tb - ta;
+            });
+
+            if (!items.length) {
+                container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-inbox"></i></div><div class="empty-title">Nothing Here</div><div class="empty-sub">No submissions match this filter.</div></div>`;
+                return;
+            }
+
+            if (allFilter === 'images') {
+                const allImgs = items.flatMap(r => (r.imageUrls || []).map(url => ({ url, r })));
+                container.innerHTML = `
+                <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${allImgs.length} Image${allImgs.length !== 1 ? 's' : ''}</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+                    ${allImgs.map(({url, r}) => `
+                    <div style="position:relative;">
+                        <img src="${escHtml(url)}" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;cursor:pointer;" onclick="openImgPreview('${escHtml(url)}')">
+                        <div style="position:absolute;bottom:4px;left:4px;background:rgba(0,0,0,0.6);color:white;font-size:9px;padding:2px 6px;border-radius:8px;">${r.type === 'flood' ? '🌊' : '🆘'}</div>
+                    </div>`).join('')}
+                </div>
+                <div style="height:12px;"></div>`;
+                return;
+            }
+
+            container.innerHTML = `<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">${items.length} Submission${items.length !== 1 ? 's' : ''}</div>` +
+                items.map(r => {
+                    const isHelp = r.type === 'help';
+                    const rows = isHelp
+                        ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
+                   <div class="card-row"><i class="fas fa-phone row-icon"></i><div><div class="row-label">Phone</div><div class="row-val">${escHtml(r.phone)}</div></div></div>
+                   <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
+                        : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
+                   ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
+                    return `
+            <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
+                <div class="card-top-row">
+                    <span class="type-badge ${isHelp ? 'badge-help' : 'badge-flood'}">
+                        ${isHelp ? '<i class="fas fa-ambulance"></i> Help Request' : '<i class="fas fa-water"></i> Flood Report'}
+                    </span>
+                    <span class="card-time">${timeAgo(r.timestamp)}</span>
+                </div>
+                <div class="card-divider"></div>
+                ${buildImageGallery(r.imageUrls)}
+                ${rows}
+                <div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">By</div><div class="row-val">${escHtml(r.submittedBy)}</div></div></div>
+                <div class="card-row"><i class="fas fa-clock row-icon"></i><div><div class="row-label">Date</div><div class="row-val">${fmtDate(r.timestamp)}</div></div></div>
+            </div>`;
+                }).join('') + '<div style="height:12px;"></div>';
+
+        } catch(e) {
+            container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error</div><div class="empty-sub">${e.message}</div></div>`;
+        }
+    }
+    window.renderAll = renderAll;
+
+    // ── FILTER SETTERS ────────────────────────────────────────────────
+    window.setRepFilter = function(f, btn) {
+        repFilter = f;
+        document.querySelectorAll('#viewReports .filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        renderFloodReports();
+    };
+    window.setAllFilter = function(f, btn) {
+        allFilter = f;
+        document.querySelectorAll('#viewAll .filter-pill').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        renderAll();
+    };
+
+    // ── COMMENTS ─────────────────────────────────────────────────────
+    window.toggleComments = function(id) {
+        const el = document.getElementById('cmts-' + id);
+        if (el) el.classList.toggle('open');
+    };
+
+    window.sendComment = function(id) {
+        const input = document.getElementById('cinput-' + id);
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text) return;
+        if (!commentStore[id]) commentStore[id] = [];
+        const now = new Date();
+        const user = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Responder';
+        commentStore[id].push({
+            user, initials: user[0].toUpperCase(),
+            text,
+            time: now.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' })
+        });
+        input.value = '';
+        const section = input.closest('.comments-section');
+        if (section) {
+            const newSection = document.createElement('div');
+            newSection.innerHTML = buildCommentSection(id);
+            section.replaceWith(newSection.firstElementChild);
+            const el = document.getElementById('cmts-' + id);
+            if (el) el.classList.add('open');
+        }
+    };
+
+    // ── SIGN OUT ─────────────────────────────────────────────────────
+    window.handleSignOut = async function() {
+        try {
+            await signOut(auth);
+            window.location.href = 'Login.html';
+        } catch(e) { alert('Sign out failed: ' + e.message); }
+    };
+
+    // ── IMAGE PREVIEW ─────────────────────────────────────────────────
+    window.openImgPreview = function(url) {
+        document.getElementById('imgPreviewEl').src = url;
+        document.getElementById('imgPreviewOverlay').classList.add('open');
+    };
+    window.closeImgPreview = function() {
+        document.getElementById('imgPreviewOverlay').classList.remove('open');
+    };
+
+    // FIX: callPerson now guards against undefined/null/empty in addition to '—'
+    window.callPerson = function(phone) {
+        if (phone && phone !== '—' && phone.trim() !== '') {
+            window.location.href = 'tel:' + phone;
+        }
+    };
 
 </script>
 
@@ -935,6 +901,7 @@
         viewRequests: 'navRequests',
         viewReports:  'navReports',
         viewAll:      'navAll',
+        // FIX: Added viewAccount to tabMap so the nav dot highlights correctly
         viewAccount:  'navAccount',
     };
 
@@ -946,7 +913,6 @@
         const navId = tabMap[panelId];
         if (navId) document.getElementById(navId)?.classList.add('active');
 
-        // Refresh data on tab open
         if (panelId === 'viewRequests' && window.renderRequests) window.renderRequests();
         if (panelId === 'viewReports'  && window.renderFloodReports) window.renderFloodReports();
         if (panelId === 'viewAll'      && window.renderAll) window.renderAll();
@@ -956,7 +922,6 @@
         window.location.href = 'Hotline.html';
     };
 
-    // Open the correct tab if arriving from another page via hash e.g. responderlogin.html#viewRequests
     window.addEventListener('DOMContentLoaded', function() {
         const hash = window.location.hash.replace('#', '');
         if (hash && document.getElementById(hash)) {
