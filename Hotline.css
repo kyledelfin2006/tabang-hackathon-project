@@ -68,7 +68,7 @@ body {
 }
 
 /* ── VIEW SWITCHING ── */
-.view { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+.view { display: none; flex-direction: column; flex: 1; overflow: hidden; min-height: 0; }
 .view.active { display: flex; }
 
 /* ── SCROLL CONTENT ── */
@@ -80,6 +80,7 @@ body {
     flex-direction: column;
     gap: 10px;
     scrollbar-width: none;
+    align-items: stretch;
 }
 .content::-webkit-scrollbar { display: none; }
 
@@ -89,6 +90,7 @@ body {
     border: 1px solid rgba(255,255,255,0.15);
     border-radius: 20px;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .card-header {
