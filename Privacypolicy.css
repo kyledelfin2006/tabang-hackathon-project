@@ -1,0 +1,96 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a1f4e;
+            font-family: 'Inter', sans-serif;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.7;
+        }
+
+        header {
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header a.logo {
+            color: #f5900a;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        header nav a {
+            color: rgba(255,255,255,0.6);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            margin-left: 24px;
+        }
+
+        header nav a:hover {
+            color: #f5900a;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            padding: 56px 32px 80px;
+        }
+
+        h1 {
+            font-size: 36px;
+            font-weight: 800;
+            color: #f5900a;
+            margin-bottom: 8px;
+        }
+
+        .last-updated {
+            font-size: 13px;
+            color: rgba(255,255,255,0.4);
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin: 36px 0 12px;
+        }
+
+        p, li {
+            font-size: 15px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 14px;
+        }
+
+        a { color: #f5900a; }
+
+        .contact-box {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(245,144,10,0.3);
+            border-radius: 10px;
+            padding: 20px 20px;
+            margin-top: 48px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 32px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 13px;
+            color: rgba(255,255,255,0.35);
+        }
+
+        footer a {
+            color: #f5900a;
+            text-decoration: none;
+            margin: 0 12px;
+        }
