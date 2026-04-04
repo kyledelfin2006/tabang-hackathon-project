@@ -29,10 +29,8 @@
     </button>
 
     <div class="profile-section">
-        <!-- FIX: use a <button> for accessibility; onclick moved to JS -->
         <button class="avatar-wrapper" id="avatarWrapper" aria-label="Change profile photo">
             <div class="avatar-circle" id="avatar-circle">
-                <!-- FIX: initials avatar shown by default; replaced by photo or SVG in JS -->
                 <div class="avatar-initials" id="avatar-initials">?</div>
             </div>
             <div class="camera-badge" aria-hidden="true">
@@ -42,7 +40,6 @@
 
         <div class="profile-info">
             <div class="profile-name-row">
-                <!-- FIX: badge image hidden by default; shown only if it loads successfully -->
                 <img src="tabang-badge.png" class="badge-img" id="badgeImg" alt="Verified badge" style="display:none;">
                 <div class="profile-name" id="profileName">Loading...</div>
             </div>
@@ -153,7 +150,7 @@
                 <li><strong>How do I call for help?</strong> — Use the Request Help tab or call the nearest hotline.</li>
             </ul>
             <div class="section-title"><i class="fas fa-phone" style="margin-right:6px;" aria-hidden="true"></i>Contact Us</div>
-            <p>Email: <strong>support@tabang.app</strong></p>
+            <p>Email: <strong><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8cfff9fcfce3fef8ccf8edeeede2eba2edfcfc">[email&#160;protected]</a></strong></p>
             <p style="margin-top:5px;">Hotline: <strong>(036) 500-1234</strong></p>
         </div>
     </div>
@@ -170,13 +167,6 @@
             <button class="modal-close-btn" data-close="modal-settings" aria-label="Close settings">&#x2715;</button>
         </div>
         <div class="modal-body">
-            <div class="toggle-row" role="group" aria-label="Dark Mode">
-                <div>
-                    <div class="toggle-label"><i class="fas fa-moon" style="margin-right:6px;" aria-hidden="true"></i>Dark Mode</div>
-                    <div class="toggle-sub">Switch app to dark theme</div>
-                </div>
-                <div class="toggle" role="switch" aria-checked="false" tabindex="0" aria-label="Dark Mode"></div>
-            </div>
             <div class="toggle-row" role="group" aria-label="Location Access">
                 <div>
                     <div class="toggle-label"><i class="fas fa-map-marker-alt" style="margin-right:6px;" aria-hidden="true"></i>Location Access</div>
@@ -219,7 +209,7 @@
     </div>
 </div>
 
-<script type="module">
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script type="module">
     import { db, auth } from "./firebase.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -230,7 +220,6 @@
         const modal = document.getElementById(id);
         if (modal) {
             modal.classList.add('show');
-            // FIX: trap focus on the first focusable element inside
             const focusable = modal.querySelector('button, [tabindex="0"]');
             if (focusable) focusable.focus();
         }
@@ -241,14 +230,12 @@
         if (modal) modal.classList.remove('show');
     }
 
-    // FIX: expose to window for any inline usage (none now, but keep for safety)
     window.openModal = openModal;
     window.closeModal = closeModal;
 
     // ─── Modal Overlay Click (close on backdrop) ──────────────────────
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        // FIX: only close if the direct target is the overlay, not a child
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) closeModal(overlay.id);
         });
@@ -275,7 +262,6 @@
         if (!el) return;
         const activate = () => action();
         el.addEventListener('click', activate);
-        // FIX: also support keyboard activation for role="button" elements
         el.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
         });
@@ -295,7 +281,6 @@
 
     // ─── Toggle Switches ─────────────────────────────────────────────
 
-    // FIX: toggles now update aria-checked in sync with visual state
     document.querySelectorAll('.toggle[role="switch"]').forEach(toggle => {
         const activate = () => {
             const isOn = toggle.classList.toggle('on');
@@ -309,12 +294,10 @@
 
     // ─── Avatar / Profile Photo ───────────────────────────────────────
 
-    // FIX: clicking avatar triggers file input (moved out of inline onclick)
     document.getElementById('avatarWrapper').addEventListener('click', () => {
         document.getElementById('photo-input').click();
     });
 
-    // FIX: show initials as default avatar fallback
     function setInitialsAvatar(name) {
         const initials = name
             .split(' ')
@@ -325,7 +308,6 @@
         document.getElementById('avatar-initials').textContent = initials;
     }
 
-    // FIX: photo upload preview
     document.getElementById('photo-input').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -339,14 +321,12 @@
 
     // ─── Badge Image ──────────────────────────────────────────────────
 
-    // FIX: only show badge image if it actually loads; avoid broken image layout
     const badgeImg = document.getElementById('badgeImg');
     badgeImg.addEventListener('load', () => { badgeImg.style.display = ''; });
     badgeImg.addEventListener('error', () => { badgeImg.style.display = 'none'; });
 
     // ─── Sign Out ─────────────────────────────────────────────────────
 
-    // FIX: renamed import to firebaseSignOut to avoid name collision with the button ID
     document.getElementById('signOutBtn').addEventListener('click', async (e) => {
         const btn = e.currentTarget;
         btn.disabled = true;
@@ -365,7 +345,6 @@
 
     // ─── Load User Profile ────────────────────────────────────────────
 
-    // FIX: store unsubscribe to prevent memory leak if component unmounts
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         const nameEl  = document.getElementById('profileName');
         const emailEl = document.getElementById('profileEmail');
@@ -386,7 +365,6 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
 
-                // FIX: check all plausible name fields in priority order
                 displayName =
                     data.fullName    ||
                     data.displayName ||
@@ -406,15 +384,11 @@
 
         } catch (err) {
             console.error('Error loading user data:', err);
-            // FIX: graceful fallback — show whatever Auth knows
             nameEl.textContent  = user.displayName || 'User';
-            emailEl.textContent = user.email        || 'No email';
+            emailEl.textContent = user.email || 'No email';
             setInitialsAvatar(user.displayName || 'U');
         }
     });
-
-    // Clean up listener when page unloads
-    window.addEventListener('beforeunload', () => unsubscribe());
 
 </script>
 </body>
