@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="stylesheet" href="responderlogin.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-    <!-- FIX: Leaflet CSS & JS loaded in <head> so it's available before initMap() runs -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <title>Responder Dashboard | Tabang</title>
@@ -14,7 +13,7 @@
 <div class="responder-dashboard">
     <div class="aurora-bg"></div>
 
-    <!-- ── HOME VIEW ── -->
+    <!-- HOME VIEW -->
     <div class="view-panel active" id="viewHome">
         <div class="dashboard-content">
 
@@ -36,7 +35,7 @@
 
             <div class="alerts-card">
                 <div class="alerts-header">
-                    <h2>📍 LIVE INCIDENT MAP</h2>
+                    <h2>Live Incident Map</h2>
                     <p>Real-time report locations</p>
                 </div>
                 <div id="incidentMap" style="height:300px;width:100%;border-radius:12px;"></div>
@@ -59,12 +58,11 @@
                 </div>
             </div>
 
-        </div><!-- /.dashboard-content  FIX: was never closed -->
-    </div><!-- /#viewHome  FIX: was never closed -->
+        </div>
+    </div>
 
-    <!-- ── HOTLINES VIEW ── -->
+    <!-- HOTLINES VIEW -->
     <div class="view-panel" id="viewHotlines">
-        <!-- FIX: panel was completely empty; hotlines content goes here or is loaded dynamically -->
         <div class="dashboard-content">
             <div class="status-bar">
                 <span>9:41</span>
@@ -76,11 +74,11 @@
             <div class="top-header">
                 <div class="brand"><h1>Hotlines</h1></div>
             </div>
-            <p style="color:rgba(255,255,255,0.6);text-align:center;margin-top:40px;">Hotlines content here.</p>
+            <p style="color:rgba(255,255,255,0.5);text-align:center;margin-top:40px;font-size:14px;">Hotlines content here.</p>
         </div>
     </div>
 
-    <!-- ── ACCOUNT VIEW ── -->
+    <!-- ACCOUNT VIEW -->
     <div class="view-panel" id="viewAccount">
         <div class="responder-profile">
             <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;font-size:13px;font-weight:700;color:#eef2ff;">
@@ -92,7 +90,9 @@
             </div>
 
             <div class="profile-hero">
-                <div class="responder-avatar">🦺</div>
+                <div class="responder-avatar">
+                    <i class="fas fa-user-shield" style="font-size:28px;color:#93c5fd;"></i>
+                </div>
                 <div>
                     <div class="responder-name" id="accName">Responder</div>
                     <div class="responder-role"><i class="fas fa-shield-alt"></i> RESPONDER</div>
@@ -128,7 +128,7 @@
                 </div>
                 <div class="profile-row">
                     <span class="profile-row-key"><i class="fas fa-circle"></i> Status</span>
-                    <span class="profile-row-val green" id="accStatus">● Active</span>
+                    <span class="profile-row-val green" id="accStatus">Active</span>
                 </div>
                 <div class="profile-row">
                     <span class="profile-row-key"><i class="fas fa-calendar-alt"></i> Since</span>
@@ -157,7 +157,7 @@
         </div>
     </div>
 
-    <!-- ── BOTTOM NAV ── -->
+    <!-- BOTTOM NAV -->
     <nav class="bottom-nav">
         <div class="nav-item" id="navHotlines" onclick="goHotlines()">
             <div class="nav-icon">
@@ -189,7 +189,7 @@
         </div>
     </nav>
 
-</div><!-- /.responder-dashboard -->
+</div>
 
 <!-- Image preview overlay -->
 <div class="img-preview-overlay" id="imgPreviewOverlay">
@@ -197,7 +197,7 @@
     <img id="imgPreviewEl" src="" alt="Preview">
 </div>
 
-<!-- ── FIREBASE MODULE SCRIPT ── -->
+<!-- FIREBASE MODULE SCRIPT -->
 <script type="module">
     import { db, auth } from "./firebase.js";
     import {
@@ -225,7 +225,7 @@
                     document.getElementById('accUnit').textContent   = d.unit || d.agency || 'MDRRMO Numancia';
                     document.getElementById('accUnit2').textContent  = d.unit || d.agency || 'MDRRMO Numancia';
                     document.getElementById('accArea').textContent   = d.area || d.barangay || 'Numancia, Aklan';
-                    document.getElementById('accStatus').textContent = '● ' + (d.status || 'Active');
+                    document.getElementById('accStatus').textContent = d.status || 'Active';
                     if (d.createdAt) {
                         const dt = d.createdAt.toDate ? d.createdAt.toDate() : new Date(d.createdAt);
                         document.getElementById('accSince').textContent = dt.toLocaleDateString('en-US', { year:'numeric', month:'long' });
@@ -242,13 +242,6 @@
         }
     });
 
-    function fmtDate(ts) {
-        if (!ts) return '—';
-        const d = ts.toDate ? ts.toDate() : new Date(ts);
-        if (isNaN(d)) return '—';
-        return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' });
-    }
-
     function timeAgo(ts) {
         if (!ts) return '';
         const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -259,7 +252,6 @@
         return `${Math.floor(diff/86400)}d ago`;
     }
 
-    // ── SIGN OUT ──────────────────────────────────────────────────────
     window.handleSignOut = async function() {
         try {
             await signOut(auth);
@@ -267,7 +259,6 @@
         } catch(e) { alert('Sign out failed: ' + e.message); }
     };
 
-    // ── IMAGE PREVIEW ─────────────────────────────────────────────────
     window.openImgPreview = function(url) {
         document.getElementById('imgPreviewEl').src = url;
         document.getElementById('imgPreviewOverlay').classList.add('open');
@@ -282,8 +273,6 @@
         }
     };
 
-    // ── MAP INITIALIZATION ────────────────────────────────────────────
-    // FIX: initMap now uses the imported `db` and `getDocs` from this module scope
     window.initMap = function() {
         const mapEl = document.getElementById('incidentMap');
         if (!mapEl) return;
@@ -318,13 +307,13 @@
                         const m = L.marker([data.latitude, data.longitude])
                             .addTo(map)
                             .bindPopup(`
-                                <div style="font-size:12px;">
-                                    <strong>🌊 Flood Report</strong><br>
-                                    <strong>Location:</strong> ${data.location || 'Unknown'}<br>
-                                    <strong>Details:</strong> ${data.details || data.description || 'No details'}<br>
-                                    <strong>Status:</strong> ${status}<br>
-                                    <strong>Reported:</strong> ${timeAgo(data.timestamp)}<br>
-                                    <button onclick="window.location.href='AllReports.html'" style="margin-top:5px;padding:3px 8px;background:#ff6b6b;color:white;border:none;border-radius:3px;cursor:pointer;">View Details</button>
+                                <div style="font-size:12px;font-family:Inter,sans-serif;">
+                                    <strong>Flood Report</strong><br>
+                                    <b>Location:</b> ${data.location || 'Unknown'}<br>
+                                    <b>Details:</b> ${data.details || data.description || 'No details'}<br>
+                                    <b>Status:</b> ${status}<br>
+                                    <b>Reported:</b> ${timeAgo(data.timestamp)}<br>
+                                    <button onclick="window.location.href='AllReports.html'" style="margin-top:6px;padding:4px 10px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:11px;">View Details</button>
                                 </div>
                             `);
                         markers.push(m);
@@ -340,18 +329,18 @@
 
                     if (data.latitude && data.longitude) {
                         const m = L.marker([data.latitude, data.longitude], {
-                            icon: L.divIcon({ html: '🆘', className: 'help-marker', iconSize: [25, 25] })
+                            icon: L.divIcon({ html: '<i class="fas fa-circle-exclamation" style="color:#f87171;font-size:18px;"></i>', className: 'help-marker', iconSize: [25, 25] })
                         })
                             .addTo(map)
                             .bindPopup(`
-                                <div style="font-size:12px;">
-                                    <strong>🆘 Help Request</strong><br>
-                                    <strong>Name:</strong> ${data.name || 'Unknown'}<br>
-                                    <strong>Situation:</strong> ${data.description || 'No details'}<br>
-                                    <strong>Phone:</strong> ${data.phone || 'N/A'}<br>
-                                    <strong>Status:</strong> ${status}<br>
-                                    <strong>Reported:</strong> ${timeAgo(data.timestamp)}<br>
-                                    <button onclick="window.location.href='AllReports.html'" style="margin-top:5px;padding:3px 8px;background:#4ade80;color:white;border:none;border-radius:3px;cursor:pointer;">View Details</button>
+                                <div style="font-size:12px;font-family:Inter,sans-serif;">
+                                    <strong>Help Request</strong><br>
+                                    <b>Name:</b> ${data.name || 'Unknown'}<br>
+                                    <b>Situation:</b> ${data.description || 'No details'}<br>
+                                    <b>Phone:</b> ${data.phone || 'N/A'}<br>
+                                    <b>Status:</b> ${status}<br>
+                                    <b>Reported:</b> ${timeAgo(data.timestamp)}<br>
+                                    <button onclick="window.location.href='AllReports.html'" style="margin-top:6px;padding:4px 10px;background:#4ade80;color:#052e16;border:none;border-radius:6px;cursor:pointer;font-size:11px;">View Details</button>
                                 </div>
                             `);
                         markers.push(m);
@@ -376,11 +365,9 @@
         setInterval(updateMap, 30000);
     };
 </script>
-<!-- FIX: removed duplicate stray </script> tag that was here -->
 
-<!-- ── NON-MODULE SCRIPT (tab switching, DOMContentLoaded) ── -->
+<!-- NON-MODULE SCRIPT -->
 <script>
-    // FIX: tabMap now correctly maps panel IDs to nav IDs
     const tabMap = {
         viewHome:     'navReports',
         viewHotlines: 'navHotlines',
@@ -405,8 +392,6 @@
         if (hash && document.getElementById(hash)) {
             window.switchTab(hash);
         }
-        // FIX: initMap is defined inside the module, so we call it after a short
-        // delay to ensure the module has finished setting window.initMap
         setTimeout(function() {
             if (typeof window.initMap === 'function' && document.getElementById('incidentMap')) {
                 window.initMap();
@@ -416,11 +401,15 @@
 </script>
 
 <style>
-    .help-marker { background:transparent !important; border:none !important; }
-    .stats-row { display:flex; justify-content:space-around; margin-top:15px; padding:10px 0; border-top:1px solid rgba(255,255,255,0.1); }
-    .stat-item { display:flex; flex-direction:column; align-items:center; color:white; font-size:12px; }
-    .stat-item i { font-size:18px; margin-bottom:4px; }
-    .stat-item span:first-of-type { font-size:16px; font-weight:bold; margin-bottom:2px; }
+    .help-marker { background: transparent !important; border: none !important; }
+    .stats-row { display: flex; justify-content: space-around; margin-top: 15px; padding: 12px 0 0; border-top: 1px solid rgba(255,255,255,0.08); }
+    .stat-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: white; }
+    .stat-item i { font-size: 16px; color: rgba(255,255,255,0.5); }
+    .stat-item span:nth-child(2) { font-size: 20px; font-weight: 700; line-height: 1; }
+    .stat-item span:nth-child(3) { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 500; }
+    .alerts-header { margin-bottom: 14px; }
+    .alerts-header h2 { font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin-bottom: 3px; }
+    .alerts-header p  { font-size: 12px; color: rgba(255,255,255,0.65); font-weight: 500; letter-spacing: 0.2px; }
 </style>
 
 </body>

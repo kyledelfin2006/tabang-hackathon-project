@@ -37,16 +37,8 @@ body {
     font-family: 'Inter', sans-serif;
 }
 
-/* Unified field group spacing — replaces details-label top margins */
+/* ── FIELD GROUP SPACING ── */
 .field-group {
-    margin-top: 12px;
-}
-.field-group:first-of-type {
-    margin-top: 0;
-}
-
-/* Kept for textarea section */
-.textarea-group {
     margin-top: 12px;
 }
 
@@ -66,8 +58,14 @@ body {
     border-color: rgba(255,255,255,0.35);
     background: rgba(255,255,255,0.14);
 }
+.input-box i {
+    color: rgba(255,255,255,0.45);
+    font-size: 14px;
+    flex-shrink: 0;
+}
 .input-box input {
-    border: none; outline: none;
+    border: none;
+    outline: none;
     background: transparent;
     color: #fff;
     font-size: 14px;
@@ -78,6 +76,7 @@ body {
 .input-box input::placeholder { color: rgba(255,255,255,0.3); font-weight: 400; }
 
 /* ── TEXTAREA ── */
+.textarea-group { margin-top: 12px; }
 .textarea-box {
     background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.15);
@@ -90,7 +89,8 @@ body {
     background: rgba(255,255,255,0.14);
 }
 .textarea-box textarea {
-    border: none; outline: none;
+    border: none;
+    outline: none;
     background: transparent;
     color: #fff;
     font-size: 13px;
@@ -102,6 +102,85 @@ body {
     line-height: 1.5;
 }
 .textarea-box textarea::placeholder { color: rgba(255,255,255,0.3); font-weight: 400; }
+
+/* ── MAP PICKER ── */
+.map-picker-wrapper {
+    margin-top: 12px;
+}
+.toggle-map-btn {
+    background: #007aff;
+    border: none;
+    color: white;
+    padding: 0 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    width: 100%;
+    height: 48px;
+    transition: background 0.2s;
+}
+.toggle-map-btn:active { background: #0062cc; }
+
+.map-container {
+    display: none;
+    margin-top: 10px;
+}
+.map-container.visible { display: block; }
+
+#locationMap {
+    height: 260px;
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: #1c1c1e;
+    margin-bottom: 8px;
+}
+
+.gps-btn {
+    background: #34c759;
+    border: none;
+    color: white;
+    padding: 0 16px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    height: 40px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+.gps-btn:active { background: #28a745; }
+
+.coord-hint {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 6px;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+}
+
+.location-status {
+    font-size: 12px;
+    color: #34c759;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 2px;
+    font-family: 'Inter', sans-serif;
+}
 
 /* ── IMAGE UPLOAD ── */
 .image-upload-area { margin-top: 12px; }
@@ -129,22 +208,24 @@ body {
 }
 .file-input { display: none; }
 .image-count {
-    font-size: 11px; color: rgba(255,255,255,0.4);
-    margin-top: 5px; font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 5px;
+    font-family: 'Inter', sans-serif;
 }
 
+/* ── SUBMIT BUTTON ── */
 .submit-btn-wrap {
     display: flex;
     justify-content: center;
     margin: 20px 0 18px;
 }
-
 .submit-btn {
     background: #f5900a;
     border: none;
-    border-radius: 16px;
+    border-radius: 14px;
     height: 50px;
-    width: 200px;           /* fixed width instead of 100% */
+    width: 100%;
     color: #ffffff;
     font-size: 16px;
     font-weight: 700;

@@ -105,6 +105,15 @@
         <div class="input-box"><input type="tel" id="phoneInput" placeholder="Enter your number"></div>
     </div>
 
+    <!-- Barangay Location field -->
+    <div class="field-group">
+        <div class="field-label">Location (text)</div>
+        <div class="input-box">
+            <i class="fas fa-map-marker-alt"></i>
+            <input type="text" id="locationInput" placeholder="Enter Location (e.g., Barangay, City)">
+        </div>
+    </div>
+
     <!-- COLLAPSIBLE MAP PICKER -->
     <div class="map-picker-wrapper">
         <button type="button" class="toggle-map-btn" id="toggleMapBtn">
@@ -171,8 +180,8 @@
     document.getElementById('navAccount').onclick  = () => navigateTo('AccountInfo.html');
     document.getElementById('backBtn').onclick     = () => navigateTo('Homepage.html');
 
-    // Cloudinary config (replace with your own)
-    const CLOUD_NAME = 'your_cloud_name';
+    // Cloudinary config (replace with our own)
+    const CLOUD_NAME = 'dz9edwf4q';
     const UPLOAD_PRESET = 'tabang_uploads';
 
     let currentUser = null;
@@ -335,12 +344,13 @@
         }
         const name  = document.getElementById('nameInput').value.trim();
         const phone = document.getElementById('phoneInput').value.trim();
+        const loc   = document.getElementById('locationInput').value.trim();
         const desc  = document.getElementById('descInput').value.trim();
 
         if (!name)  { showToast('Please enter your name'); return; }
         if (!phone) { showToast('Please enter your phone number'); return; }
+        if (!loc)   { showToast('Please enter your location'); return; }
         if (!desc)  { showToast('Please describe your situation'); return; }
-
         if (!selectedLat || !selectedLng) {
             showToast('Please pin your exact location on the map (click "Pin your exact location" button)');
             return;
@@ -367,6 +377,7 @@
             await addDoc(collection(db, "helpRequests"), {
                 name: name,
                 phone: phone,
+                location: loc,
                 description: desc,
                 latitude: selectedLat,
                 longitude: selectedLng,

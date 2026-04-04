@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <file url="PROJECT" libraries="{d3, font-awesome, topojson}" />
+    <file url="PROJECT" libraries="{d3, font-awesome, leaflet, topojson}" />
   </component>
 </project>
