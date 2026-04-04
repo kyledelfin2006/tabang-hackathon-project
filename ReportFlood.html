@@ -150,7 +150,7 @@
 
 <script type="module">
     import { db, auth } from "./firebase.js";
-    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { addDoc, collection, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     function navigateTo(page) { window.location.href = page; }
@@ -349,6 +349,13 @@
                 imageUrls = await Promise.all(uploadPromises);
             }
 
+            // Fetch user name
+            let userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (!userDoc.exists()) {
+                userDoc = await getDoc(doc(db, 'responders', currentUser.uid));
+            }
+            const submittedBy = userDoc.exists() ? userDoc.data().fullName : currentUser.displayName || currentUser.email || 'Unknown';
+
             await addDoc(collection(db, "floodReports"), {
                 location: loc,
                 latitude: selectedLat,
@@ -356,7 +363,7 @@
                 details: det || 'No additional details provided.',
                 timestamp: new Date(),
                 userId: currentUser.uid,
-                submittedBy: currentUser.email || currentUser.displayName || 'Unknown',
+                submittedBy: submittedBy,
                 imageUrls: imageUrls,
                 type: "flood"
             });

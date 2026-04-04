@@ -63,7 +63,7 @@
     <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)">
     <select class="select-field" id="orgInput">
       <option value="" selected>Organization / Agency (Optional)</option>
-      <option>MNDRRMO</option>
+      <option>MDRRMO</option>
       <option>BFP</option>
       <option>PNP</option>
       <option>Local Health Office/RHU</option>
@@ -210,8 +210,8 @@
         createdAt: new Date().toISOString(),
       };
 
-      // Write user document to path covered by your security rules
-      await setDoc(doc(db, 'users', uid), userDoc);
+      // Write responder document to path covered by your security rules
+      await setDoc(doc(db, 'responders', uid), userDoc);
 
       showToast('✅ Account created! Redirecting to login…', true);
       setTimeout(() => { window.location.href = 'Loginresponder.html'; }, 1500);

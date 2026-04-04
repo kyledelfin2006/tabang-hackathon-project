@@ -7,6 +7,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="Hotline.css">
+    <style>
+        .auth-prompt {
+            margin-top: 12px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.75);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .auth-prompt.guest button {
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 16px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .auth-prompt.guest button:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
 </head>
 <body>
 <div class="phone">
@@ -25,6 +47,7 @@
             <div class="back-btn" id="backBtn">&#8249;</div>
             <div class="header-title">Emergency Hotlines</div>
             <div class="header-subtitle">Review and rate Emergency Hotlines in Aklan</div>
+            <div class="auth-prompt" id="authPrompt">Please sign in to vote on hotlines.</div>
         </div>
 
         <div class="content">
@@ -263,8 +286,11 @@
     </div>
 
 </div>
+<script type="module">
+    import { db, auth } from './firebase.js';
+    import { collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-<script>
     const votes = {
         bfp:        { up: 12, down: 2, userVote: null },
         kalibo:     { up: 12, down: 2, userVote: null },
@@ -281,151 +307,360 @@
         redcross:   []
     };
 
+    const votesCollection = collection(db, 'hotlineVotes');
+    const commentsCollection = collection(db, 'hotlineComments');
+    const userVotesCollection = collection(db, 'userHotlineVotes');
+
     let currentCard = null;
+    let currentUser = null;
+    let currentUserFullName = null;      
+    let currentUserInitials = null;    
 
-    document.querySelectorAll('.reaction-btn.upvote').forEach(btn => {
-        btn.addEventListener('click', () => handleVote(btn.dataset.card, 'up'));
-    });
 
-    document.querySelectorAll('.reaction-btn.downvote').forEach(btn => {
-        btn.addEventListener('click', () => handleVote(btn.dataset.card, 'down'));
-    });
+    // ---------- Always attach DOM listeners first ----------
+    function attachEventListeners() {
+        const content = document.querySelector('.content');
+        if (content) {
+            content.addEventListener('click', (event) => {
+                const btn = event.target.closest('.reaction-btn');
+                if (!btn || !content.contains(btn)) return;
+                const cardId = btn.dataset.card;
+                if (!cardId) return;
+                if (btn.classList.contains('upvote')) {
+                    handleVote(cardId, 'up');
+                } else if (btn.classList.contains('downvote')) {
+                    handleVote(cardId, 'down');
+                }
+            });
+        }
 
-    function handleVote(cardId, type) {
+        document.querySelectorAll('.comment-btn').forEach(btn => {
+            btn.addEventListener('click', () => openComments(btn.dataset.card, btn.dataset.name));
+        });
+
+        const sendBtn = document.getElementById('commentSendBtn');
+        if (sendBtn) sendBtn.addEventListener('click', sendComment);
+
+        const commentInput = document.getElementById('commentInput');
+        if (commentInput) {
+            commentInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendComment();
+                }
+            });
+            commentInput.addEventListener('input', function() { autoResize(this); });
+        }
+
+        const backBtn = document.getElementById('backBtn');
+        if (backBtn) backBtn.onclick = () => window.location.href = 'Homepage.html';
+
+        const commentBackBtn = document.getElementById('commentBackBtn');
+        if (commentBackBtn) {
+            commentBackBtn.addEventListener('click', () => {
+                document.getElementById('commentView').classList.remove('active');
+                document.getElementById('hotlinesView').classList.add('active');
+                currentCard = null;
+            });
+        }
+
+        // Navigation buttons
+        const navRequest = document.getElementById('navRequest');
+        if (navRequest) navRequest.onclick = () => window.location.href = 'RequestHelp.html';
+        const navHotlines = document.getElementById('navHotlines');
+        if (navHotlines) navHotlines.onclick = () => window.location.href = 'Hotline.html';
+        const navReport = document.getElementById('navReport');
+        if (navReport) navReport.onclick = () => window.location.href = 'ReportFlood.html';
+        const navMyReports = document.getElementById('navMyReports');
+        if (navMyReports) navMyReports.onclick = () => window.location.href = 'MyReports.html';
+        const navAccount = document.getElementById('navAccount');
+        if (navAccount) navAccount.onclick = () => window.location.href = 'AccountInfo.html';
+    }
+
+    // ---------- Firebase-dependent functions (with error handling) ----------
+    async function loadVotes() {
+        for (let id of Object.keys(votes)) {
+            try {
+                const docRef = doc(votesCollection, id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    votes[id].up = data.up || 0;
+                    votes[id].down = data.down || 0;
+                } else {
+                    // Only try to create if user is signed in (to avoid permission errors)
+                    if (currentUser) {
+                        await setDoc(docRef, { up: votes[id].up, down: votes[id].down });
+                    }
+                }
+                updateVoteDisplay(id);
+                // Real-time listener
+                onSnapshot(docRef, (snap) => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        votes[id].up = data.up || 0;
+                        votes[id].down = data.down || 0;
+                        updateVoteDisplay(id);
+                    }
+                }, (err) => console.warn(`Snapshot error for ${id}:`, err));
+            } catch (err) {
+                console.warn(`Failed to load/init votes for ${id}:`, err);
+            }
+        }
+    }
+
+    async function loadUserVoteState() {
+        function updateAuthPrompt() {
+    const prompt = document.getElementById('authPrompt');
+    if (!prompt) return;
+    if (currentUser && currentUserFullName) {
+        prompt.innerHTML = `Signed in as ${escapeHtml(currentUserFullName)}.`;
+        prompt.classList.remove('guest');
+    } else if (currentUser) {
+        prompt.innerHTML = `Signed in as ${escapeHtml(currentUser.email || 'User')}.`;
+        prompt.classList.remove('guest');
+    } else {
+        prompt.innerHTML = `Guest mode: <button id="loginButton">Sign in to vote</button>`;
+        prompt.classList.add('guest');
+        const loginBtn = document.getElementById('loginButton');
+        if (loginBtn) loginBtn.onclick = () => window.location.href = 'Login.html';
+            }
+        }
+    }
+
+    function updateAuthPrompt() {
+        const prompt = document.getElementById('authPrompt');
+        if (!prompt) return;
+        if (currentUser) {
+            prompt.innerHTML = `Signed in as ${currentUser.email || currentUser.displayName || 'User'}.`;
+            prompt.classList.remove('guest');
+        } else {
+            prompt.innerHTML = `Guest mode: <button id="loginButton">Sign in to vote</button>`;
+            prompt.classList.add('guest');
+            const loginBtn = document.getElementById('loginButton');
+            if (loginBtn) loginBtn.onclick = () => window.location.href = 'Login.html';
+        }
+    }
+
+    function updateVoteDisplay(id) {
+        const upBtn = document.querySelector(`.reaction-btn.upvote[data-card="${id}"]`);
+        const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${id}"]`);
+        if (upBtn) {
+            upBtn.querySelector('.upvote-count').textContent = votes[id].up;
+            if (votes[id].userVote === 'up') upBtn.classList.add('voted');
+            else upBtn.classList.remove('voted');
+        }
+        if (downBtn) {
+            downBtn.querySelector('.downvote-count').textContent = votes[id].down;
+            if (votes[id].userVote === 'down') downBtn.classList.add('voted');
+            else downBtn.classList.remove('voted');
+        }
+    }
+
+    async function handleVote(cardId, type) {
+        if (!currentUser) {
+            const shouldLogin = confirm('You must sign in before voting. Go to the login page now?');
+            if (shouldLogin) window.location.href = 'Login.html';
+            return;
+        }
+
         const v = votes[cardId];
         const upBtn = document.querySelector(`.reaction-btn.upvote[data-card="${cardId}"]`);
         const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${cardId}"]`);
 
-        if (v.userVote === type) {
-            if (type === 'up') v.up--;
-            else v.down--;
-            v.userVote = null;
-            upBtn.classList.remove('voted');
-            downBtn.classList.remove('voted');
-        } else {
-            if (v.userVote === 'up') { v.up--; upBtn.classList.remove('voted'); }
-            if (v.userVote === 'down') { v.down--; downBtn.classList.remove('voted'); }
+        if (v.userVote === type) return;
 
-            if (type === 'up') { v.up++; upBtn.classList.add('voted'); pulseBtn(upBtn); }
-            else { v.down++; downBtn.classList.add('voted'); pulseBtn(downBtn); }
+        const originalUp = v.up, originalDown = v.down, originalUserVote = v.userVote;
 
-            v.userVote = type;
+        // Remove old vote
+        if (v.userVote === 'up') { v.up--; upBtn?.classList.remove('voted'); }
+        else if (v.userVote === 'down') { v.down--; downBtn?.classList.remove('voted'); }
+
+        // Apply new vote
+        if (type === 'up') { v.up++; upBtn?.classList.add('voted'); pulseBtn(upBtn); }
+        else { v.down++; downBtn?.classList.add('voted'); pulseBtn(downBtn); }
+
+        v.userVote = type;
+        if (upBtn) upBtn.querySelector('.upvote-count').textContent = v.up;
+        if (downBtn) downBtn.querySelector('.downvote-count').textContent = v.down;
+
+        try {
+            const voteDocRef = doc(votesCollection, cardId);
+            const userVoteDocRef = doc(userVotesCollection, `${currentUser.uid}_${cardId}`);
+            await setDoc(voteDocRef, { up: v.up, down: v.down });
+            await setDoc(userVoteDocRef, {
+                userId: currentUser.uid,
+                hotlineId: cardId,
+                vote: type,
+                timestamp: serverTimestamp()
+            });
+        } catch (error) {
+            console.error('Error updating vote:', error);
+            // Revert
+            v.up = originalUp; v.down = originalDown; v.userVote = originalUserVote;
+            if (originalUserVote === 'up') upBtn?.classList.add('voted');
+            if (originalUserVote === 'down') downBtn?.classList.add('voted');
+            updateVoteDisplay(cardId);
         }
-
-        upBtn.querySelector('.upvote-count').textContent = v.up;
-        downBtn.querySelector('.downvote-count').textContent = v.down;
     }
 
     function pulseBtn(btn) {
+        if (!btn) return;
         btn.classList.remove('vote-pulse');
         void btn.offsetWidth;
         btn.classList.add('vote-pulse');
         btn.addEventListener('animationend', () => btn.classList.remove('vote-pulse'), { once: true });
     }
 
-    document.querySelectorAll('.comment-btn').forEach(btn => {
-        btn.addEventListener('click', () => openComments(btn.dataset.card, btn.dataset.name));
-    });
-
-    function openComments(cardId, cardName) {
+    async function openComments(cardId, cardName) {
         currentCard = cardId;
         document.getElementById('commentTitle').textContent = cardName;
-        document.getElementById('commentSub').textContent = `${comments[cardId].length} comment${comments[cardId].length !== 1 ? 's' : ''}`;
-        renderComments(cardId);
         document.getElementById('hotlinesView').classList.remove('active');
         document.getElementById('commentView').classList.add('active');
         document.getElementById('commentInput').value = '';
         autoResize(document.getElementById('commentInput'));
+        comments[cardId] = [];
+        document.getElementById('commentSub').textContent = '0 comments';
+        renderComments(cardId);
+        try {
+            await loadComments(cardId);
+            const len = comments[cardId].length;
+            document.getElementById('commentSub').textContent = `${len} comment${len !== 1 ? 's' : ''}`;
+            renderComments(cardId);
+        } catch (err) {
+            console.error('Error loading comments:', err);
+        }
+    }
+
+    async function loadComments(cardId) {
+    const q = query(commentsCollection, where('hotlineId', '==', cardId));
+    const querySnapshot = await getDocs(q);
+    const commentList = [];
+    querySnapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        commentList.push({
+            id: docSnap.id,               // ← ADDED for future edits
+            userId: data.userId || null,
+            user: data.user,
+            initials: data.initials,
+            text: data.text,
+            time: data.time,
+            timestamp: data.timestamp
+        });
+    });
+    commentList.sort((a,b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0));
+    comments[cardId] = commentList;
     }
 
     function renderComments(cardId) {
         const list = document.getElementById('commentsList');
         const c = comments[cardId];
-
-        if (c.length === 0) {
-            list.innerHTML = `
-                <div class="no-comments">
-                    <i class="fas fa-comments"></i>
-                    <span>No comments yet.<br>Be the first to review!</span>
-                </div>`;
+        if (!c || c.length === 0) {
+            list.innerHTML = `<div class="no-comments"><i class="fas fa-comments"></i><span>No comments yet.<br>Be the first to review!</span></div>`;
             return;
         }
-
-        list.innerHTML = c.map((item, i) => `
+        list.innerHTML = c.map(item => `
             <div class="comment-item">
                 <div class="comment-item-top">
-                    <div class="comment-avatar">${item.initials}</div>
-                    <span class="comment-user">${item.user}</span>
-                    <span class="comment-time">${item.time}</span>
+                    <div class="comment-avatar">${escapeHtml(item.initials)}</div>
+                    <span class="comment-user">${escapeHtml(item.user)}</span>
+                    <span class="comment-time">${escapeHtml(item.time)}</span>
                 </div>
                 <div class="comment-text">${escapeHtml(item.text)}</div>
             </div>
         `).join('');
-
         list.scrollTop = list.scrollHeight;
     }
-
-    document.getElementById('commentSendBtn').addEventListener('click', sendComment);
-
-    document.getElementById('commentInput').addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendComment();
-        }
-    });
-
-    document.getElementById('commentInput').addEventListener('input', function() {
-        autoResize(this);
-    });
 
     function autoResize(el) {
         el.style.height = 'auto';
         el.style.height = Math.min(el.scrollHeight, 80) + 'px';
     }
+    
+    async function sendComment() {
+    const input = document.getElementById('commentInput');
+    const text = input.value.trim();
+    if (!text || !currentCard) return;
 
-    function sendComment() {
-        const input = document.getElementById('commentInput');
-        const text = input.value.trim();
-        if (!text || !currentCard) return;
-
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-        const names = ['User', 'Resident', 'Citizen', 'Anonymous'];
-        const user = names[Math.floor(Math.random() * names.length)] + ' ' + Math.floor(Math.random() * 900 + 100);
-        const initials = user.charAt(0);
-
-        comments[currentCard].push({ user, initials, text, time: timeStr });
-
-        input.value = '';
-        autoResize(input);
-
-        renderComments(currentCard);
-
-        const c = comments[currentCard];
-        document.getElementById('commentSub').textContent = `${c.length} comment${c.length !== 1 ? 's' : ''}`;
+    if (!currentUser) {
+        alert('Please sign in to leave a comment.');
+        window.location.href = 'Login.html';
+        return;
     }
 
-    document.getElementById('commentBackBtn').addEventListener('click', () => {
-        document.getElementById('commentView').classList.remove('active');
-        document.getElementById('hotlinesView').classList.add('active');
-        currentCard = null;
-    });
+    // Use the real full name and initials fetched from Firestore
+    const user = currentUserFullName || currentUser.email?.split('@')[0] || 'User';
+    const initials = currentUserInitials || user.charAt(0).toUpperCase();
 
-    document.getElementById('backBtn').onclick = function() {
-        window.location.href = 'Homepage.html';
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const commentData = {
+        hotlineId: currentCard,
+        userId: currentUser.uid,
+        user: user,
+        initials: initials,
+        text: text,
+        time: timeStr,
+        timestamp: serverTimestamp()
     };
 
-    document.getElementById('navRequest').onclick = function() { window.location.href = 'RequestHelp.html'; };
-    document.getElementById('navHotlines').onclick = function() { window.location.href = 'Hotline.html'; };
-    document.getElementById('navReport').onclick = function() { window.location.href = 'ReportFlood.html'; };
-    document.getElementById('navMyReports').onclick = function() { window.location.href = 'MyReports.html'; };
-    document.getElementById('navAccount').onclick = function() { window.location.href = 'AccountInfo.html'; };
-
+    try {
+        const docRef = await addDoc(commentsCollection, commentData);
+        comments[currentCard].push({
+            id: docRef.id,
+            userId: currentUser.uid,
+            user: user,
+            initials: initials,
+            text: text,
+            time: timeStr
+        });
+        input.value = '';
+        autoResize(input);
+        renderComments(currentCard);
+        const len = comments[currentCard].length;
+        document.getElementById('commentSub').textContent = `${len} comment${len !== 1 ? 's' : ''}`;
+    } catch (err) {
+        console.error('Failed to send comment:', err);
+        alert('Could not post comment. Please try again.');
+        }
+    }
 
     function escapeHtml(text) {
         return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+
+    // ---------- Initialization sequence ----------
+    // Attach DOM listeners immediately (so back button works even if Firebase is slow)
+    attachEventListeners();
+
+    onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    currentUserFullName = null;
+    currentUserInitials = null;
+
+    if (user) {
+        try {
+            const userDocRef = doc(db, 'users', user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
+                const data = userDocSnap.data();
+                currentUserFullName = data.fullName || data.firstName + ' ' + data.lastName || user.email?.split('@')[0] || 'User';
+            } else {
+                currentUserFullName = user.displayName || user.email?.split('@')[0] || 'User';
+            }
+            currentUserInitials = currentUserFullName.charAt(0).toUpperCase();
+        } catch (err) {
+            console.warn('Could not fetch user name:', err);
+            currentUserFullName = user.email?.split('@')[0] || 'User';
+            currentUserInitials = currentUserFullName.charAt(0).toUpperCase();
+        }
+    }
+
+    updateAuthPrompt();          // update the header to show real name
+    await loadVotes();           // these functions now use currentUser
+    await loadUserVoteState();
+});
 </script>
 </body>
 </html>

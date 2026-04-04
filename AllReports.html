@@ -198,7 +198,7 @@
                 </div>
                 <div class="card-row">
                     <i class="fas fa-user row-icon"></i>
-                    <div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(r.submittedBy)}</div></div>
+                    <div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(getDisplayName(r.submittedBy))}</div></div>
                 </div>
                 ${rows}
                 <div class="card-row">
@@ -244,9 +244,12 @@
             return div.innerHTML;
         }
 
-        function viewReport(id, type) {
-            // Placeholder for viewing report details
-            alert(`Viewing ${type} report ${id}`);
+        function getDisplayName(submittedBy) {
+            if (!submittedBy) return 'Unknown';
+            if (submittedBy.includes('@')) {
+                return submittedBy.split('@')[0];
+            }
+            return submittedBy;
         }
 
         window.viewReport = viewReport;

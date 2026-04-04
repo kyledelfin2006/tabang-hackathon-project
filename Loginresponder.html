@@ -39,8 +39,9 @@
     <div class="toast" id="toast"></div>
 </div>
 <script type="module">
-    import { auth } from './firebase.js';
+    import { auth, db } from './firebase.js';
     import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
     function showToast(msg) {
         var t = document.getElementById('toast');
@@ -71,7 +72,15 @@
                 throw new Error('Please log in using email address');
             }
 
-            await signInWithEmailAndPassword(auth, emailOrUser, pass);
+            const userCredential = await signInWithEmailAndPassword(auth, emailOrUser, pass);
+            const uid = userCredential.user.uid;
+
+            // Check if user is a responder
+            const responderDoc = await getDoc(doc(db, 'responders', uid));
+            if (!responderDoc.exists()) {
+                throw new Error('Access denied. This login is for responders only.');
+            }
+
             showToast('✅ Login successful! Redirecting...', true);
 
             setTimeout(() => {

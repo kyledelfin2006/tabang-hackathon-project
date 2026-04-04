@@ -148,7 +148,7 @@
 
 <script type="module">
     import { db, auth } from "./firebase.js";
-    import { addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { addDoc, collection, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     let currentUser = null;
@@ -255,13 +255,21 @@
         try {
             const idBase64 = await fileToBase64(idFile);
             const selfieBase64 = await fileToBase64(selfieFile);
+
+            // Fetch user name
+            let userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            if (!userDoc.exists()) {
+                userDoc = await getDoc(doc(db, 'responders', currentUser.uid));
+            }
+            const submittedBy = userDoc.exists() ? userDoc.data().fullName : currentUser.displayName || currentUser.email || name;
+
             await addDoc(collection(db, "verifications"), {
                 name, mobile: '+63' + mobile, barangay,
                 email: emailInput.value.trim(),
                 landmark: document.getElementById('field-landmark').value.trim(),
                 timestamp: new Date(),
                 userId: currentUser.uid,
-                submittedBy: currentUser.email || currentUser.displayName || name,
+                submittedBy: submittedBy,
                 idPhotoBase64: idBase64, selfieBase64
             });
             showToast('✅ Verification submitted!', 'success');

@@ -65,13 +65,6 @@
             <span class="menu-label">Help &amp; Support</span>
             <svg class="menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
-        <div class="menu-item" id="menu-verify" role="button" tabindex="0" aria-label="Verify Account">
-            <div class="menu-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><polyline points="16 11 17.5 12.5 21 9"/></svg>
-            </div>
-            <span class="menu-label">Verify Account</span>
-            <svg class="menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
     </div>
 
     <div class="divider"></div>
@@ -346,7 +339,6 @@
     bindMenuClick('menu-help',     () => openModal('modal-help'));
     bindMenuClick('menu-settings', () => openModal('modal-settings'));
     bindMenuClick('menu-signout',  () => openModal('modal-signout'));
-    bindMenuClick('menu-verify',   () => { window.location.href = 'VerAcc.html'; });
 
 
 
@@ -445,7 +437,7 @@
 
         try {
             await firebaseSignOut(auth);
-            window.location.href = 'Login.html';
+            window.location.href = 'Loginresponder.html';
         } catch (err) {
             console.error('Sign out failed:', err);
             btn.disabled = false;
@@ -489,7 +481,13 @@
         }
 
         try {
-            const docSnap = await getDoc(doc(db, "users", user.uid));
+            let docSnap = await getDoc(doc(db, "users", user.uid));
+            let isResponder = false;
+
+            if (!docSnap.exists()) {
+                docSnap = await getDoc(doc(db, "responders", user.uid));
+                isResponder = docSnap.exists();
+            }
 
             let displayName = '';
             let email       = user.email;
