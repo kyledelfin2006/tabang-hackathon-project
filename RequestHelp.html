@@ -171,8 +171,8 @@
     document.getElementById('navAccount').onclick  = () => navigateTo('AccountInfo.html');
     document.getElementById('backBtn').onclick     = () => navigateTo('Homepage.html');
 
-    // Cloudinary config (replace with your own)
-    const CLOUD_NAME = 'your_cloud_name';
+    // Cloudinary 
+    const CLOUD_NAME = 'dz9edwf4q';
     const UPLOAD_PRESET = 'tabang_uploads';
 
     let currentUser = null;
@@ -357,14 +357,12 @@
                 imageUrls = await Promise.all(uploadPromises);
             }
 
-            // Fetch user name
-            let userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-            if (!userDoc.exists()) {
-                userDoc = await getDoc(doc(db, 'responders', currentUser.uid));
-            }
-            const submittedBy = userDoc.exists() ? userDoc.data().fullName : currentUser.displayName || currentUser.email || name;
-
-            await addDoc(collection(db, "helpRequests"), {
+            // Fetch user name from 'users' collection only
+            const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+            const submittedBy = userDoc.exists() 
+                ? userDoc.data().fullName 
+                : currentUser.displayName || currentUser.email || name;
+                await addDoc(collection(db, "helpRequests"), {
                 name: name,
                 phone: phone,
                 description: desc,
