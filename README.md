@@ -61,7 +61,7 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-## System Flow Diagram
+### ## System Flow Diagram
 
 <p align="center">
   <img src="https://res.cloudinary.com/dz9edwf4q/image/upload/v1775397018/SystemFlowChart_qwdlmh.png" width="600">
