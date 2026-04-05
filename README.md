@@ -1,154 +1,154 @@
-# Team Tabang Entry: 
-### UPV KomsaiHack 2026 — *Risk Ready*
+# Team Tabang Entry
+## UPV KomsaiHack 2026 — Risk Ready
 
-**Tabang** is a web-based mobile application designed to support communities in **Aklan** during flood-related emergencies. The platform provides a centralized system where residents and emergency responders can coordinate through verified reports, assistance requests, and accessible emergency hotlines.
-
-The goal of Tabang is to improve **community awareness, response coordination, and hotline accountability** during disaster situations.
+**Tabang** is a web-based mobile application designed to support communities in Aklan during flood-related emergencies. It provides a centralized platform for real-time reporting, assistance coordination, and evaluation of emergency hotlines.
 
 ---
 
-## Overview
+### ## Overview
+Flood emergencies create communication gaps between residents and responders, leading to delayed assistance, poor coordination, and unreliable hotline response.
 
-Flood emergencies often create communication gaps between affected residents and responders. Tabang bridges this gap by allowing:
+Tabang enables:
+* **Real-time** flood reporting and help requests.
+* **Centralized visibility** of nearby incidents.
+* **A responder dashboard** for coordinated action.
+* **Public evaluation** of hotline effectiveness to improve reliability and trust.
 
-- Residents to report flooding and request help in real time  
-- Communities to view nearby incidents  
-- Emergency responders to monitor and coordinate responses through a dedicated dashboard  
-- Public evaluation of hotline effectiveness to improve reliability and trust  
-
-The system is community-focused and built specifically for **Aklan-based emergency use cases**.
-
----
-
-## Core Features
-
-### User Features (Residents)
-
-- **User Authentication (Demo Verification)**  
-  Users can create accounts and log in to access platform features.
-
-- **Flood Reporting**  
-  Submit real-time flood reports to inform the community about affected locations.
-
-- **Nearby Flood Visibility**  
-  View flooding reports submitted within the user’s area.
-
-- **Help Requests**  
-  Request assistance during emergencies.
-
-- **Community Help Feed**  
-  View assistance requests from other residents.
-
-- **Hotline Directory**  
-  Access verified emergency hotlines from Aklan-based organizations.
-
-- **Hotline Ratings & Reviews**  
-  Users can rate and review hotline responsiveness and effectiveness to promote accountability and public trust.
+The system is community-focused and built specifically for Aklan-based emergency use cases.
 
 ---
 
-### Responder Features
+### ## Project Scope
 
-- **Responder Authentication (Demo Verification)**  
-  Emergency responders log in through a dedicated responder account system.
+#### **MVP Scope (Implemented Features)**
+* **Flood reporting:** (Location + optional image)
+* **Help request system:** Direct requests for assistance.
+* **Community feed:** A live stream of reports and requests.
+* **Responder dashboard:** For incident monitoring.
+* **Hotline directory:** Includes a rating and feedback system.
 
-- **Responder Dashboard**
-  - View reported flooding incidents across Aklan
-  - Monitor incoming help requests
-  - Track community emergency activity in real time
-
-- **Hotline Feedback Monitoring**
-  - View hotline ratings and reviews submitted by users
-  - Identify response effectiveness trends
+#### **Out of Scope (Future Work)**
+* Real-time GPS tracking of responders.
+* Real-time disaster analytics.
+* Push notifications.
+* Offline reporting capability.
+* Advanced Security & Data Encryption: Implementation of robust security protocols and penetration testing.
 
 ---
 
-## System Roles
+### Tech Stack
+- Frontend: HTML, CSS, JavaScript
+- Backend: Firebase, Cloudinary
+- Authentication: Firebase built in Authentication system
+- Database: Firestore
+
+---
+
+### ## Core Features
+
+#### **User Features**
+* Submit flood reports in real time.
+* Request emergency assistance.
+* View nearby incidents via community feed.
+* Access verified emergency hotlines.
+* Rate and review hotline effectiveness.
+
+#### **Responder Features**
+* Monitor flood reports across Aklan.
+* View and manage incoming help requests.
+* Track community activity in real time.
+* Analyze hotline feedback trends.
+
+---
+
+## System Flow Diagram
+
+<p align="center">
+  <img src="https://res.cloudinary.com/dz9edwf4q/image/upload/v1775397018/SystemFlowChart_qwdlmh.png" width="600">
+</p>
+
+---
+
+### ## Success Criteria
+* **Report submission time:** < 30 seconds.
+* **Responder acknowledgment:** Within 2 minutes.
+* **Accountability:** Improved hotline reliability through user ratings.
+
+---
+
+### ## System Roles
 
 | Role | Capabilities |
-|------|-------------|
-| **Resident User** | Report floods, request help, view nearby incidents, rate hotlines |
-| **Responder** | Monitor reports, review help requests, analyze hotline feedback |
-| **Firebase Admin** | Backend configuration and database management *(Developer-only role)* |
+| :--- | :--- |
+| **Resident** | Report floods, request help, view incidents, rate hotlines. |
+| **Responder** | Monitor reports, manage requests, review feedback. |
+| **Firebase Admin** | Backend configuration and database management. |
 
-> **Note:** The Firebase Admin role is used only by the developers for system management and is not accessible to public users or responders.
-
----
-
-## Technology Stack
-
-- **Frontend:** HTML, CSS, JavaScript  
-- **Backend Services:** Firebase  
-- **Authentication:** Demo-based role verification  
-- **Database:** Firebase Firestore / Realtime Database *(depending on implementation)*
+> **Note:** Admin access is restricted to developers only.
 
 ---
 
-## Demo Email Accounts
+### ## Technology Stack
+* **Frontend:** HTML, CSS, JavaScript
+* **Backend:** Firebase
+* **Authentication:** Role-based (simulated for demo)
+* **Database:** Firestore / Realtime Database
 
-You may use the following test emails to explore the application:
-
-skyline.pixel28@gmail.com
-nova.spark451@gmail.com
-midnight.echo77@gmail.com
-cloudyorbit19@gmail.com
-frostbyte.wave63@gmail.com
-
-
-*(Demo Emails are provided for testing purposes during evaluation.)*
+#### **Design Considerations**
+* Firestore structured for real-time updates (live feeds).
+* Data organized by location for efficient filtering.
+* Role-based UI rendering for residents and responders.
 
 ---
 
-## How to Use the Application
+### ## Demo Access
+**Test Accounts:**
+* `skyline.pixel28@gmail.com`
+* `nova.spark451@gmail.com`
+* `midnight.echo77@gmail.com`
+* `cloudyorbit19@gmail.com`
+* `frostbyte.wave63@gmail.com`
 
-### As a Resident User
+#### **How to Use**
+**For Residents:**
+1.  Log in using a demo account.
+2.  Submit reports via **Report Flood**.
+3.  Request help when needed.
+4.  View nearby incidents.
+5.  Access and evaluate emergency hotlines.
 
-1. Log in using one of the demo accounts.
-2. Navigate to the **Report Flood ** to submit flood reports.
-3. Use **Request Help** to ask for assistance during emergencies.
-4. View flooding incidents reported near your area.
-5. Open the **Hotlines** section to:
-   - View emergency contacts
-   - Upvote or downvote hotline performance
-   - Leave feedback or comments based on response effectiveness.
-
----
-
-### As a Responder
-
-1. Log in using a responder account.
-2. Open the **Responder Homepage/Dashboard**.
-3. View:
-   - Reported flooding incidents
-   - Community help requests
-4. Review hotline feedback submitted by users to monitor service effectiveness.
+**For Responders:**
+1.  Log in with a responder account.
+2.  Open the **Dashboard**.
+3.  Monitor reports and requests.
+4.  Review hotline feedback.
 
 ---
 
-
-## Project Vision
-
-Tabang aims to demonstrate how community-centered digital systems can strengthen disaster response by combining:
-
-- real-time reporting  
-- transparent communication  
-- accountable emergency services  
-
-The project emphasizes accessibility, coordination, and localized disaster preparedness for Aklan communities.
+### ## Project Vision
+*Tabang demonstrates how localized, community-driven reporting systems can reduce response delays and improve coordination during flood emergencies in Aklan.*
 
 ---
 
-## Team Members
+### ## Team Members
+* **Aldrin Kyle Delfin** — Team Lead, QA
+* **JM Suante** — Frontend (UI/UX)
+* **Rod Micheal Contado** — Frontend (UI/UX)
+* **Lenard Olajay** — Backend, QA
+* **Denniz Gabriel Dela Cruz** — Firebase Admin
 
-- **Aldrin Kyle Delfin** — Team Lead, Quality Assurance  
-- **JM Suante** — Front-End Developer (UI/UX)  
-- **Rod Micheal Contado** — Front-End Developer (UI/UX)  
-- **Lenard Olajay** — Back-End Developer, Quality Assurance  
-- **Denniz Gabriel Dela Cruz** — Firebase Administrator
+## AI Disclosure 
+This project utilized AI tools such as ChatGPT, Claude Code, and Deepseek to assist in various stages of development, including code generation, debugging, concept exploration, and improving written content for clarity and professionalism.
 
-## AI Tools Used
+AI-generated outputs were used as initial references or starting points only. All code, features, and written materials were reviewed, modified, and finalized by the team to ensure correctness, relevance, and alignment with the project’s goals on disaster readiness.
 
-- **Claude Code** — used only for generating general boilerplate code and assisting with debugging.
-- **ChatGPT** — used for web application ideation and brainstorming.
+Team Responsibilities
+The team remained responsible for the core integrity of the project, specifically:
 
+Designing the system architecture and feature flow.
 
+Implementing and integrating core functionalities.
+
+Testing, debugging, and refining outputs.
+
+Editing and finalizing all project documentation and user-facing text.
