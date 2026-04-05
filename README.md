@@ -5,7 +5,7 @@
 
 ---
 
-### ## Overview
+## Overview
 Flood emergencies create communication gaps between residents and responders, leading to delayed assistance, poor coordination, and unreliable hotline response.
 
 Tabang enables:
@@ -18,7 +18,7 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-### ## Project Scope
+## Project Scope
 
 #### **MVP Scope (Implemented Features)**
 * **Flood reporting:** (Location + optional image)
@@ -26,17 +26,9 @@ The system is community-focused and built specifically for Aklan-based emergency
 * **Community feed:** A live stream of reports and requests.
 * **Responder dashboard:** For incident monitoring.
 * **Hotline directory:** Includes a rating and feedback system.
-
-#### **Out of Scope (Future Work)**
-* Real-time GPS tracking of responders.
-* Real-time disaster analytics.
-* Push notifications.
-* Offline reporting capability.
-* Advanced Security & Data Encryption: Implementation of robust security protocols and penetration testing.
-
 ---
 
-### Tech Stack
+## Tech Stack
 - Frontend: HTML, CSS, JavaScript
 - Backend: Firebase, Cloudinary
 - Authentication: Firebase built in Authentication system
@@ -44,7 +36,7 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-### ## Core Features
+## Core Features
 
 #### **User Features**
 * Submit flood reports in real time.
@@ -61,7 +53,7 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-### ## System Flow Diagram
+ ## System Flow Diagram
 
 <p align="center">
   <img src="https://res.cloudinary.com/dz9edwf4q/image/upload/v1775397018/SystemFlowChart_qwdlmh.png" width="600">
@@ -69,14 +61,14 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-### ## Success Criteria
+ ## Success Criteria
 * **Report submission time:** < 30 seconds.
 * **Responder acknowledgment:** Within 2 minutes.
 * **Accountability:** Improved hotline reliability through user ratings.
 
 ---
 
-### ## System Roles
+ ## System Roles
 
 | Role | Capabilities |
 | :--- | :--- |
@@ -88,20 +80,20 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-### ## Technology Stack
+ ## Technology Stack
 * **Frontend:** HTML, CSS, JavaScript
 * **Backend:** Firebase
 * **Authentication:** Role-based (simulated for demo)
 * **Database:** Firestore / Realtime Database
 
-#### **Design Considerations**
+## **Design Considerations**
 * Firestore structured for real-time updates (live feeds).
 * Data organized by location for efficient filtering.
 * Role-based UI rendering for residents and responders.
 
 ---
 
-### ## Demo Access
+## Demo Access
 **Test Accounts:**
 * `skyline.pixel28@gmail.com`
 * `nova.spark451@gmail.com`
@@ -109,7 +101,7 @@ The system is community-focused and built specifically for Aklan-based emergency
 * `cloudyorbit19@gmail.com`
 * `frostbyte.wave63@gmail.com`
 
-#### **How to Use**
+## **How to Use**
 **For Residents:**
 1.  Log in using a demo account.
 2.  Submit reports via **Report Flood**.
@@ -125,12 +117,12 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
-### ## Project Vision
+## Project Vision
 *Tabang demonstrates how localized, community-driven reporting systems can reduce response delays and improve coordination during flood emergencies in Aklan.*
 
 ---
 
-### ## Team Members
+ ## Team Members
 * **Aldrin Kyle Delfin** — Team Lead, QA
 * **JM Suante** — Frontend (UI/UX)
 * **Rod Micheal Contado** — Frontend (UI/UX)
