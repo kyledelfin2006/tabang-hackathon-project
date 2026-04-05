@@ -19,7 +19,7 @@
 - **Aldrin Kyle Delfin** — Team Lead, Quality Assurance  
 - **JM Suante** — Front-End Developer (UI/UX)  
 - **Rod Micheal Contado** — Front-End Developer (UI/UX)  
-- **Lenard Olejay** — Back-End Developer, Quality Assurance  
+- **Lenard Olajay** — Back-End Developer, Quality Assurance  
 - **Denniz Gabriel Dela Cruz** — Firebase Administrator  
 
 ---
