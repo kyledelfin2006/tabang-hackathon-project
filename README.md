@@ -26,13 +26,6 @@ The system is community-focused and built specifically for Aklan-based emergency
 * **Community feed:** A live stream of reports and requests.
 * **Responder dashboard:** For incident monitoring.
 * **Hotline directory:** Includes a rating and feedback system.
----
-
-## Tech Stack
-- Frontend: HTML, CSS, JavaScript
-- Backend: Firebase, Cloudinary
-- Authentication: Firebase built in Authentication system
-- Database: Firestore
 
 ---
 
@@ -80,11 +73,13 @@ The system is community-focused and built specifically for Aklan-based emergency
 
 ---
 
- ## Technology Stack
-* **Frontend:** HTML, CSS, JavaScript
-* **Backend:** Firebase
-* **Authentication:** Role-based (simulated for demo)
-* **Database:** Firestore / Realtime Database
+## Tech Stack
+- Frontend: HTML, CSS, JavaScript
+- Backend: Firebase, Cloudinary
+- Authentication: Firebase built in Authentication system
+- Database: Firestore
+
+---
 
 ## **Design Considerations**
 * Firestore structured for real-time updates (live feeds).
