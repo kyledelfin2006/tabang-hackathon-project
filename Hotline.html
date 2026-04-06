@@ -287,10 +287,12 @@
 
 </div>
 <script type="module">
+    // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
     import { db, auth } from './firebase.js';
     import { collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
+    // Local vote state for each hotline card — seeded with defaults, synced with Firestore on load
     const votes = {
         bfp:        { up: 12, down: 2, userVote: null },
         kalibo:     { up: 12, down: 2, userVote: null },
@@ -299,6 +301,7 @@
         redcross:   { up: 10, down: 1, userVote: null }
     };
 
+    // In-memory comment cache per hotline card, populated when the comment panel is opened
     const comments = {
         bfp:        [],
         kalibo:     [],
@@ -307,20 +310,24 @@
         redcross:   []
     };
 
+    // Firestore collection references
     const votesCollection = collection(db, 'hotlineVotes');
     const commentsCollection = collection(db, 'hotlineComments');
     const userVotesCollection = collection(db, 'userHotlineVotes');
 
-    let currentCard = null;
-    let currentUser = null;
-    let currentUserFullName = null;      
-    let currentUserInitials = null;    
+    let currentCard = null;             // ID of the hotline card whose comment panel is open
+    let currentUser = null;             // Firebase Auth user object
+    let currentUserFullName = null;     // Full name fetched from Firestore users collection
+    let currentUserInitials = null;     // First letter of the full name, used in comment avatars
 
 
     // ---------- Always attach DOM listeners first ----------
+
+    // Wires up all interactive elements — runs before Firebase resolves so the UI is immediately responsive
     function attachEventListeners() {
         const content = document.querySelector('.content');
         if (content) {
+            // Delegate upvote/downvote clicks from the content container to avoid re-binding on re-render
             content.addEventListener('click', (event) => {
                 const btn = event.target.closest('.reaction-btn');
                 if (!btn || !content.contains(btn)) return;
@@ -334,10 +341,12 @@
             });
         }
 
+        // Open the comment panel for the associated card when a comment button is clicked
         document.querySelectorAll('.comment-btn').forEach(btn => {
             btn.addEventListener('click', () => openComments(btn.dataset.card, btn.dataset.name));
         });
 
+        // Send a comment on button click or Enter key (Shift+Enter inserts a newline instead)
         const sendBtn = document.getElementById('commentSendBtn');
         if (sendBtn) sendBtn.addEventListener('click', sendComment);
 
@@ -349,12 +358,14 @@
                     sendComment();
                 }
             });
+            // Auto-resize the textarea as the user types
             commentInput.addEventListener('input', function() { autoResize(this); });
         }
 
         const backBtn = document.getElementById('backBtn');
         if (backBtn) backBtn.onclick = () => window.location.href = 'Homepage.html';
 
+        // Close the comment panel and return to the hotlines view
         const commentBackBtn = document.getElementById('commentBackBtn');
         if (commentBackBtn) {
             commentBackBtn.addEventListener('click', () => {
@@ -364,7 +375,7 @@
             });
         }
 
-        // Navigation buttons
+        // Bottom navigation bar — each button routes to its corresponding page
         const navRequest = document.getElementById('navRequest');
         if (navRequest) navRequest.onclick = () => window.location.href = 'RequestHelp.html';
         const navHotlines = document.getElementById('navHotlines');
@@ -378,6 +389,8 @@
     }
 
     // ---------- Firebase-dependent functions (with error handling) ----------
+
+    // Loads vote counts from Firestore for each hotline card and attaches real-time listeners
     async function loadVotes() {
         for (let id of Object.keys(votes)) {
             try {
@@ -388,13 +401,14 @@
                     votes[id].up = data.up || 0;
                     votes[id].down = data.down || 0;
                 } else {
-                    // Only try to create if user is signed in (to avoid permission errors)
+                    // Only create the document if a user is signed in to avoid permission errors
                     if (currentUser) {
                         await setDoc(docRef, { up: votes[id].up, down: votes[id].down });
                     }
                 }
                 updateVoteDisplay(id);
-                // Real-time listener
+
+                // Subscribe to real-time updates so vote counts stay in sync across sessions
                 onSnapshot(docRef, (snap) => {
                     if (snap.exists()) {
                         const data = snap.data();
@@ -409,6 +423,7 @@
         }
     }
 
+    // Placeholder — user vote state loading logic (e.g. restoring prior upvote/downvote per card)
     async function loadUserVoteState() {
         function updateAuthPrompt() {
     const prompt = document.getElementById('authPrompt');
@@ -428,6 +443,7 @@
         }
     }
 
+    // Updates the auth prompt banner — shows the signed-in user's name or a guest sign-in button
     function updateAuthPrompt() {
         const prompt = document.getElementById('authPrompt');
         if (!prompt) return;
@@ -442,6 +458,7 @@
         }
     }
 
+    // Refreshes the upvote/downvote count display and 'voted' highlight for a given card
     function updateVoteDisplay(id) {
         const upBtn = document.querySelector(`.reaction-btn.upvote[data-card="${id}"]`);
         const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${id}"]`);
@@ -457,6 +474,7 @@
         }
     }
 
+    // Handles an upvote or downvote: updates local state optimistically, then persists to Firestore
     async function handleVote(cardId, type) {
         if (!currentUser) {
             const shouldLogin = confirm('You must sign in before voting. Go to the login page now?');
@@ -468,15 +486,17 @@
         const upBtn = document.querySelector(`.reaction-btn.upvote[data-card="${cardId}"]`);
         const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${cardId}"]`);
 
+        // Ignore the vote if the user already voted the same way
         if (v.userVote === type) return;
 
+        // Snapshot current state for rollback if the Firestore write fails
         const originalUp = v.up, originalDown = v.down, originalUserVote = v.userVote;
 
-        // Remove old vote
+        // Remove the previous vote (if any) before applying the new one
         if (v.userVote === 'up') { v.up--; upBtn?.classList.remove('voted'); }
         else if (v.userVote === 'down') { v.down--; downBtn?.classList.remove('voted'); }
 
-        // Apply new vote
+        // Apply the new vote and trigger the pulse animation
         if (type === 'up') { v.up++; upBtn?.classList.add('voted'); pulseBtn(upBtn); }
         else { v.down++; downBtn?.classList.add('voted'); pulseBtn(downBtn); }
 
@@ -486,6 +506,7 @@
 
         try {
             const voteDocRef = doc(votesCollection, cardId);
+            // Keyed by uid + cardId so each user can only have one vote per hotline
             const userVoteDocRef = doc(userVotesCollection, `${currentUser.uid}_${cardId}`);
             await setDoc(voteDocRef, { up: v.up, down: v.down });
             await setDoc(userVoteDocRef, {
@@ -496,7 +517,7 @@
             });
         } catch (error) {
             console.error('Error updating vote:', error);
-            // Revert
+            // Firestore write failed — revert the optimistic UI update
             v.up = originalUp; v.down = originalDown; v.userVote = originalUserVote;
             if (originalUserVote === 'up') upBtn?.classList.add('voted');
             if (originalUserVote === 'down') downBtn?.classList.add('voted');
@@ -504,14 +525,16 @@
         }
     }
 
+    // Triggers a brief CSS pulse animation on a vote button for visual feedback
     function pulseBtn(btn) {
         if (!btn) return;
         btn.classList.remove('vote-pulse');
-        void btn.offsetWidth;
+        void btn.offsetWidth; // Force reflow so the animation restarts even if already active
         btn.classList.add('vote-pulse');
         btn.addEventListener('animationend', () => btn.classList.remove('vote-pulse'), { once: true });
     }
 
+    // Switches to the comment panel for the given card, resets state, and loads comments from Firestore
     async function openComments(cardId, cardName) {
         currentCard = cardId;
         document.getElementById('commentTitle').textContent = cardName;
@@ -519,6 +542,8 @@
         document.getElementById('commentView').classList.add('active');
         document.getElementById('commentInput').value = '';
         autoResize(document.getElementById('commentInput'));
+
+        // Reset comment cache and count while loading
         comments[cardId] = [];
         document.getElementById('commentSub').textContent = '0 comments';
         renderComments(cardId);
@@ -532,6 +557,7 @@
         }
     }
 
+    // Fetches all comments for a hotline card from Firestore, sorts them oldest-first, and caches them
     async function loadComments(cardId) {
     const q = query(commentsCollection, where('hotlineId', '==', cardId));
     const querySnapshot = await getDocs(q);
@@ -539,7 +565,7 @@
     querySnapshot.forEach(docSnap => {
         const data = docSnap.data();
         commentList.push({
-            id: docSnap.id,               // ← ADDED for future edits
+            id: docSnap.id,
             userId: data.userId || null,
             user: data.user,
             initials: data.initials,
@@ -548,10 +574,12 @@
             timestamp: data.timestamp
         });
     });
+    // Sort ascending so the oldest comment appears at the top of the list
     commentList.sort((a,b) => (a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0));
     comments[cardId] = commentList;
     }
 
+    // Renders the cached comment list for a card into the DOM, or shows an empty state prompt
     function renderComments(cardId) {
         const list = document.getElementById('commentsList');
         const c = comments[cardId];
@@ -569,14 +597,17 @@
                 <div class="comment-text">${escapeHtml(item.text)}</div>
             </div>
         `).join('');
+        // Auto-scroll to the latest comment
         list.scrollTop = list.scrollHeight;
     }
 
+    // Expands a textarea to fit its content up to a max height of 80px
     function autoResize(el) {
         el.style.height = 'auto';
         el.style.height = Math.min(el.scrollHeight, 80) + 'px';
     }
-    
+
+    // Validates input, builds the comment object, writes it to Firestore, and updates the local cache
     async function sendComment() {
     const input = document.getElementById('commentInput');
     const text = input.value.trim();
@@ -588,7 +619,7 @@
         return;
     }
 
-    // Use the real full name and initials fetched from Firestore
+    // Prefer the Firestore full name; fall back to the email prefix or a generic label
     const user = currentUserFullName || currentUser.email?.split('@')[0] || 'User';
     const initials = currentUserInitials || user.charAt(0).toUpperCase();
 
@@ -607,6 +638,7 @@
 
     try {
         const docRef = await addDoc(commentsCollection, commentData);
+        // Immediately push to the local cache so the UI updates without waiting for a re-fetch
         comments[currentCard].push({
             id: docRef.id,
             userId: currentUser.uid,
@@ -626,14 +658,17 @@
         }
     }
 
+    // Sanitizes text before inserting into the DOM to prevent XSS attacks
     function escapeHtml(text) {
         return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
     // ---------- Initialization sequence ----------
-    // Attach DOM listeners immediately (so back button works even if Firebase is slow)
+
+    // Attach DOM listeners immediately so the UI is interactive even before Firebase resolves
     attachEventListeners();
 
+    // On auth state change: resolve the user's full name from Firestore, then load votes and vote state
     onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     currentUserFullName = null;
@@ -645,6 +680,7 @@
             const userDocSnap = await getDoc(userDocRef);
             if (userDocSnap.exists()) {
                 const data = userDocSnap.data();
+                // Prefer fullName, then firstName + lastName, then email prefix
                 currentUserFullName = data.fullName || data.firstName + ' ' + data.lastName || user.email?.split('@')[0] || 'User';
             } else {
                 currentUserFullName = user.displayName || user.email?.split('@')[0] || 'User';
@@ -652,14 +688,15 @@
             currentUserInitials = currentUserFullName.charAt(0).toUpperCase();
         } catch (err) {
             console.warn('Could not fetch user name:', err);
+            // Gracefully fall back if the Firestore read fails
             currentUserFullName = user.email?.split('@')[0] || 'User';
             currentUserInitials = currentUserFullName.charAt(0).toUpperCase();
         }
     }
 
-    updateAuthPrompt();          // update the header to show real name
-    await loadVotes();           // these functions now use currentUser
-    await loadUserVoteState();
+    updateAuthPrompt();         // Update header to show the resolved name or guest prompt
+    await loadVotes();          // Load vote counts now that currentUser is set
+    await loadUserVoteState();  // Restore the user's prior vote selections per card
 });
 </script>
 </body>
