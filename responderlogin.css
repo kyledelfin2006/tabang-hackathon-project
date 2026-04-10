@@ -766,3 +766,33 @@ body {
 }
 .back-btn:active { background: rgba(255,255,255,0.15); }
 .back-btn svg { width: 16px; height: 16px; stroke: #93c5fd; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.card-actions {
+    margin-top: 12px;
+    text-align: right;
+}
+.respond-btn {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.respond-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+.respond-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.help-marker { background:transparent !important; border:none !important; }
+    .stats-row { display:flex; justify-content:space-around; margin-top:15px; padding:10px 0; border-top:1px solid rgba(255,255,255,0.1); }
+    .stat-item { display:flex; flex-direction:column; align-items:center; color:white; font-size:12px; }
+    .stat-item i { font-size:18px; margin-bottom:4px; }
+    .stat-item span:first-of-type { font-size:16px; font-weight:bold; margin-bottom:2px; }

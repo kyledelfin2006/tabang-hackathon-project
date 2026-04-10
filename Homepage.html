@@ -243,6 +243,7 @@
 
 
 <script type="module">
+    // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
     import { auth, db } from "./firebase.js";
     import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -435,8 +436,11 @@
     // We hide the badge the moment they open the panel — not after they close it —
     // so it doesn't flash back while they're still reading.
     let notifDismissed = false;
+    let notifIsOpen = false;
 
     function openNotif() {
+        if (notifIsOpen) return;
+        notifIsOpen = true;
         notifPanel.classList.add('open');
         notifOverlay.classList.add('open');
         notifOverlay.removeAttribute('aria-hidden');
@@ -444,10 +448,11 @@
         // Hide badge immediately on open — feels more responsive than waiting for close
         notifBadge.style.visibility = 'hidden';
         notifDismissed = true;
-        document.getElementById('closeNotif').focus();
     }
 
     function closeNotif() {
+        if (!notifIsOpen) return;
+        notifIsOpen = false;
         notifPanel.classList.remove('open');
         notifOverlay.classList.remove('open');
         notifOverlay.setAttribute('aria-hidden', 'true');
@@ -455,7 +460,6 @@
         // Only restore the badge if they somehow closed without actually opening
         // (shouldn't happen, but just being safe)
         if (!notifDismissed) notifBadge.style.visibility = '';
-        openNotifBtn.focus();
     }
 
     openNotifBtn.addEventListener('click', openNotif);
