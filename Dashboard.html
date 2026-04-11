@@ -234,6 +234,17 @@
     <div style="height:28px;"></div>
 
 </div>
-<script type="module" src="JS/Dashboard.js"></script>
+
+<!-- Step 1: Expose Firebase db to window so plain scripts can use it -->
+<script type="module">
+    import { db } from './javascript/firebase.js';
+    import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    window._tabangDb      = db;
+    window._firestoreFns  = { collection, getDocs };
+</script>
+
+<!-- Step 2: Load Dashboard as a plain script AFTER Leaflet — no module timing issues -->
+<script src="JS/Dashboard.js"></script>
+
 </body>
 </html>
