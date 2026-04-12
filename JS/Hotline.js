@@ -8,7 +8,8 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/f
 const votes = {
     bfp:        { up: 12, down: 2, userVote: null },
     kalibo:     { up: 12, down: 2, userVote: null },
-    mdrrmo:     { up: 12, down: 2, userVote: null },
+    mdrrmo:        { up: 12, down: 2, userVote: null },
+    mdrrmo_kalibo: { up: 0,  down: 0, userVote: null },
     coastguard: { up: 6,  down: 0, userVote: null },
     redcross:   { up: 10, down: 1, userVote: null }
 };
@@ -18,7 +19,8 @@ const votes = {
 const comments = {
     bfp:        [],
     kalibo:     [],
-    mdrrmo:     [],
+    mdrrmo:        [],
+    mdrrmo_kalibo: [],
     coastguard: [],
     redcross:   []
 };
@@ -58,10 +60,14 @@ function attachEventListeners() {
         });
     }
 
-    // Each comment button carries its card ID and display name in data attributes
-    document.querySelectorAll('.comment-btn').forEach(btn => {
-        btn.addEventListener('click', () => openComments(btn.dataset.card, btn.dataset.name));
-    });
+    // Use event delegation for comment buttons too — consistent with vote buttons
+    if (content) {
+        content.addEventListener('click', (event) => {
+            const btn = event.target.closest('.comment-btn');
+            if (!btn || !content.contains(btn)) return;
+            openComments(btn.dataset.card, btn.dataset.name);
+        });
+    }
 
     const sendBtn = document.getElementById('commentSendBtn');
     if (sendBtn) sendBtn.addEventListener('click', sendComment);
