@@ -76,7 +76,7 @@ The system is community-focused and built specifically for Aklan-based emergency
 ## Tech Stack
 - Frontend: HTML, CSS, JavaScript
 - Backend: Firebase, Cloudinary
-- Authentication: Firebase built in Authentication system
+- Authentication: Firebase built-in Authentication system
 - Database: Firestore
 
 ---
