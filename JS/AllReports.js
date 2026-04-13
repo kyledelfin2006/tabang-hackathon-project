@@ -12,13 +12,12 @@ let repFilter = 'all';
 // Redirect to login if no user is authenticated; otherwise store the user and load reports
 onAuthStateChanged(auth, (user) => {
     if (!user) {
-        window.location.href = 'responderlogin.html';
+        window.location.href = 'index.html';
         return;
     }
     currentUser = user;
     renderFloodReports();
 });
-
 
 // Updates the active filter pill and re-renders the report list based on the selected filter
 function setRepFilter(filter, btn) {
@@ -112,12 +111,17 @@ async function renderFloodReports() {
 
                 // Build the middle card rows differently depending on report type
                 const rows = isHelp
-                    // Help requests show name and situation description
                     ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
                        <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
-                    // Flood reports show location and optional details
                     : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
                        ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
+
+                const statusValue = r.status || 'unresolved';
+                const buttonText = getButtonText(statusValue);
+                let buttonClass = 'respond-btn';
+                if (statusValue === 'unresolved') buttonClass += ' btn-respond';
+                else if (statusValue === 'responding') buttonClass += ' btn-responding';
+                else if (statusValue === 'resolved') buttonClass += ' btn-resolved';
 
                 return `
                     <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
@@ -137,9 +141,8 @@ async function renderFloodReports() {
                             <div><div class="row-label">Submitted</div><div class="row-val">${fmtDate(r.timestamp)}</div></div>
                         </div>
                         <div class="card-actions">
-                            <!-- Status button advances the report through unresolved → responding → resolved -->
-                            <button class="respond-btn" onclick="updateStatus('${r.id}', '${r.type}', '${r.status || 'unresolved'}')">
-                                ${getButtonText(r.status || 'unresolved')}
+                            <button class="${buttonClass}" onclick="updateStatus('${r.id}', '${r.type}', '${statusValue}')">
+                                ${buttonText}
                             </button>
                         </div>
                     </div>`;
@@ -176,6 +179,7 @@ function fmtDate(timestamp) {
 
 // Escapes HTML special characters to prevent XSS when rendering user-submitted content
 function escHtml(text) {
+    if (!text) return '';
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
@@ -185,11 +189,12 @@ function escHtml(text) {
 function getDisplayName(submittedBy) {
     if (!submittedBy) return 'Unknown';
     if (submittedBy.includes('@')) {
-        // Use only the local part before the @ symbol (e.g. "john.doe" from "john.doe@email.com")
         return submittedBy.split('@')[0];
     }
     return submittedBy;
 }
 
-// Expose viewReport globally
-window.viewReport = viewReport;
+// Dummy viewReport function if needed elsewhere
+window.viewReport = function(reportId) {
+    console.log('View report:', reportId);
+};
