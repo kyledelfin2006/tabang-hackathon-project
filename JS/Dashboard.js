@@ -1,56 +1,96 @@
-// Dashboard.js — plain script (not module), runs after Leaflet is loaded
+// Dashboard.js — Flood response + Help requests + Evacuation centers (Aklan only)
 
 (function () {
 
-    // Static incident data
-    const incidents = [
-        {name:'Flood — Palo, Leyte',  lat:11.15, lng:124.99, type:'flood',   detail:'1,200 affected'},
-        {name:'Flood — Ormoc City',   lat:11.00, lng:124.61, type:'flood',   detail:'Roads submerged'},
-        {name:'Typhoon landfall',      lat:11.40, lng:125.10, type:'typhoon', detail:'Signal 3 · 4,200 affected'},
-        {name:'Typhoon — Samar',       lat:11.65, lng:125.00, type:'typhoon', detail:'Coastal flooding'},
-        {name:'Flood — Capiz',         lat:11.35, lng:122.63, type:'flood',   detail:'River 78% full'},
-        {name:'Fire — Iloilo City',    lat:10.72, lng:122.57, type:'fire',    detail:'3 barangays hit'},
-        {name:'Fire — Roxas City',     lat:11.59, lng:122.75, type:'fire',    detail:'Contained'},
-        {name:'Earthquake — Negros',   lat:10.20, lng:122.98, type:'quake',   detail:'Magnitude 4.2'},
-        {name:'Typhoon — Antique',     lat:11.00, lng:121.95, type:'typhoon', detail:'Gusts 95kph'},
-        {name:'Flood — Aklan',         lat:11.82, lng:122.49, type:'flood',   detail:'Low-lying inundated'},
-        {name:'Typhoon — Romblon',     lat:12.58, lng:122.27, type:'typhoon', detail:'Signal 2'},
-        {name:'Flood — S. Leyte',      lat:10.30, lng:124.97, type:'flood',   detail:'600 displaced'},
-        {name:'Evac — Iloilo',         lat:10.69, lng:122.55, type:'evac',    detail:'680 evacuees'},
-        {name:'Evac — Ormoc',          lat:11.01, lng:124.59, type:'evac',    detail:'420 evacuees'},
-        {name:'Evac — Kalibo',         lat:11.71, lng:122.37, type:'evac',    detail:'310 evacuees'},
-        {name:'Earthquake — Cebu',     lat:10.31, lng:123.89, type:'quake',   detail:'Magnitude 3.8'},
-        {name:'Fire — Bacolod',        lat:10.67, lng:122.95, type:'fire',    detail:'Controlled'},
-        {name:'Typhoon — Mindoro',     lat:13.05, lng:121.12, type:'typhoon', detail:'Signal 1'},
+    // ----- Static fallback data (Aklan only, used when Firebase collections are empty) -----
+    const staticFloods = [
+        { name: 'Flood — Kalibo',   lat: 11.710, lng: 122.364, detail: 'Sample flood report' },
+        { name: 'Flood — Numancia', lat: 11.705, lng: 122.330, detail: 'Sample flood report' }
     ];
 
-    const aklanBounds = { minLat:11.3, maxLat:12.0, minLng:121.8, maxLng:122.6 };
-    const aklanIncidents = incidents.filter(i =>
-        i.lat >= aklanBounds.minLat && i.lat <= aklanBounds.maxLat &&
-        i.lng >= aklanBounds.minLng && i.lng <= aklanBounds.maxLng
-    );
+    const staticHelp = [
+        { name: 'Help: Family stranded', lat: 11.715, lng: 122.368, detail: 'Need rescue', phone: '09123456789' }
+    ];
 
-    const cmap = {
-        flood:'#378ADD', fire:'#EF9F27', quake:'#888780',
-        typhoon:'#33b4a5', evac:'#4caf7d', user:'#ff8c42', help:'#aa66ff'
-    };
+    const staticEvacs = [
+        { name: 'Evacuation Center — Kalibo', lat: 11.702, lng: 122.370, detail: 'Capacity: 300 families', phone: '09271234567' },
+        { name: 'Evacuation Center — Numancia', lat: 11.700, lng: 122.328, detail: 'Capacity: 200 families', phone: '09271234568' }
+    ];
 
-    function addMarkersToMap(map, markersLayer, reports) {
+    // Status‑based colors for flood reports and help requests
+    function getStatusColor(status) {
+        switch (status?.toLowerCase()) {
+            case 'responding': return '#f59e0b'; // yellow
+            case 'resolved':   return '#10b981'; // green
+            default:           return '#ef4444'; // unresolved (red)
+        }
+    }
+
+    // Create a colored marker with Font Awesome icon
+    function createMarker(color, iconClass, popupContent) {
+        const html = `
+            <div style="
+                background-color: ${color};
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                font-size: 16px;
+                color: white;
+            ">
+                <i class="fas ${iconClass}"></i>
+            </div>
+        `;
+        const icon = L.divIcon({
+            html: html,
+            className: 'custom-marker',
+            iconSize: [34, 34],
+            popupAnchor: [0, -12]
+        });
+        return L.marker([0,0], { icon }).bindPopup(popupContent);
+    }
+
+    function addMarkersToMap(map, markersLayer, floodHelpItems, evacItems) {
         markersLayer.clearLayers();
-        reports.forEach(inc => {
-            const color  = cmap[inc.type] || '#888780';
-            const radius = inc.type === 'typhoon' ? 10 : 8;
-            let popup = `<strong>${inc.name}</strong><br>${inc.detail}`;
-            if (inc.locationText) popup += `<br>📍 ${inc.locationText}`;
-            if (inc.phone)        popup += `<br>📞 ${inc.phone}`;
-            if (inc.ts)           popup += `<br><small>📅 ${inc.ts}</small>`;
-            if (inc.img)          popup += `<br><a href="${inc.img}" target="_blank">📷 View image</a>`;
 
-            L.circleMarker([inc.lat, inc.lng], {
-                radius, fillColor: color,
-                color: '#fff', weight: 1.5,
-                opacity: 1, fillOpacity: 0.9
-            }).bindPopup(popup).addTo(markersLayer);
+        // Add flood/help markers (status‑based)
+        floodHelpItems.forEach(item => {
+            const color = getStatusColor(item.status);
+            const iconClass = item.type === 'flood' ? 'fa-water' : 'fa-circle-exclamation';
+            const popupContent = `
+                <div style="font-size:12px;font-family:Inter,sans-serif;">
+                    <strong>${item.name}</strong><br>
+                    <b>Details:</b> ${item.detail}<br>
+                    <b>Status:</b> ${item.status}<br>
+                    ${item.locationText ? `<b>Location:</b> ${item.locationText}<br>` : ''}
+                    ${item.phone ? `<b>Phone:</b> ${item.phone}<br>` : ''}
+                    ${item.ts ? `<small>📅 ${item.ts}</small><br>` : ''}
+                    ${item.img ? `<a href="${item.img}" target="_blank">📷 View image</a>` : ''}
+                </div>
+            `;
+            const marker = createMarker(color, iconClass, popupContent);
+            marker.setLatLng([item.lat, item.lng]);
+            marker.addTo(markersLayer);
+        });
+
+        // Add evacuation center markers (always green, no status)
+        evacItems.forEach(evac => {
+            const color = '#4caf7d';
+            const iconClass = 'fa-people-arrows';
+            const popupContent = `
+                <div style="font-size:12px;font-family:Inter,sans-serif;">
+                    <strong>${evac.name}</strong><br>
+                    ${evac.detail}<br>
+                    ${evac.phone ? `📞 ${evac.phone}` : ''}
+                </div>
+            `;
+            const marker = createMarker(color, iconClass, popupContent);
+            marker.setLatLng([evac.lat, evac.lng]);
+            marker.addTo(markersLayer);
         });
     }
 
@@ -59,9 +99,7 @@
         const loadingEl = document.getElementById('dashMapLoading');
         if (!container) return;
 
-        // Create map
-        const map = L.map('dashMap').setView([11.6, 122.4], 9);
-
+        const map = L.map('dashMap').setView([11.71, 122.37], 11); // centered on Kalibo, Aklan
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors',
             maxZoom: 18
@@ -69,16 +107,18 @@
 
         const markersLayer = L.layerGroup().addTo(map);
 
-        // Plot static markers immediately — no waiting for Firebase
-        addMarkersToMap(map, markersLayer, aklanIncidents);
+        // Show fallback data immediately (flood/help + evac centers)
+        const initialFloodHelp = [
+            ...staticFloods.map(f => ({ ...f, type: 'flood', status: 'unresolved' })),
+            ...staticHelp.map(h => ({ ...h, type: 'help', status: 'unresolved' }))
+        ];
+        addMarkersToMap(map, markersLayer, initialFloodHelp, staticEvacs);
 
-        // Hide loading spinner right after map renders
         setTimeout(() => {
             map.invalidateSize();
             if (loadingEl) loadingEl.style.display = 'none';
         }, 200);
 
-        // Try to load Firebase data — but map already shows without it
         loadFirebaseData(map, markersLayer);
 
         window.addEventListener('resize', () => {
@@ -87,59 +127,90 @@
     }
 
     async function loadFirebaseData(map, markersLayer) {
-        // Only run if Firebase was loaded via the module script in HTML
         try {
             const db = window._tabangDb;
             if (!db) return;
 
             const { collection, getDocs } = window._firestoreFns;
 
-            const [fSnap, hSnap] = await Promise.all([
+            // 1. Load flood reports and help requests
+            const [floodSnap, helpSnap] = await Promise.all([
                 getDocs(collection(db, 'floodReports')),
                 getDocs(collection(db, 'helpRequests'))
             ]);
 
-            const extra = [];
+            const dynamicFloodHelp = [];
 
-            fSnap.forEach(doc => {
+            floodSnap.forEach(doc => {
                 const d = doc.data();
                 if (d.latitude && d.longitude) {
-                    extra.push({
-                        name: `Flood report: ${d.submittedBy || 'Anonymous'}`,
-                        lat: d.latitude, lng: d.longitude,
-                        type: 'user',
-                        detail: d.details || 'No details',
+                    dynamicFloodHelp.push({
+                        name: `Flood: ${d.submittedBy || 'Anonymous'}`,
+                        lat: d.latitude,
+                        lng: d.longitude,
+                        status: d.status || 'unresolved',
+                        type: 'flood',
+                        detail: d.details || d.description || 'No details',
                         locationText: d.location || '',
                         img: d.imageUrls?.[0] || '',
+                        phone: d.phone || '',
                         ts: d.timestamp?.toDate?.().toLocaleString() || ''
                     });
                 }
             });
 
-            hSnap.forEach(doc => {
+            helpSnap.forEach(doc => {
                 const d = doc.data();
                 if (d.latitude && d.longitude) {
-                    extra.push({
+                    dynamicFloodHelp.push({
                         name: `Help: ${d.name || d.submittedBy || 'Anonymous'}`,
-                        lat: d.latitude, lng: d.longitude,
+                        lat: d.latitude,
+                        lng: d.longitude,
+                        status: d.status || 'unresolved',
                         type: 'help',
                         detail: d.description || 'No description',
-                        phone: d.phone || '',
+                        locationText: d.location || '',
                         img: d.imageUrls?.[0] || '',
+                        phone: d.phone || '',
                         ts: d.timestamp?.toDate?.().toLocaleString() || ''
                     });
                 }
             });
 
-            // Re-render with all data combined
-            addMarkersToMap(map, markersLayer, [...aklanIncidents, ...extra]);
+            // 2. Load evacuation centers (if collection exists)
+            let dynamicEvacs = [];
+            try {
+                const evacSnap = await getDocs(collection(db, 'evacuationCenters'));
+                evacSnap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.latitude && d.longitude) {
+                        dynamicEvacs.push({
+                            name: d.name || 'Evacuation Center',
+                            lat: d.latitude,
+                            lng: d.longitude,
+                            detail: d.detail || d.description || 'No details',
+                            phone: d.phone || ''
+                        });
+                    }
+                });
+            } catch (e) {
+                console.warn('evacuationCenters collection not found or empty, using static fallback');
+            }
+
+            // Use dynamic data if available, otherwise fallback
+            const finalFloodHelp = dynamicFloodHelp.length > 0 ? dynamicFloodHelp : staticFloods.map(f => ({ ...f, type: 'flood', status: 'unresolved' })).concat(staticHelp.map(h => ({ ...h, type: 'help', status: 'unresolved' })));
+            const finalEvacs = dynamicEvacs.length > 0 ? dynamicEvacs : staticEvacs;
+
+            addMarkersToMap(map, markersLayer, finalFloodHelp, finalEvacs);
 
         } catch (err) {
-            console.warn('Firebase data not loaded for map:', err.message);
+            console.warn('Firebase data not fully loaded, using static fallback:', err.message);
+            // Ensure evac centers still show even if Firebase fails completely
+            const fallbackFloodHelp = staticFloods.map(f => ({ ...f, type: 'flood', status: 'unresolved' })).concat(staticHelp.map(h => ({ ...h, type: 'help', status: 'unresolved' })));
+            addMarkersToMap(map, markersLayer, fallbackFloodHelp, staticEvacs);
         }
     }
 
-    // Run after page is fully loaded
     if (document.readyState === 'complete') {
         initMap();
     } else {
