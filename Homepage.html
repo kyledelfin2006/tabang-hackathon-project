@@ -42,7 +42,31 @@
 
         <!-- HERO CARD -->
         <div class="hero-card">
-            <img class="hero-image" src="images/d42a55f46beca3b427c817d40ca02dab.png" alt="Flooded street in Aklan">
+            <!-- IMAGE CAROUSEL -->
+            <div class="carousel" aria-label="Flood awareness images" role="region">
+                <div class="carousel-track" id="carouselTrack" aria-live="polite">
+                    <div class="carousel-slide">
+                        <img class="hero-image" src="images/d42a55f46beca3b427c817d40ca02dab.png" alt="Flooded street in Aklan">
+                    </div>
+                    <div class="carousel-slide">
+                        <img class="hero-image" src="images/d42a55f46beca3b427c817d40ca02dab.png" alt="Rescue operations during flood">
+                    </div>
+                    <div class="carousel-slide">
+                        <img class="hero-image" src="images/d42a55f46beca3b427c817d40ca02dab.png" alt="Emergency responders in action">
+                    </div>
+                </div>
+                <button class="carousel-btn carousel-prev" id="carouselPrev" aria-label="Previous slide">
+                    <i class="fas fa-chevron-left" aria-hidden="true"></i>
+                </button>
+                <button class="carousel-btn carousel-next" id="carouselNext" aria-label="Next slide">
+                    <i class="fas fa-chevron-right" aria-hidden="true"></i>
+                </button>
+                <div class="carousel-dots" role="tablist" aria-label="Carousel navigation">
+                    <button class="carousel-dot active" data-index="0" role="tab" aria-selected="true" aria-label="Slide 1"></button>
+                    <button class="carousel-dot" data-index="1" role="tab" aria-selected="false" aria-label="Slide 2"></button>
+                    <button class="carousel-dot" data-index="2" role="tab" aria-selected="false" aria-label="Slide 3"></button>
+                </div>
+            </div>
             <div class="hero-title">Need help?<br>Report or Request Assistance</div>
             <div class="hero-desc">Quickly report flood incidents or request help from local authorities.</div>
             <div class="quick-actions">
