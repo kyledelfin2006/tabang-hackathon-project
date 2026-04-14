@@ -228,38 +228,53 @@ notifOverlay.addEventListener('click', closeNotif);
 // ─── Image Carousel ───────────────────────────────────────────────
 
 (function initCarousel() {
-    const track   = document.getElementById('carouselTrack');
-    const dots    = document.querySelectorAll('.carousel-dot');
-    const prevBtn = document.getElementById('carouselPrev');
-    const nextBtn = document.getElementById('carouselNext');
-    const total   = dots.length;
+    const track      = document.getElementById('carouselTrack');
+    const dotsContainer = document.querySelector('.carousel-dots');
+    const prevBtn    = document.getElementById('carouselPrev');
+    const nextBtn    = document.getElementById('carouselNext');
 
-    let current      = 0;   // active slide index
+    let current      = 0;
     let autoplayTimer = null;
-    let startX       = 0;   // touch start X
+    let startX       = 0;
     let isDragging   = false;
 
+    // Always read live count so newly added slides are included
+    function getTotal() { return track.querySelectorAll('.carousel-slide').length; }
+    function getDots()  { return dotsContainer.querySelectorAll('.carousel-dot'); }
+
     function goTo(index) {
-        // Wrap around
+        const total = getTotal();
         current = (index + total) % total;
         track.style.transform = `translateX(-${current * 100}%)`;
-        dots.forEach((d, i) => {
+        getDots().forEach((d, i) => {
             d.classList.toggle('active', i === current);
             d.setAttribute('aria-selected', String(i === current));
         });
+    }
+
+    // Rebuild dot indicators to match current slide count
+    function rebuildDots() {
+        const total = getTotal();
+        dotsContainer.innerHTML = '';
+        for (let i = 0; i < total; i++) {
+            const dot = document.createElement('button');
+            dot.className = 'carousel-dot' + (i === current ? ' active' : '');
+            dot.dataset.index = i;
+            dot.setAttribute('role', 'tab');
+            dot.setAttribute('aria-selected', String(i === current));
+            dot.setAttribute('aria-label', `Slide ${i + 1}`);
+            dot.addEventListener('click', () => { goTo(i); resetAutoplay(); });
+            dotsContainer.appendChild(dot);
+        }
     }
 
     // Buttons
     prevBtn.addEventListener('click', () => { goTo(current - 1); resetAutoplay(); });
     nextBtn.addEventListener('click', () => { goTo(current + 1); resetAutoplay(); });
 
-    // Dot clicks
-    dots.forEach(dot => {
-        dot.addEventListener('click', () => {
-            goTo(Number(dot.dataset.index));
-            resetAutoplay();
-        });
-    });
+    rebuildDots();
+
+    // Dot clicks are wired inside rebuildDots() dynamically
 
     // Touch / swipe support
     track.addEventListener('touchstart', (e) => {
@@ -301,4 +316,167 @@ notifOverlay.addEventListener('click', closeNotif);
 
     goTo(0); // initialise
     startAutoplay();
+
+    // ── User Image Upload for Carousel ──────────────────────────────
+    // Every uploaded image is ADDED as a new slide at the end of the carousel.
+    const STORAGE_KEY = 'tabang_carousel_images';
+    const REPORT_IMAGES_KEY = 'tabang_carousel_report_images';
+
+    // Load previously saved images from localStorage (persists across sessions)
+    function loadSavedImages() {
+        try {
+            // 1. Load user-uploaded carousel images (added via double-tap on homepage)
+            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+            saved.forEach((dataUrl) => {
+                if (dataUrl) addSlide(dataUrl);
+            });
+
+            // 2. Load report images synced from MyReports page
+            const reportImages = JSON.parse(localStorage.getItem(REPORT_IMAGES_KEY) || '[]');
+            reportImages.forEach((url) => {
+                if (url) addSlide(url, /* isReport */ true);
+            });
+        } catch (_) {}
+    }
+
+    function saveImages() {
+        try {
+            // Save only user-uploaded slides (those after the original 3)
+            const slides = track.querySelectorAll('.carousel-slide img');
+            const allSrcs = Array.from(slides).map(img => img.src);
+            // Only save data URLs (user uploads), not the original image paths
+            const uploads = allSrcs.filter(src => src.startsWith('data:'));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
+        } catch (_) {}
+    }
+
+    // Creates and appends a new slide + dot for the given image src
+    function addSlide(src, isReport = false) {
+        const slide = document.createElement('div');
+        slide.className = 'carousel-slide';
+        const img = document.createElement('img');
+        img.className = 'hero-image';
+        img.src = src;
+        img.alt = isReport ? 'Community flood report image' : 'User uploaded image';
+        slide.appendChild(img);
+
+        // Add a small "Community Report" badge on report images
+        if (isReport) {
+            const badge = document.createElement('div');
+            badge.style.cssText = `
+                position:absolute; top:8px; left:8px;
+                background:rgba(220,53,69,0.85); color:white;
+                border-radius:10px; padding:3px 8px;
+                font-size:10px; font-weight:700; font-family:'Inter',sans-serif;
+                z-index:15; pointer-events:none;
+                display:flex; align-items:center; gap:4px;
+            `;
+            badge.innerHTML = '<i class="fas fa-flag" style="font-size:9px;"></i> Community Report';
+            slide.style.position = 'relative';
+            slide.appendChild(badge);
+        }
+
+        track.appendChild(slide);
+        rebuildDots();
+    }
+
+    // Hidden file input — triggered by double-tap / double-click / long-press
+    const carouselFileInput = document.createElement('input');
+    carouselFileInput.type = 'file';
+    carouselFileInput.accept = 'image/*';
+    carouselFileInput.multiple = true; // allow picking multiple at once
+    carouselFileInput.style.display = 'none';
+    document.body.appendChild(carouselFileInput);
+
+    // Long-press (500ms) or double-tap on a slide to add an image
+    let pressTimer = null;
+    let lastTap = 0;
+
+    track.addEventListener('touchstart', () => {
+        pressTimer = setTimeout(() => {
+            carouselFileInput.click();
+        }, 500);
+    }, { passive: true });
+
+    track.addEventListener('touchend', () => {
+        clearTimeout(pressTimer);
+        // Double-tap detection
+        const now = Date.now();
+        if (now - lastTap < 300) {
+            carouselFileInput.click();
+        }
+        lastTap = now;
+    }, { passive: true });
+
+    // Desktop: double-click to add
+    track.addEventListener('dblclick', () => {
+        carouselFileInput.click();
+    });
+
+    carouselFileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                addSlide(ev.target.result);
+                saveImages();
+                // Navigate to the newly added slide
+                goTo(getTotal() - 1);
+                showUploadToast(`Image added! (${getTotal()} slides total)`);
+            };
+            reader.readAsDataURL(file);
+        });
+        // Reset so same file can be re-selected
+        carouselFileInput.value = '';
+    });
+
+    // Add a small camera hint overlay on the active slide
+    function updateCameraHint() {
+        track.querySelectorAll('.slide-upload-hint').forEach(h => h.remove());
+        const slides = track.querySelectorAll('.carousel-slide');
+        if (slides[current]) {
+            const hint = document.createElement('div');
+            hint.className = 'slide-upload-hint';
+            hint.innerHTML = '<i class="fas fa-camera"></i>';
+            hint.style.cssText = `
+                position:absolute; bottom:28px; right:10px;
+                background:rgba(0,0,0,0.45); color:white;
+                border-radius:50%; width:28px; height:28px;
+                display:flex; align-items:center; justify-content:center;
+                font-size:12px; pointer-events:none; z-index:15;
+                transition:opacity 0.3s;
+            `;
+            slides[current].style.position = 'relative';
+            slides[current].appendChild(hint);
+        }
+    }
+
+    // Toast notification
+    function showUploadToast(msg) {
+        let toast = document.getElementById('carouselToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'carouselToast';
+            toast.style.cssText = `
+                position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
+                background:rgba(0,0,0,0.75); color:white;
+                padding:8px 16px; border-radius:20px;
+                font-size:12px; font-weight:600; font-family:'Inter',sans-serif;
+                z-index:200; opacity:0; transition:opacity 0.3s; white-space:nowrap;
+            `;
+            document.querySelector('.phone').appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.style.opacity = '1';
+        setTimeout(() => { toast.style.opacity = '0'; }, 2000);
+    }
+
+    // Update camera hint whenever the slide transition ends
+    track.addEventListener('transitionend', updateCameraHint, { passive: true });
+
+    loadSavedImages();
+    goTo(0);
+    startAutoplay();
+    setTimeout(updateCameraHint, 100);
 })();

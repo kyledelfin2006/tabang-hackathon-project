@@ -331,6 +331,11 @@ async function renderList() {
         return dateB - dateA;
     });
 
+    // ── Sync report images to homepage carousel ──────────────────────
+    // Collect all imageUrls from every report and save them to localStorage
+    // so Homepage.js can pick them up and display them in the carousel.
+    syncReportImagesToCarousel(items);
+
     if (items.length === 0) {
         reportsList.innerHTML = `
                 <div class="empty-state">
@@ -366,3 +371,20 @@ window.openImagePreview = openImagePreview;
 window.closeImagePreview = closeImagePreview;
 window.openMapPreview   = openMapPreview;
 window.closeMapPreview  = closeMapPreview;
+
+// ─── Sync report images → homepage carousel ───────────────────────────────
+// Saves all unique image URLs from reports into localStorage.
+// Homepage.js reads this key on load and adds them as carousel slides.
+function syncReportImagesToCarousel(items) {
+    try {
+        const CAROUSEL_REPORT_KEY = 'tabang_carousel_report_images';
+        // Gather every imageUrl from every report, flatten, deduplicate
+        const allUrls = items
+            .flatMap(item => Array.isArray(item.imageUrls) ? item.imageUrls : [])
+            .filter(url => typeof url === 'string' && url.trim() !== '');
+        const unique = [...new Set(allUrls)];
+        localStorage.setItem(CAROUSEL_REPORT_KEY, JSON.stringify(unique));
+    } catch (err) {
+        console.warn('Could not sync report images to carousel:', err);
+    }
+}
