@@ -1,6 +1,6 @@
     // Firebase imports: database, auth instance, Firestore write helpers, and auth state listener
 
-    import { db, auth } from "../javascript/firebase.js";
+    import { db, auth } from "./firebase.js";
     import { addDoc, collection, getDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
