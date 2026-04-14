@@ -73,10 +73,72 @@ body {
     padding: 16px;
     display: flex; flex-direction: column; align-items: center;
 }
-.hero-image {
-    width: 100%; height: 110px; object-fit: cover;
-    border-radius: 16px; margin-bottom: 14px;
+/* hero-image styles now live inside .carousel-slide */
+/* ── CAROUSEL ── */
+.carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 16px;
+    margin-bottom: 14px;
 }
+.carousel-track {
+    display: flex;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+.carousel-slide {
+    min-width: 100%;
+    flex-shrink: 0;
+}
+.carousel-slide .hero-image {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 0;
+    margin-bottom: 0;
+    display: block;
+}
+/* Prev / Next buttons */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px; height: 28px;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    color: white; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background 0.2s;
+    z-index: 10;
+}
+.carousel-btn:active { background: rgba(0,0,0,0.6); }
+.carousel-prev { left: 8px; }
+.carousel-next { right: 8px; }
+/* Dot indicators */
+.carousel-dots {
+    position: absolute;
+    bottom: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; gap: 6px;
+    z-index: 10;
+}
+.carousel-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    border: none; cursor: pointer;
+    padding: 0;
+    transition: background 0.25s, transform 0.25s;
+}
+.carousel-dot.active {
+    background: white;
+    transform: scale(1.25);
+}
+
 .hero-title {
     color: white; font-size: 18px; font-weight: 800;
     font-family: 'Inter', sans-serif;
