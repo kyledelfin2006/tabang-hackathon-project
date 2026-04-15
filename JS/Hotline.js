@@ -1,17 +1,21 @@
-import { db, auth } from './firebase.js';
-import { collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { db, auth } from '../javascript/firebase.js';
+import { collection, doc, getDoc, setDoc, addDoc, getDocs, query, where, serverTimestamp, onSnapshot, deleteDoc, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+function randomInitialUp() {
+    return Math.floor(Math.random() * 11) + 11;
+}
 
 // Local vote state — serves as a fallback and optimistic update buffer.
 // These seed values match what's hardcoded in the HTML so the UI
 // doesn't flicker to "0" while Firestore loads.
 const votes = {
-    bfp:        { up: 12, down: 2, userVote: null },
-    kalibo:     { up: 12, down: 2, userVote: null },
-    mdrrmo:        { up: 12, down: 2, userVote: null },
-    mdrrmo_kalibo: { up: 0,  down: 0, userVote: null },
-    coastguard: { up: 6,  down: 0, userVote: null },
-    redcross:   { up: 10, down: 1, userVote: null }
+    bfp:           { up: randomInitialUp(), down: 2, userVote: null },
+    kalibo:        { up: randomInitialUp(), down: 2, userVote: null },
+    mdrrmo:        { up: randomInitialUp(), down: 2, userVote: null },
+    mdrrmo_kalibo: { up: randomInitialUp(), down: 0, userVote: null },
+    coastguard:    { up: randomInitialUp(), down: 0, userVote: null },
+    redcross:      { up: randomInitialUp(), down: 1, userVote: null }
 };
 
 // In-memory comment cache per hotline card.
@@ -72,6 +76,17 @@ function attachEventListeners() {
     const sendBtn = document.getElementById('commentSendBtn');
     if (sendBtn) sendBtn.addEventListener('click', sendComment);
 
+    const commentsList = document.getElementById('commentsList');
+    if (commentsList) {
+        commentsList.addEventListener('click', (event) => {
+            const btn = event.target.closest('.comment-delete-btn');
+            if (!btn || !commentsList.contains(btn)) return;
+            const commentId = btn.dataset.commentId;
+            if (!commentId) return;
+            deleteComment(commentId);
+        });
+    }
+
     const commentInput = document.getElementById('commentInput');
     if (commentInput) {
         // Send on Enter, newline on Shift+Enter — feels like a chat app
@@ -123,11 +138,8 @@ async function loadVotes() {
                 votes[id].up = data.up || 0;
                 votes[id].down = data.down || 0;
             } else {
-                // Doc doesn't exist yet — seed it, but only if the user is
-                // signed in. Anonymous writes will get rejected by Firestore rules.
-                if (currentUser) {
-                    await setDoc(docRef, { up: votes[id].up, down: votes[id].down });
-                }
+                // Seed missing vote docs with a randomized initial like count.
+                if (currentUser) await setDoc(docRef, { up: votes[id].up, down: votes[id].down });
             }
 
             updateVoteDisplay(id);
@@ -153,20 +165,24 @@ async function loadVotes() {
 // This was accidentally defined inside loadVotes() at some point — moved it
 // out so it can be called independently after auth state changes too.
 async function loadUserVoteState() {
-    function updateAuthPrompt() {
-        const prompt = document.getElementById('authPrompt');
-        if (!prompt) return;
-        if (currentUser && currentUserFullName) {
-            prompt.innerHTML = `Signed in as ${escapeHtml(currentUserFullName)}.`;
-            prompt.classList.remove('guest');
-        } else if (currentUser) {
-            prompt.innerHTML = `Signed in as ${escapeHtml(currentUser.email || 'User')}.`;
-            prompt.classList.remove('guest');
-        } else {
-            prompt.innerHTML = `Guest mode: <button id="loginButton">Sign in to vote</button>`;
-            prompt.classList.add('guest');
-            const loginBtn = document.getElementById('loginButton');
-            if (loginBtn) loginBtn.onclick = () => window.location.href = 'Login.html';
+    Object.keys(votes).forEach(id => {
+        votes[id].userVote = null;
+        updateVoteDisplay(id);
+    });
+
+    if (!currentUser) return;
+
+    for (const id of Object.keys(votes)) {
+        try {
+            const userVoteDocRef = doc(userVotesCollection, `${currentUser.uid}_${id}`);
+            const userVoteSnap = await getDoc(userVoteDocRef);
+            if (userVoteSnap.exists()) {
+                const vote = userVoteSnap.data().vote;
+                votes[id].userVote = vote === 'up' || vote === 'down' ? vote : null;
+            }
+            updateVoteDisplay(id);
+        } catch (err) {
+            console.warn(`Could not load saved vote for ${id}:`, err);
         }
     }
 }
@@ -220,47 +236,63 @@ async function handleVote(cardId, type) {
     }
 
     const v = votes[cardId];
-    const upBtn = document.querySelector(`.reaction-btn.upvote[data-card="${cardId}"]`);
-    const downBtn = document.querySelector(`.reaction-btn.downvote[data-card="${cardId}"]`);
+    if (!v) return;
 
     // Clicking the same vote twice does nothing — could toggle it off later if needed
     if (v.userVote === type) return;
 
-    // Save original state in case we need to roll back on Firestore failure
-    const originalUp = v.up, originalDown = v.down, originalUserVote = v.userVote;
-
-    // Optimistic update — apply locally first so the UI feels instant
-    if (v.userVote === 'up') { v.up--; upBtn?.classList.remove('voted'); }
-    else if (v.userVote === 'down') { v.down--; downBtn?.classList.remove('voted'); }
-
-    if (type === 'up') { v.up++; upBtn?.classList.add('voted'); pulseBtn(upBtn); }
-    else { v.down++; downBtn?.classList.add('voted'); pulseBtn(downBtn); }
-
-    v.userVote = type;
-    if (upBtn) upBtn.querySelector('.upvote-count').textContent = v.up;
-    if (downBtn) downBtn.querySelector('.downvote-count').textContent = v.down;
-
     try {
-        // Write the aggregate vote count and the per-user record separately.
-        // The per-user doc uses a composite key (uid + hotlineId) so one user
-        // can't rack up multiple votes on the same hotline.
         const voteDocRef = doc(votesCollection, cardId);
         const userVoteDocRef = doc(userVotesCollection, `${currentUser.uid}_${cardId}`);
-        await setDoc(voteDocRef, { up: v.up, down: v.down });
-        await setDoc(userVoteDocRef, {
-            userId: currentUser.uid,
-            hotlineId: cardId,
-            vote: type,
-            timestamp: serverTimestamp()
+
+        const result = await runTransaction(db, async (transaction) => {
+            const [voteSnap, userVoteSnap] = await Promise.all([
+                transaction.get(voteDocRef),
+                transaction.get(userVoteDocRef)
+            ]);
+
+            const voteData = voteSnap.exists() ? voteSnap.data() : { up: votes[cardId].up, down: votes[cardId].down };
+            const previousVote = userVoteSnap.exists() ? userVoteSnap.data().vote : null;
+
+            if (previousVote === type) {
+                return {
+                    up: voteData.up || 0,
+                    down: voteData.down || 0,
+                    userVote: previousVote || null,
+                    changed: false
+                };
+            }
+
+            let up = voteData.up || 0;
+            let down = voteData.down || 0;
+
+            if (previousVote === 'up') up = Math.max(0, up - 1);
+            if (previousVote === 'down') down = Math.max(0, down - 1);
+
+            if (type === 'up') up += 1;
+            if (type === 'down') down += 1;
+
+            transaction.set(voteDocRef, { up, down }, { merge: true });
+            transaction.set(userVoteDocRef, {
+                userId: currentUser.uid,
+                hotlineId: cardId,
+                vote: type,
+                timestamp: serverTimestamp()
+            });
+
+            return { up, down, userVote: type, changed: true };
         });
+
+        v.up = result.up;
+        v.down = result.down;
+        v.userVote = result.userVote;
+        updateVoteDisplay(cardId);
+
+        const activeBtn = document.querySelector(`.reaction-btn.${type === 'up' ? 'upvote' : 'downvote'}[data-card="${cardId}"]`);
+        if (result.changed) pulseBtn(activeBtn);
     } catch (error) {
         console.error('Error updating vote:', error);
-        // Firestore write failed — revert the optimistic update so the UI
-        // doesn't show a count that didn't actually persist
-        v.up = originalUp; v.down = originalDown; v.userVote = originalUserVote;
-        if (originalUserVote === 'up') upBtn?.classList.add('voted');
-        if (originalUserVote === 'down') downBtn?.classList.add('voted');
-        updateVoteDisplay(cardId);
+        alert('Could not save your vote. Please try again.');
     }
 }
 
@@ -309,8 +341,20 @@ async function loadComments(cardId) {
     const q = query(commentsCollection, where('hotlineId', '==', cardId));
     const querySnapshot = await getDocs(q);
     const commentList = [];
+    const seenComments = new Set();
     querySnapshot.forEach(docSnap => {
         const data = docSnap.data();
+        const dedupeKey = [
+            (data.userId || '').toLowerCase(),
+            (data.user || '').trim().toLowerCase(),
+            (data.text || '').trim().toLowerCase()
+        ].join('::');
+
+        if (seenComments.has(dedupeKey)) {
+            return;
+        }
+        seenComments.add(dedupeKey);
+
         commentList.push({
             id: docSnap.id,           // keep the doc ID — useful if we add edit/delete later
             userId: data.userId || null,
@@ -341,6 +385,10 @@ function renderComments(cardId) {
                     <div class="comment-avatar">${escapeHtml(item.initials)}</div>
                     <span class="comment-user">${escapeHtml(item.user)}</span>
                     <span class="comment-time">${escapeHtml(item.time)}</span>
+                    ${item.userId === currentUser?.uid ? `
+                    <button class="comment-delete-btn" data-comment-id="${escapeHtml(item.id)}" title="Delete comment">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>` : ''}
                 </div>
                 <div class="comment-text">${escapeHtml(item.text)}</div>
             </div>
@@ -412,6 +460,31 @@ async function sendComment() {
     } catch (err) {
         console.error('Failed to send comment:', err);
         alert('Could not post comment. Please try again.');
+    }
+}
+
+async function deleteComment(commentId) {
+    if (!currentUser || !currentCard) return;
+
+    const comment = comments[currentCard]?.find(item => item.id === commentId);
+    if (!comment || comment.userId !== currentUser.uid) {
+        alert('You can only delete your own comments.');
+        return;
+    }
+
+    const shouldDelete = confirm('Delete this comment?');
+    if (!shouldDelete) return;
+
+    try {
+        await deleteDoc(doc(commentsCollection, commentId));
+        comments[currentCard] = comments[currentCard].filter(item => item.id !== commentId);
+        renderComments(currentCard);
+
+        const len = comments[currentCard].length;
+        document.getElementById('commentSub').textContent = `${len} comment${len !== 1 ? 's' : ''}`;
+    } catch (err) {
+        console.error('Failed to delete comment:', err);
+        alert('Could not delete comment. Please try again.');
     }
 }
 

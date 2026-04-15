@@ -1,7 +1,7 @@
 // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
-import { db, auth } from './firebase.js';
+import { db, auth } from '../javascript/firebase.js';
 import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, getDocs, updateDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Tracks the currently authenticated Firebase user
 let currentUser = null;
@@ -29,36 +29,6 @@ function setRepFilter(filter, btn) {
 
 // Expose to global scope so it can be called from inline HTML onclick attributes
 window.setRepFilter = setRepFilter;
-
-// Advances a report's status through the workflow: unresolved → responding → resolved
-async function updateStatus(id, type, currentStatus) {
-    let newStatus;
-    if (currentStatus === 'unresolved') {
-        newStatus = 'responding';
-    } else if (currentStatus === 'responding') {
-        newStatus = 'resolved';
-    } else {
-        return;
-    }
-    try {
-        // Determine the correct Firestore collection based on report type
-        const collectionName = type === 'flood' ? 'floodReports' : 'helpRequests';
-        await updateDoc(doc(db, collectionName, id), { status: newStatus });
-        renderFloodReports(); // Re-render the list to reflect the updated status
-    } catch (e) {
-        alert('Failed to update status: ' + e.message);
-    }
-}
-
-// Expose to global scope for inline HTML onclick usage
-window.updateStatus = updateStatus;
-
-// Returns the appropriate button label based on the current report status
-function getButtonText(status) {
-    if (status === 'unresolved') return 'Respond';
-    if (status === 'responding') return 'Responding';
-    return 'Resolved';
-}
 
 // Fetches flood reports and help requests from Firestore, applies filters/search/sort, and renders cards
 async function renderFloodReports() {
@@ -111,17 +81,12 @@ async function renderFloodReports() {
 
                 // Build the middle card rows differently depending on report type
                 const rows = isHelp
-                    ? `<div class="card-row"><i class="fas fa-user row-icon"></i><div><div class="row-label">Name</div><div class="row-val">${escHtml(r.name)}</div></div></div>
+                    ? `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
                        <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
                     : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
                        ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
 
-                const statusValue = r.status || 'unresolved';
-                const buttonText = getButtonText(statusValue);
-                let buttonClass = 'respond-btn';
-                if (statusValue === 'unresolved') buttonClass += ' btn-respond';
-                else if (statusValue === 'responding') buttonClass += ' btn-responding';
-                else if (statusValue === 'resolved') buttonClass += ' btn-resolved';
+                const submittedByName = isHelp ? (r.name || r.submittedBy) : r.submittedBy;
 
                 return `
                     <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
@@ -133,17 +98,12 @@ async function renderFloodReports() {
                         </div>
                         <div class="card-row">
                             <i class="fas fa-user row-icon"></i>
-                            <div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(getDisplayName(r.submittedBy))}</div></div>
+                            <div><div class="row-label">Submitted By</div><div class="row-val">${escHtml(getDisplayName(submittedByName))}</div></div>
                         </div>
                         ${rows}
                         <div class="card-row">
                             <i class="fas fa-clock row-icon"></i>
                             <div><div class="row-label">Submitted</div><div class="row-val">${fmtDate(r.timestamp)}</div></div>
-                        </div>
-                        <div class="card-actions">
-                            <button class="${buttonClass}" onclick="updateStatus('${r.id}', '${r.type}', '${statusValue}')">
-                                ${buttonText}
-                            </button>
                         </div>
                     </div>`;
             }).join('') + '<div style="height:12px;"></div>';

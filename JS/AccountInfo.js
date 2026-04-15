@@ -1,5 +1,5 @@
 // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
-import { db, auth } from "./firebase.js";
+import { db, auth } from "../javascript/firebase.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut as firebaseSignOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 

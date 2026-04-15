@@ -306,6 +306,25 @@ body {
        margin-left: auto; 
        font-family: 'Inter', sans-serif;
      }
+.comment-delete-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(255,107,107,0.24);
+    border-radius: 10px;
+    background: rgba(255,107,107,0.1);
+    color: #ff8a8a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.12s;
+}
+.comment-delete-btn:hover {
+    background: rgba(255,107,107,0.2);
+}
+.comment-delete-btn:active {
+    transform: scale(0.94);
+}
 .comment-text { 
     color: rgba(255,255,255,0.85);
      font-size: 13px; 
