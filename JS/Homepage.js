@@ -1,5 +1,5 @@
 // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
-import { auth, db } from "../javascript/firebase.js";
+import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
@@ -221,7 +221,84 @@ openNotifBtn.addEventListener('click', openNotif);
 document.getElementById('closeNotif').addEventListener('click', closeNotif);
 notifOverlay.addEventListener('click', closeNotif);
 
-// ─── Dashboard button ─────────────────────────────────────────────
-// Navigation is handled inline via onclick on the button element above.
+// ─── Navigation is handled inline via onclick on the button element above.
 // Keeping it there so it works even before this script fully loads —
 // important for slow connections during emergencies.
+
+// ─── Image Carousel ───────────────────────────────────────────────
+
+(function initCarousel() {
+    const track   = document.getElementById('carouselTrack');
+    const dots    = document.querySelectorAll('.carousel-dot');
+    const prevBtn = document.getElementById('carouselPrev');
+    const nextBtn = document.getElementById('carouselNext');
+    const total   = dots.length;
+
+    let current      = 0;   // active slide index
+    let autoplayTimer = null;
+    let startX       = 0;   // touch start X
+    let isDragging   = false;
+
+    function goTo(index) {
+        // Wrap around
+        current = (index + total) % total;
+        track.style.transform = `translateX(-${current * 100}%)`;
+        dots.forEach((d, i) => {
+            d.classList.toggle('active', i === current);
+            d.setAttribute('aria-selected', String(i === current));
+        });
+    }
+
+    // Buttons
+    prevBtn.addEventListener('click', () => { goTo(current - 1); resetAutoplay(); });
+    nextBtn.addEventListener('click', () => { goTo(current + 1); resetAutoplay(); });
+
+    // Dot clicks
+    dots.forEach(dot => {
+        dot.addEventListener('click', () => {
+            goTo(Number(dot.dataset.index));
+            resetAutoplay();
+        });
+    });
+
+    // Touch / swipe support
+    track.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        isDragging = true;
+    }, { passive: true });
+
+    track.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        const diff = startX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 40) {
+            goTo(diff > 0 ? current + 1 : current - 1);
+            resetAutoplay();
+        }
+        isDragging = false;
+    }, { passive: true });
+
+    // Auto-advance every 4 seconds
+    function startAutoplay() {
+        autoplayTimer = setInterval(() => goTo(current + 1), 4000);
+    }
+    function resetAutoplay() {
+        clearInterval(autoplayTimer);
+        startAutoplay();
+    }
+
+    // Pause when the phone-scroll container is not visible
+    const observer = new IntersectionObserver((entries) => {
+        entries[0].isIntersecting ? startAutoplay() : clearInterval(autoplayTimer);
+    }, { threshold: 0.3 });
+    observer.observe(track);
+
+    // Keyboard: left/right arrow keys when carousel is focused
+    track.parentElement.setAttribute('tabindex', '0');
+    track.parentElement.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft')  { goTo(current - 1); resetAutoplay(); }
+        if (e.key === 'ArrowRight') { goTo(current + 1); resetAutoplay(); }
+    });
+
+    goTo(0); // initialise
+    startAutoplay();
+})();
