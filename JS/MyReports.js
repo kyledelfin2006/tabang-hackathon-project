@@ -41,6 +41,18 @@ function formatDate(timestamp) {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+function formatSubmittedAt(timestamp) {
+    const date = toDate(timestamp);
+    if (!date) return '—';
+    return date.toLocaleString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
+}
+
 // ─── Map preview functions ───────────────────────────────────────────────
 function openMapPreview(lat, lng, title) {
     // Show modal
@@ -203,20 +215,10 @@ function buildCard(r) {
     const isOwner   = currentUser && r.userId === currentUser.uid;
     const hasCoords = r.latitude && r.longitude;
 
-    const cardClass   = `report-card${isHelp ? ' help-card' : ''}`;
+    const cardClass   = `report-card${isHelp ? ' help-card' : ''}${isOwner ? ' own-card' : ''}`;
     const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
     const iconClass   = isHelp ? 'row-icon help-row-icon' : 'row-icon';
-
-    // Type badge
-    const badgeHtml = isHelp
-        ? '<span class="badge badge-emergency"><i class="fas fa-ambulance"></i> Emergency Request</span>'
-        : '<span class="badge badge-priority"><i class="fas fa-flag"></i> Flood Report</span>';
-
-    // Owner badge
     const ownerName       = escapeHtml(r.reporterName || r.name || r.submittedBy || 'Unknown');
-    const ownerDetail     = escapeHtml(r.submittedBy || r.email || '');
-    const ownerBadgeClass = isOwner ? 'badge-you' : 'badge-other';
-    const ownerBadge      = `<span class="user-badge ${ownerBadgeClass}"><i class="fas fa-user"></i> ${ownerName}</span>`;
 
     // Delete button (only for own entries)
     const deleteBtn = isOwner
@@ -239,44 +241,23 @@ function buildCard(r) {
                            </button>`;
     }
 
-    // Content rows
-    let rows = '';
-    if (isHelp) {
-        rows = `
-                <div class="card-row">
-                    <i class="fas fa-user ${iconClass}"></i>
-                    <div><div class="row-label">Name</div><div class="row-val">${escapeHtml(r.name || '—')}</div></div>
-                </div>
-                <div class="card-row">
-                    <i class="fas fa-phone ${iconClass}"></i>
-                    <div><div class="row-label">Phone</div><div class="row-val">${escapeHtml(r.phone || '—')}</div></div>
-                </div>
-                <div class="card-row">
-                    <i class="fas fa-comment-alt ${iconClass}"></i>
-                    <div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(r.description || '—')}</div></div>
-                </div>`;
-    } else {
-        rows = `
-                <div class="card-row">
-                    <i class="fas fa-map-marker-alt ${iconClass}"></i>
-                    <div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div>
-                </div>
-                ${r.details ? `
-                <div class="card-row">
-                    <i class="fas fa-info-circle ${iconClass}"></i>
-                    <div><div class="row-label">Details</div><div class="row-val">${escapeHtml(r.details)}</div></div>
-                </div>` : ''}`;
-    }
-
-    // Timestamp row (common)
-    rows += `
+    const situationText = isHelp ? (r.description || '—') : (r.details || '—');
+    const rows = `
+            <div class="card-row">
+                <i class="fas fa-map-marker-alt ${iconClass}"></i>
+                <div><div class="row-label">Location</div><div class="row-val">${escapeHtml(r.location || '—')}</div></div>
+            </div>
+            <div class="card-row">
+                <i class="fas fa-comment-alt ${iconClass}"></i>
+                <div><div class="row-label">Situation</div><div class="row-val">${escapeHtml(situationText)}</div></div>
+            </div>
             <div class="card-row">
                 <i class="fas fa-user ${iconClass}"></i>
-                <div><div class="row-label">Reporter</div><div class="row-val">${ownerName}${ownerDetail ? ` (${ownerDetail})` : ''}</div></div>
+                <div><div class="row-label">Reporter</div><div class="row-val">${ownerName}</div></div>
             </div>
             <div class="card-row">
                 <i class="fas fa-clock ${iconClass}"></i>
-                <div><div class="row-label">Submitted</div><div class="row-val">${escapeHtml(formatDate(r.timestamp))}</div></div>
+                <div><div class="row-label">Time Submitted</div><div class="row-val">${escapeHtml(formatSubmittedAt(r.timestamp))}</div></div>
             </div>`;
 
     const imageHtml = buildImageGallery(r.imageUrls);
@@ -284,7 +265,7 @@ function buildCard(r) {
     return `
             <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
                 <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
-                    ${ownerBadge}
+                    <span class="user-badge ${isOwner ? 'badge-you' : 'badge-other'}">${isHelp ? 'Help Request' : 'Flood Report'}</span>
                     <div style="display:flex; gap:8px;">
                         ${locationBtn}
                         ${deleteBtn}
@@ -293,10 +274,6 @@ function buildCard(r) {
                 <div class="${dividerClass}"></div>
                 ${imageHtml}
                 ${rows}
-                <div class="card-footer">
-                    ${badgeHtml}
-                    <span class="card-assigned"><i class="fas fa-shield-alt"></i> MDRRMO Aklan</span>
-                </div>
             </div>`;
 }
 

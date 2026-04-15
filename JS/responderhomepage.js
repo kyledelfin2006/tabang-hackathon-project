@@ -121,20 +121,18 @@ window.initMap = function() {
             markers.forEach(m => map.removeLayer(m));
             markers = [];
 
-            let unresolved = 0, responding = 0, resolved = 0;
-
             const [floodSnap, helpSnap] = await Promise.all([
                 getDocs(collection(db, 'floodReports')),
                 getDocs(collection(db, 'helpRequests'))
             ]);
 
+            const floodCount = floodSnap.size;
+            const helpCount = helpSnap.size;
+
             // Process flood reports
             floodSnap.forEach(docSnap => {
                 const data = docSnap.data();
                 const status = data.status || 'unresolved';
-                if (status === 'unresolved') unresolved++;
-                else if (status === 'responding') responding++;
-                else if (status === 'resolved') resolved++;
 
                 if (data.latitude && data.longitude) {
                     const icon = createStatusIcon(status, 'flood');
@@ -158,9 +156,6 @@ window.initMap = function() {
             helpSnap.forEach(docSnap => {
                 const data = docSnap.data();
                 const status = data.status || 'unresolved';
-                if (status === 'unresolved') unresolved++;
-                else if (status === 'responding') responding++;
-                else if (status === 'resolved') resolved++;
 
                 if (data.latitude && data.longitude) {
                     const icon = createStatusIcon(status, 'help');
@@ -187,10 +182,9 @@ window.initMap = function() {
                 map.fitBounds(group.getBounds().pad(0.1));
             }
 
-            // Update stats counters
-            document.getElementById('unresolvedCount').textContent = unresolved;
-            document.getElementById('respondingCount').textContent = responding;
-            document.getElementById('resolvedCount').textContent   = resolved;
+            // Update live totals
+            document.getElementById('helpRequestCount').textContent = helpCount;
+            document.getElementById('floodReportCount').textContent = floodCount;
 
         } catch (error) {
             console.error('Error updating map:', error);

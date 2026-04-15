@@ -41,19 +41,14 @@
                 <div id="incidentMap" style="height:300px;width:100%;border-radius:12px;"></div>
                 <div class="stats-row">
                     <div class="stat-item">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <span id="unresolvedCount">0</span>
-                        <span>Unresolved</span>
+                        <i class="fas fa-hand-holding-water"></i>
+                        <span id="helpRequestCount">0</span>
+                        <span>Requests for Help</span>
                     </div>
                     <div class="stat-item">
-                        <i class="fas fa-clock"></i>
-                        <span id="respondingCount">0</span>
-                        <span>In Progress</span>
-                    </div>
-                    <div class="stat-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span id="resolvedCount">0</span>
-                        <span>Resolved</span>
+                        <i class="fas fa-water"></i>
+                        <span id="floodReportCount">0</span>
+                        <span>Flood Reports in Aklan</span>
                     </div>
                 </div>
             </div>
@@ -208,9 +203,29 @@
     .stat-item i { font-size: 16px; color: rgba(255,255,255,0.5); }
     .stat-item span:nth-child(2) { font-size: 20px; font-weight: 700; line-height: 1; }
     .stat-item span:nth-child(3) { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 500; }
-    .alerts-header { margin-bottom: 14px; }
-    .alerts-header h2 { font-size: 18px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; margin-bottom: 3px; }
-    .alerts-header p  { font-size: 12px; color: rgba(255,255,255,0.65); font-weight: 500; letter-spacing: 0.2px; }
+    .alerts-header {
+        margin-bottom: 16px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(116,185,255,0.08));
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .alerts-header h2 {
+        font-size: 22px;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.5px;
+        margin-bottom: 4px;
+        line-height: 1.05;
+    }
+    .alerts-header p  {
+        font-size: 12px;
+        color: rgba(255,255,255,0.72);
+        font-weight: 600;
+        letter-spacing: 0.35px;
+        text-transform: uppercase;
+    }
 </style>
 
 </body>

@@ -190,8 +190,6 @@ notifOverlay.addEventListener('click', closeNotif);
     let isDragging   = false;
     let isAnimating  = false;
 
-    const STORAGE_KEY = 'tabang_carousel_images';
-
     // ── Core helpers ──────────────────────────────────────────────
 
     function getSlides() { return track.querySelectorAll('.carousel-slide'); }
@@ -220,14 +218,18 @@ notifOverlay.addEventListener('click', closeNotif);
     }
 
     function goTo(index) {
+        const total = getTotal();
+        if (!total) {
+            track.style.transform = 'translateX(0)';
+            dotsContainer.innerHTML = '';
+            return;
+        }
         if (isAnimating) return;
         isAnimating = true;
 
-        const total = getTotal();
         current = ((index % total) + total) % total;
         track.style.transform = `translateX(-${current * 100}%)`;
         syncDots();
-        updateCameraHint();
 
         setTimeout(() => { isAnimating = false; }, 420);
     }
@@ -236,7 +238,8 @@ notifOverlay.addEventListener('click', closeNotif);
 
     function startAutoplay() {
         if (autoplayTimer) return;
-        autoplayTimer = setInterval(() => goTo(current + 1), 4000);
+        if (getTotal() <= 1) return;
+        autoplayTimer = setInterval(() => goTo(current + 1), 3000);
     }
 
     function stopAutoplay() {
@@ -261,31 +264,16 @@ notifOverlay.addEventListener('click', closeNotif);
 
     // ── Touch / swipe ─────────────────────────────────────────────
 
-    let lastTap    = 0;
-    let pressTimer = null;
-
     track.addEventListener('touchstart', (e) => {
         startX     = e.touches[0].clientX;
         isDragging = true;
-        pressTimer = setTimeout(() => carouselFileInput.click(), 500);
     }, { passive: true });
 
-    track.addEventListener('touchmove', () => {
-        clearTimeout(pressTimer);
-    }, { passive: true });
+    track.addEventListener('touchmove', () => {}, { passive: true });
 
     track.addEventListener('touchend', (e) => {
-        clearTimeout(pressTimer);
         if (!isDragging) return;
         isDragging = false;
-
-        const now = Date.now();
-        if (now - lastTap < 300) {
-            carouselFileInput.click();
-            lastTap = 0;
-            return;
-        }
-        lastTap = now;
 
         const diff = startX - e.changedTouches[0].clientX;
         if (Math.abs(diff) > 40) {
@@ -293,8 +281,6 @@ notifOverlay.addEventListener('click', closeNotif);
             resetAutoplay();
         }
     }, { passive: true });
-
-    track.addEventListener('dblclick', () => carouselFileInput.click());
 
     // ── Keyboard ──────────────────────────────────────────────────
 
@@ -304,30 +290,9 @@ notifOverlay.addEventListener('click', closeNotif);
         if (e.key === 'ArrowRight') { goTo(current + 1); resetAutoplay(); }
     });
 
-    // ── Camera hint ───────────────────────────────────────────────
-
-    function updateCameraHint() {
-        track.querySelectorAll('.slide-upload-hint').forEach(h => h.remove());
-        const slides = getSlides();
-        if (!slides[current]) return;
-
-        const hint = document.createElement('div');
-        hint.className = 'slide-upload-hint';
-        hint.innerHTML = '<i class="fas fa-camera"></i>';
-        hint.style.cssText = `
-            position:absolute; bottom:28px; right:10px;
-            background:rgba(0,0,0,0.45); color:white;
-            border-radius:50%; width:28px; height:28px;
-            display:flex; align-items:center; justify-content:center;
-            font-size:12px; pointer-events:none; z-index:15;
-        `;
-        slides[current].style.position = 'relative';
-        slides[current].appendChild(hint);
-    }
-
     // ── Slide creation ────────────────────────────────────────────
 
-    function addSlide(src, isReport = false) {
+    function addSlide(src) {
         const slide = document.createElement('div');
         slide.className = 'carousel-slide';
         slide.style.position = 'relative';
@@ -335,96 +300,36 @@ notifOverlay.addEventListener('click', closeNotif);
         const img = document.createElement('img');
         img.className = 'hero-image';
         img.src       = src;
-        img.alt       = isReport ? 'Community flood report image' : 'User uploaded image';
+        img.alt       = 'Reporting in the area';
         img.loading   = 'lazy';
         slide.appendChild(img);
 
-        if (isReport) {
-            const badge = document.createElement('div');
-            badge.style.cssText = `
-                position:absolute; top:8px; left:8px;
-                background:rgba(220,53,69,0.85); color:white;
-                border-radius:10px; padding:3px 8px;
-                font-size:10px; font-weight:700; font-family:'Inter',sans-serif;
-                z-index:15; pointer-events:none;
-                display:flex; align-items:center; gap:4px;
-            `;
-            badge.innerHTML = '<i class="fas fa-flag" style="font-size:9px;"></i> Community Report';
-            slide.appendChild(badge);
-        }
+        const badge = document.createElement('div');
+        badge.style.cssText = `
+            position:absolute; top:10px; left:10px;
+            background:rgba(7,24,82,0.72); color:white;
+            border:1px solid rgba(255,255,255,0.18);
+            border-radius:999px; padding:4px 9px;
+            font-size:10px; font-weight:700; font-family:'Inter',sans-serif;
+            z-index:15; pointer-events:none; letter-spacing:0.2px;
+        `;
+        badge.textContent = 'Community Reports';
+        slide.appendChild(badge);
 
         track.appendChild(slide);
-        // Do NOT call rebuildDots() here — batch callers do it once after all slides are added
-    }
-
-    // ── Toast ─────────────────────────────────────────────────────
-
-    function showUploadToast(msg) {
-        let toast = document.getElementById('carouselToast');
-        if (!toast) {
-            toast = document.createElement('div');
-            toast.id = 'carouselToast';
-            toast.style.cssText = `
-                position:absolute; bottom:80px; left:50%; transform:translateX(-50%);
-                background:rgba(0,0,0,0.75); color:white;
-                padding:8px 16px; border-radius:20px;
-                font-size:12px; font-weight:600; font-family:'Inter',sans-serif;
-                z-index:200; opacity:0; transition:opacity 0.3s; white-space:nowrap;
-            `;
-            document.querySelector('.phone').appendChild(toast);
-        }
-        toast.textContent = msg;
-        toast.style.opacity = '1';
-        clearTimeout(toast._hideTimer);
-        toast._hideTimer = setTimeout(() => { toast.style.opacity = '0'; }, 2000);
-    }
-
-    // ── File input ────────────────────────────────────────────────
-
-    const carouselFileInput = document.createElement('input');
-    carouselFileInput.type     = 'file';
-    carouselFileInput.accept   = 'image/*';
-    carouselFileInput.multiple = true;
-    carouselFileInput.style.display = 'none';
-    document.body.appendChild(carouselFileInput);
-
-    carouselFileInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        if (!files.length) return;
-
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                addSlide(ev.target.result);
-                rebuildDots();
-                saveImages();
-                goTo(getTotal() - 1);
-                showUploadToast(`Image added! (${getTotal()} slides total)`);
-            };
-            reader.readAsDataURL(file);
-        });
-        carouselFileInput.value = '';
-    });
-
-    // ── Persist user uploads ──────────────────────────────────────
-
-    function saveImages() {
-        try {
-            const srcs    = Array.from(track.querySelectorAll('.carousel-slide img')).map(i => i.src);
-            const uploads = srcs.filter(s => s.startsWith('data:'));
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(uploads));
-        } catch (_) {}
-    }
-
-    function loadSavedImages() {
-        try {
-            const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-            saved.forEach(url => { if (url) addSlide(url); });
-            if (saved.length) rebuildDots();
-        } catch (_) {}
     }
 
     // ── Firestore report images ───────────────────────────────────
+
+    function isExcludedCarouselReport(data) {
+        const location = (data.location || '').trim().toLowerCase();
+        const details = (data.details || data.description || '').trim().toLowerCase();
+
+        return (
+            (location === 'tinigaw, kalibo, aklan' &&
+                details === 'flood at asu')
+        );
+    }
 
     async function loadReportImagesFromFirestore() {
         try {
@@ -436,16 +341,29 @@ notifOverlay.addEventListener('click', closeNotif);
             const urls = [...floodSnap.docs, ...helpSnap.docs]
                 .flatMap(d => {
                     const data = d.data();
+                    if (isExcludedCarouselReport(data)) return [];
                     return Array.isArray(data.imageUrls) ? data.imageUrls : [];
                 })
                 .filter(u => typeof u === 'string' && u.trim())
                 .filter((u, i, a) => a.indexOf(u) === i);
 
-            urls.forEach(url => addSlide(url, true));
+            track.innerHTML = '';
+            urls.forEach(url => addSlide(url));
 
             if (urls.length) {
+                current = 0;
                 rebuildDots();
                 goTo(0);
+                startAutoplay();
+            } else {
+                dotsContainer.innerHTML = '';
+                track.innerHTML = `
+                    <div class="carousel-slide" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg, rgba(7,24,82,0.92), rgba(26,69,153,0.92)); color:white; text-align:center; padding:24px;">
+                        <div style="font-family:'Inter',sans-serif;">
+                            <div style="font-size:16px; font-weight:800; margin-bottom:8px;">No report images yet</div>
+                            <div style="font-size:12px; color:rgba(255,255,255,0.75);">User-submitted report and request photos will appear here.</div>
+                        </div>
+                    </div>`;
             }
         } catch (err) {
             console.warn('Could not load report images from Firestore:', err);
@@ -456,9 +374,6 @@ notifOverlay.addEventListener('click', closeNotif);
 
     rebuildDots();
     goTo(0);
-    startAutoplay();
-
-    loadSavedImages();
     loadReportImagesFromFirestore();
 
 })();

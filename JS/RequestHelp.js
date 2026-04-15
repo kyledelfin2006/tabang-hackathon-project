@@ -174,12 +174,10 @@ document.getElementById('submitBtn').onclick = async function() {
         showToast('You must be logged in.');
         return;
     }
-    const name  = document.getElementById('nameInput').value.trim();
     const phone = document.getElementById('phoneInput').value.trim();
     const loc   = document.getElementById('locationInput').value.trim();
     const desc  = document.getElementById('descInput').value.trim();
 
-    if (!name)  { showToast('Please enter your name'); return; }
     if (!phone) { showToast('Please enter your phone number'); return; }
     if (!loc)   { showToast('Please enter your location'); return; }
     if (!desc)  { showToast('Please describe your situation'); return; }
@@ -204,10 +202,11 @@ document.getElementById('submitBtn').onclick = async function() {
         if (!userDoc.exists()) {
             userDoc = await getDoc(doc(db, 'responders', currentUser.uid));
         }
-        const submittedBy = userDoc.exists() ? userDoc.data().fullName : currentUser.displayName || currentUser.email || name;
+        const userData = userDoc.exists() ? userDoc.data() : null;
+        const submittedBy = userData?.fullName || userData?.name || userData?.displayName || currentUser.displayName || currentUser.email || 'Unknown';
 
         await addDoc(collection(db, "helpRequests"), {
-            name: name,
+            name: submittedBy,
             phone: phone,
             location: loc,
             description: desc,
