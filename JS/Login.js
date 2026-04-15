@@ -1,6 +1,6 @@
 // Kyle was here...Hello kyle! and Hello to you reader!
 // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
-import { auth } from "../javascript/firebase.js";
+import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // Quick helper to pop a temporary message at the bottom of the screen.
