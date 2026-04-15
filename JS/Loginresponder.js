@@ -1,5 +1,5 @@
 // Firebase imports: auth, database instance, email sign-in helper, and Firestore doc helpers
-import { auth, db } from './firebase.js';
+import { auth, db } from '../javascript/firebase.js';
 import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 

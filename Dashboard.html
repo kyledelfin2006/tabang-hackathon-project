@@ -233,7 +233,7 @@
 
 <!-- Step 1: Expose Firebase db to window so plain scripts can use it -->
 <script type="module">
-    import { db } from './JS/firebase.js';
+    import { db } from './javascript/firebase.js';
     import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     window._tabangDb      = db;
     window._firestoreFns  = { collection, getDocs };
