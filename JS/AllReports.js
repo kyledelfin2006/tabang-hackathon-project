@@ -30,6 +30,56 @@ function setRepFilter(filter, btn) {
 // Expose to global scope so it can be called from inline HTML onclick attributes
 window.setRepFilter = setRepFilter;
 
+// ─── Image preview ────────────────────────────────────────────────────────────
+// Opens the full-screen image preview modal with the given image URL
+function openImagePreview(src) {
+    const modal = document.getElementById('imagePreview');
+    const img   = document.getElementById('previewImg');
+    if (!modal || !img) return;
+    img.src = src;
+    img.classList.remove('zoomed');
+    modal.style.display = 'flex';
+}
+
+// Closes the full-screen image preview modal
+function closeImagePreview() {
+    const modal = document.getElementById('imagePreview');
+    if (modal) modal.style.display = 'none';
+}
+
+// Expose image preview functions globally for inline onclick handlers
+window.openImagePreview  = openImagePreview;
+window.closeImagePreview = closeImagePreview;
+
+// Toggle zoom on the preview image when clicked
+document.addEventListener('DOMContentLoaded', () => {
+    const previewImg = document.getElementById('previewImg');
+    if (previewImg) {
+        previewImg.addEventListener('click', function () {
+            this.classList.toggle('zoomed');
+        });
+    }
+});
+
+// ─── Build image gallery HTML ─────────────────────────────────────────────────
+// Renders up to 4 thumbnail images from the report's imageUrls array.
+// Shows a "+N" label if there are more than 4 images.
+function buildImageGallery(imageUrls) {
+    if (!imageUrls || imageUrls.length === 0) return '';
+    const maxVisible    = 4;
+    const visibleImages = imageUrls.slice(0, maxVisible);
+    const extraCount    = imageUrls.length - maxVisible;
+    const thumbnails = visibleImages.map(url => `
+        <img class="gallery-thumb"
+             src="${escHtml(url)}"
+             alt="Report image"
+             loading="lazy"
+             onclick="openImagePreview('${escHtml(url)}')">`
+    ).join('');
+    const moreLabel = extraCount > 0 ? `<div class="gallery-more">+${extraCount}</div>` : '';
+    return `<div class="image-gallery">${thumbnails}${moreLabel}</div>`;
+}
+
 // Fetches flood reports and help requests from Firestore, applies filters/search/sort, and renders cards
 async function renderFloodReports() {
     const container = document.getElementById('reportsList');
@@ -88,6 +138,9 @@ async function renderFloodReports() {
 
                 const submittedByName = isHelp ? (r.name || r.submittedBy) : r.submittedBy;
 
+                // Build the image gallery if the report has attached images
+                const imageHtml = buildImageGallery(r.imageUrls);
+
                 return `
                     <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
                         <div class="card-top-row">
@@ -105,6 +158,7 @@ async function renderFloodReports() {
                             <i class="fas fa-clock row-icon"></i>
                             <div><div class="row-label">Submitted</div><div class="row-val">${fmtDate(r.timestamp)}</div></div>
                         </div>
+                        ${imageHtml}
                     </div>`;
             }).join('') + '<div style="height:12px;"></div>';
 
@@ -153,6 +207,9 @@ function getDisplayName(submittedBy) {
     }
     return submittedBy;
 }
+
+// Expose renderFloodReports globally so the search input oninput can call it
+window.renderFloodReports = renderFloodReports;
 
 // Dummy viewReport function if needed elsewhere
 window.viewReport = function(reportId) {

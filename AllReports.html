@@ -46,26 +46,96 @@
         }
 
         .btn-respond {
-            background: #ef4444; /* red */
+            background: #ef4444;
         }
         .btn-respond:hover {
             background: #dc2626;
         }
 
         .btn-responding {
-            background: #f59e0b; /* yellow/amber */
+            background: #f59e0b;
         }
         .btn-responding:hover {
             background: #d97706;
         }
 
         .btn-resolved {
-            background: #10b981; /* green */
+            background: #10b981;
             cursor: default;
             opacity: 0.7;
         }
         .btn-resolved:hover {
             background: #10b981;
+        }
+
+        /* ── Image Gallery ── */
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 10px;
+        }
+        .gallery-thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: transform 0.15s, border-color 0.15s;
+        }
+        .gallery-thumb:hover {
+            transform: scale(1.05);
+            border-color: rgba(255,107,107,0.6);
+        }
+        .gallery-more {
+            width: 72px;
+            height: 72px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.6);
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+
+        /* ── Full-screen Image Preview Modal ── */
+        .image-preview {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: rgba(0,0,0,0.92);
+            align-items: center;
+            justify-content: center;
+        }
+        .image-preview .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 32px;
+            color: #fff;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+        }
+        .image-preview .close-btn:hover {
+            opacity: 1;
+        }
+        .preview-img {
+            max-width: 92vw;
+            max-height: 88vh;
+            border-radius: 10px;
+            object-fit: contain;
+            cursor: zoom-in;
+            transition: transform 0.25s ease;
+        }
+        .preview-img.zoomed {
+            transform: scale(1.9);
+            cursor: zoom-out;
         }
     </style>
 </head>
@@ -104,8 +174,13 @@
         </div>
     </div>
 
-    <nav class="bottom-nav">
+    <!-- Image Preview Modal -->
+    <div id="imagePreview" class="image-preview">
+        <span class="close-btn" onclick="closeImagePreview()">&times;</span>
+        <img id="previewImg" class="preview-img" alt="Report image">
+    </div>
 
+    <nav class="bottom-nav">
         <div class="nav-item" onclick="window.location.href='responderhotline.html'">
             <div class="nav-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
