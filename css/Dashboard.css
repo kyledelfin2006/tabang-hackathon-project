@@ -17,6 +17,23 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
     position: relative;
+    max-height: 844px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+.phone-dashboard::-webkit-scrollbar {
+    width: 4px;
+}
+.phone-dashboard::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+}
+.phone-dashboard::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.25);
+    border-radius: 4px;
+}
+.phone-dashboard::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.4);
 }
 
 /* ── Back Button ── */
