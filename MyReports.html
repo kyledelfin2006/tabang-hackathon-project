@@ -9,6 +9,96 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="css/Myreports.css">
+    <style>
+        /* ── Responder status badge (read-only, user side) ── */
+        .responder-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 7px 14px;
+            border-radius: 40px;
+            font-size: 12px;
+            font-weight: 700;
+            pointer-events: none; /* not clickable */
+            user-select: none;
+        }
+        .badge-responded {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+        }
+        .badge-responding {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+        }
+
+        /* ── "Mark as Responded" button — shown to the reporter when status = 'responding' ── */
+        .mark-responded-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            border: none;
+            border-radius: 40px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: 0 2px 14px rgba(16, 185, 129, 0.45);
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            animation: pulse-green 2s infinite;
+        }
+        .mark-responded-btn:hover {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.6);
+            transform: translateY(-1px);
+            animation: none;
+        }
+        .mark-responded-btn:active {
+            transform: translateY(0);
+        }
+        .mark-responded-btn:disabled {
+            opacity: 0.6;
+            cursor: default;
+            transform: none;
+            animation: none;
+        }
+
+        /* ── Responder action box — container shown when a responder is on the way ── */
+        .responder-action-box {
+            margin-top: 12px;
+            background: rgba(245, 158, 11, 0.10);
+            border: 1px solid rgba(245, 158, 11, 0.30);
+            border-radius: 14px;
+            padding: 12px 14px;
+        }
+        .responder-action-box .action-hint {
+            font-size: 11px;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .responder-action-box .action-hint i {
+            color: #f59e0b;
+        }
+        .responder-action-box .action-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        @keyframes pulse-green {
+            0%   { box-shadow: 0 2px 14px rgba(16,185,129,0.45); }
+            50%  { box-shadow: 0 2px 22px rgba(16,185,129,0.75); }
+            100% { box-shadow: 0 2px 14px rgba(16,185,129,0.45); }
+        }
+    </style>
 </head>
 <body>
 <div class="phone">

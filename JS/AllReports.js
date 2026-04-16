@@ -1,7 +1,10 @@
 // Firebase imports: database, auth instance, Firestore doc helpers, and auth state/sign-out
 import { db, auth } from '../javascript/firebase.js';
-import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import {
+    collection, doc, updateDoc,
+    onSnapshot, query, orderBy
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Tracks the currently authenticated Firebase user
 let currentUser = null;
@@ -9,29 +12,60 @@ let currentUser = null;
 // Tracks the active report filter: 'all', 'flood', or 'help'
 let repFilter = 'all';
 
-// Redirect to login if no user is authenticated; otherwise store the user and load reports
+// In-memory cache of all fetched items (kept fresh by onSnapshot)
+let allItems = [];
+
+// Active Firestore listeners — unsubscribe when re-attaching
+let unsubFlood = null;
+let unsubHelp  = null;
+
+// Redirect to login if no user is authenticated; otherwise store the user and start listeners
 onAuthStateChanged(auth, (user) => {
     if (!user) {
         window.location.href = 'index.html';
         return;
     }
     currentUser = user;
-    renderFloodReports();
+    attachListeners();
 });
 
-// Updates the active filter pill and re-renders the report list based on the selected filter
+// ─── Real-time Firestore listeners ────────────────────────────────────────────
+// Uses onSnapshot so AllReports automatically reflects changes made by the user
+// side (MyReports) in real-time — specifically when responderStatus → 'responded'.
+function attachListeners() {
+    // Clean up any previous listeners
+    if (unsubFlood) unsubFlood();
+    if (unsubHelp)  unsubHelp();
+
+    let floodItems = [];
+    let helpItems  = [];
+
+    const merge = () => {
+        allItems = [...floodItems, ...helpItems];
+        renderFloodReports();
+    };
+
+    unsubFlood = onSnapshot(collection(db, 'floodReports'), snap => {
+        floodItems = snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+        merge();
+    }, err => console.error('floodReports listener error:', err));
+
+    unsubHelp = onSnapshot(collection(db, 'helpRequests'), snap => {
+        helpItems = snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
+        merge();
+    }, err => console.error('helpRequests listener error:', err));
+}
+
+// Updates the active filter pill and re-renders the report list
 function setRepFilter(filter, btn) {
     repFilter = filter;
     document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderFloodReports();
 }
-
-// Expose to global scope so it can be called from inline HTML onclick attributes
 window.setRepFilter = setRepFilter;
 
 // ─── Image preview ────────────────────────────────────────────────────────────
-// Opens the full-screen image preview modal with the given image URL
 function openImagePreview(src) {
     const modal = document.getElementById('imagePreview');
     const img   = document.getElementById('previewImg');
@@ -41,17 +75,14 @@ function openImagePreview(src) {
     modal.style.display = 'flex';
 }
 
-// Closes the full-screen image preview modal
 function closeImagePreview() {
     const modal = document.getElementById('imagePreview');
     if (modal) modal.style.display = 'none';
 }
 
-// Expose image preview functions globally for inline onclick handlers
 window.openImagePreview  = openImagePreview;
 window.closeImagePreview = closeImagePreview;
 
-// Toggle zoom on the preview image when clicked
 document.addEventListener('DOMContentLoaded', () => {
     const previewImg = document.getElementById('previewImg');
     if (previewImg) {
@@ -62,8 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ─── Build image gallery HTML ─────────────────────────────────────────────────
-// Renders up to 4 thumbnail images from the report's imageUrls array.
-// Shows a "+N" label if there are more than 4 images.
 function buildImageGallery(imageUrls) {
     if (!imageUrls || imageUrls.length === 0) return '';
     const maxVisible    = 4;
@@ -80,48 +109,130 @@ function buildImageGallery(imageUrls) {
     return `<div class="image-gallery">${thumbnails}${moreLabel}</div>`;
 }
 
-// Fetches flood reports and help requests from Firestore, applies filters/search/sort, and renders cards
-async function renderFloodReports() {
+// ─── Respond Button ───────────────────────────────────────────────────────────
+//
+// States visible to the RESPONDER:
+//   'respond'    → red   "Respond" button       → clicking sets status to 'responding'
+//   'responding' → amber "Responding…" spinner  → LOCKED, waits for user to click
+//                                                  "Mark as Responded" on MyReports
+//   'responded'  → green "Responded ✓"          → read-only, set by the user side only
+//
+function getStatusConfig(status) {
+    switch (status) {
+        case 'responding':
+            return {
+                label:    '<i class="fas fa-spinner fa-spin"></i> Responding…',
+                cls:      'btn-responding',
+                disabled: true,   // Locked — waits for the user to confirm
+                title:    'Waiting for the reporter to confirm as Responded'
+            };
+        case 'responded':
+            return {
+                label:    '<i class="fas fa-check-circle"></i> Responded',
+                cls:      'btn-responded',
+                disabled: true,
+                title:    'This report has been resolved — confirmed by the reporter'
+            };
+        default: // 'respond'
+            return {
+                label:    '<i class="fas fa-bolt"></i> Respond',
+                cls:      'btn-respond',
+                disabled: false,
+                title:    'Click to start responding to this report'
+            };
+    }
+}
+
+// Only 'respond' → 'responding' is allowed here. The rest is driven by Firestore.
+async function cycleRespondStatus(reportId, reportType, btn) {
+    const currentStatus = btn.getAttribute('data-status') || 'respond';
+
+    // Responders can ONLY move from 'respond' → 'responding'.
+    // 'responding' → 'responded' is exclusively the user's action in MyReports.
+    if (currentStatus !== 'respond') return;
+
+    const nextStatus = 'responding';
+
+    // Optimistically lock the button immediately
+    applyStatusToBtn(btn, nextStatus);
+
+    try {
+        const collectionName = reportType === 'help' ? 'helpRequests' : 'floodReports';
+        await updateDoc(doc(db, collectionName, reportId), {
+            responderStatus: nextStatus
+        });
+    } catch (err) {
+        console.error('Failed to update status:', err);
+        // Roll back on failure
+        applyStatusToBtn(btn, currentStatus);
+    }
+}
+
+function applyStatusToBtn(btn, status) {
+    const config = getStatusConfig(status);
+    btn.setAttribute('data-status', status);
+    btn.innerHTML  = config.label;
+    btn.disabled   = config.disabled;
+    btn.title      = config.title || '';
+    btn.classList.remove('btn-respond', 'btn-responding', 'btn-responded');
+    btn.classList.add(config.cls);
+    // Visual cue: muted cursor when locked
+    btn.style.cursor = config.disabled ? 'default' : 'pointer';
+    // 'responded' — fully resolved, dim slightly and remove hover lift
+    if (status === 'responded') {
+        btn.style.opacity   = '0.85';
+        btn.style.transform = 'none';
+        btn.style.pointerEvents = 'none'; // stop any hover effects
+    } else {
+        btn.style.opacity   = '1';
+        btn.style.pointerEvents = config.disabled ? 'none' : 'auto';
+    }
+}
+
+window.cycleRespondStatus = cycleRespondStatus;
+
+// ─── Render reports from in-memory cache ─────────────────────────────────────
+function renderFloodReports() {
     const container = document.getElementById('reportsList');
     if (!container) return;
 
-    // Show a loading spinner while data is being fetched
-    container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+    // Show a brief loading state only on the very first load (cache is empty)
+    if (allItems.length === 0) {
+        container.innerHTML = '<div class="panel-loading"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+        return;
+    }
 
     try {
-        // Fetch both collections in parallel for efficiency
-        const [fSnap, hSnap] = await Promise.all([
-            getDocs(collection(db, 'floodReports')),
-            getDocs(collection(db, 'helpRequests'))
-        ]);
+        let items = repFilter === 'flood'
+            ? allItems.filter(r => r.type === 'flood')
+            : repFilter === 'help'
+                ? allItems.filter(r => r.type === 'help')
+                : [...allItems];
 
-        // Map Firestore documents to plain objects and tag each with its type
-        let floods = fSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
-        let helps  = hSnap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
-
-        // Apply the active filter: show only floods, only help requests, or both
-        let items = repFilter === 'flood' ? floods : repFilter === 'help' ? helps : [...floods, ...helps];
-
-        // Apply the search query filter if the search box has a value
         const q = (document.getElementById('repSearch')?.value || '').toLowerCase();
-        if (q) items = items.filter(r =>
-            (r.location + r.name + r.description + r.details + r.submittedBy).toLowerCase().includes(q)
-        );
+        if (q) {
+            items = items.filter(r =>
+                (r.location + r.name + r.description + r.details + r.submittedBy)
+                    .toLowerCase().includes(q)
+            );
+        }
 
-        // Sort reports by timestamp descending (newest first)
         items.sort((a, b) => {
             const ta = a.timestamp?.toDate ? a.timestamp.toDate() : new Date(a.timestamp || 0);
             const tb = b.timestamp?.toDate ? b.timestamp.toDate() : new Date(b.timestamp || 0);
             return tb - ta;
         });
 
-        // Show an empty state message if no reports match the current filters
         if (!items.length) {
-            container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-water"></i></div><div class="empty-title">No Reports</div><div class="empty-sub">No matching reports found.</div></div>`;
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-water"></i></div>
+                    <div class="empty-title">No Reports</div>
+                    <div class="empty-sub">No matching reports found.</div>
+                </div>`;
             return;
         }
 
-        // Render the report count header and a card for each report
         container.innerHTML =
             `<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.8px;">
                 ${items.length} Report${items.length !== 1 ? 's' : ''}
@@ -129,7 +240,6 @@ async function renderFloodReports() {
             items.map(r => {
                 const isHelp = r.type === 'help';
 
-                // Build the middle card rows differently depending on report type
                 const rows = isHelp
                     ? `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
                        <div class="card-row"><i class="fas fa-comment-alt row-icon"></i><div><div class="row-label">Situation</div><div class="row-val">${escHtml(r.description)}</div></div></div>`
@@ -137,9 +247,23 @@ async function renderFloodReports() {
                        ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
 
                 const submittedByName = isHelp ? (r.name || r.submittedBy) : r.submittedBy;
-
-                // Build the image gallery if the report has attached images
                 const imageHtml = buildImageGallery(r.imageUrls);
+
+                // Use the actual Firestore status — all three states are rendered correctly
+                const savedStatus = r.responderStatus || 'respond';
+                const statusConfig = getStatusConfig(savedStatus);
+
+                const respondBtn = `
+                    <div class="card-actions">
+                        <button class="respond-btn ${statusConfig.cls}"
+                                data-status="${savedStatus}"
+                                ${statusConfig.disabled ? 'disabled' : ''}
+                                title="${escHtml(statusConfig.title || '')}"
+                                style="cursor:${statusConfig.disabled ? 'default' : 'pointer'};${savedStatus === 'responded' ? 'opacity:0.85;pointer-events:none;' : ''}"
+                                onclick="cycleRespondStatus('${escHtml(r.id)}', '${escHtml(r.type)}', this)">
+                            ${statusConfig.label}
+                        </button>
+                    </div>`;
 
                 return `
                     <div class="entry-card ${isHelp ? 'help-card' : 'flood-card'}">
@@ -159,16 +283,23 @@ async function renderFloodReports() {
                             <div><div class="row-label">Submitted</div><div class="row-val">${fmtDate(r.timestamp)}</div></div>
                         </div>
                         ${imageHtml}
+                        ${respondBtn}
                     </div>`;
             }).join('') + '<div style="height:12px;"></div>';
 
     } catch (e) {
-        // Display an error card if the Firestore fetch fails
-        container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div><div class="empty-title">Error Loading</div><div class="empty-sub">${e.message}</div></div>`;
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon"><i class="fas fa-exclamation-circle"></i></div>
+                <div class="empty-title">Error Loading</div>
+                <div class="empty-sub">${e.message}</div>
+            </div>`;
     }
 }
 
-// Converts a Firestore timestamp to a human-readable relative time string (e.g. "5m ago")
+window.renderFloodReports = renderFloodReports;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function timeAgo(timestamp) {
     if (!timestamp) return 'Unknown';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -178,20 +309,18 @@ function timeAgo(timestamp) {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays  = Math.floor(diffHours / 24);
 
-    if (diffMins < 1)  return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffMins < 1)   return 'Just now';
+    if (diffMins < 60)  return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
 }
 
-// Formats a Firestore timestamp into a full locale date/time string
 function fmtDate(timestamp) {
     if (!timestamp) return 'Unknown';
     const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return date.toLocaleString();
 }
 
-// Escapes HTML special characters to prevent XSS when rendering user-submitted content
 function escHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -199,19 +328,12 @@ function escHtml(text) {
     return div.innerHTML;
 }
 
-// Extracts a readable display name from an email address or returns the value as-is
 function getDisplayName(submittedBy) {
     if (!submittedBy) return 'Unknown';
-    if (submittedBy.includes('@')) {
-        return submittedBy.split('@')[0];
-    }
+    if (submittedBy.includes('@')) return submittedBy.split('@')[0];
     return submittedBy;
 }
 
-// Expose renderFloodReports globally so the search input oninput can call it
-window.renderFloodReports = renderFloodReports;
-
-// Dummy viewReport function if needed elsewhere
 window.viewReport = function(reportId) {
     console.log('View report:', reportId);
 };

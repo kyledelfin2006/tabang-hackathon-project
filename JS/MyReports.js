@@ -1,6 +1,9 @@
 // Firebase imports: auth, database instance, email sign-in helper, and Firestore doc helpers
 import { db, auth } from "../javascript/firebase.js";
-import { collection, getDocs, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+    collection, deleteDoc, doc, getDoc, updateDoc,
+    onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // ─── State ───────────────────────────────────────────────────────────────
@@ -9,6 +12,11 @@ let pendingDelete = null;
 let currentUser = null;
 let previewMap = null;
 let previewMarker = null;
+
+// In-memory cache kept fresh by onSnapshot listeners
+let allItems = [];
+let unsubFlood = null;
+let unsubHelp  = null;
 
 const overlay      = document.getElementById('confirmOverlay');
 const filterBtns   = document.querySelectorAll('.filter-btn');
@@ -45,27 +53,18 @@ function formatSubmittedAt(timestamp) {
     const date = toDate(timestamp);
     if (!date) return '—';
     return date.toLocaleString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
+        month: 'long', day: 'numeric', year: 'numeric',
+        hour: 'numeric', minute: '2-digit'
     });
 }
 
 // ─── Map preview functions ───────────────────────────────────────────────
 function openMapPreview(lat, lng, title) {
-    // Show modal
     mapModal.style.display = 'flex';
-    // Wait for modal to be visible, then init map
     setTimeout(() => {
         const container = document.getElementById('previewMap');
         if (!container) return;
-        // Destroy previous map instance if exists
-        if (previewMap) {
-            previewMap.remove();
-            previewMap = null;
-        }
+        if (previewMap) { previewMap.remove(); previewMap = null; }
         previewMap = L.map(container).setView([lat, lng], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -77,10 +76,7 @@ function openMapPreview(lat, lng, title) {
 
 function closeMapPreview() {
     mapModal.style.display = 'none';
-    if (previewMap) {
-        previewMap.remove();
-        previewMap = null;
-    }
+    if (previewMap) { previewMap.remove(); previewMap = null; }
 }
 
 // ─── Image preview ───────────────────────────────────────────────────────
@@ -105,8 +101,34 @@ onAuthStateChanged(auth, (user) => {
     currentUser = user;
     filterBtns.forEach(btn => btn.disabled = false);
     if (searchInput) searchInput.disabled = false;
-    renderList();
+    attachListeners();
 });
+
+// ─── Real-time Firestore listeners ────────────────────────────────────────
+// Keeps the list in sync live — so when a responder sets status to 'responding',
+// the "Mark as Responded" button appears on the user side automatically.
+function attachListeners() {
+    if (unsubFlood) unsubFlood();
+    if (unsubHelp)  unsubHelp();
+
+    let floodItems = [];
+    let helpItems  = [];
+
+    const merge = () => {
+        allItems = [...floodItems, ...helpItems];
+        renderList();
+    };
+
+    unsubFlood = onSnapshot(collection(db, 'floodReports'), snap => {
+        floodItems = snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+        merge();
+    }, err => console.error('floodReports listener error:', err));
+
+    unsubHelp = onSnapshot(collection(db, 'helpRequests'), snap => {
+        helpItems = snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
+        merge();
+    }, err => console.error('helpRequests listener error:', err));
+}
 
 // ─── Delete confirmation ──────────────────────────────────────────────────
 document.getElementById('confirmCancel').addEventListener('click', () => {
@@ -132,20 +154,32 @@ function showConfirm(id, isFlood, cardEl) {
 async function deleteEntry(id, isFlood) {
     const collectionName = isFlood ? 'floodReports' : 'helpRequests';
     await deleteDoc(doc(db, collectionName, id));
-    renderList();
+    // renderList will be called automatically by onSnapshot
 }
 
-// ─── Data fetching ────────────────────────────────────────────────────────
-async function getAllFloodReports() {
-    const snap = await getDocs(collection(db, 'floodReports'));
-    return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'flood' }));
+// ─── "Responded" — user-side action ───────────────────────────────────────
+// Called when the reporter taps the "Responded" button on their card.
+// This is the ONLY way responderStatus can reach 'responded'.
+async function markAsResponded(reportId, reportType, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating…';
+
+    try {
+        const collectionName = reportType === 'help' ? 'helpRequests' : 'floodReports';
+        await updateDoc(doc(db, collectionName, reportId), {
+            responderStatus: 'responded'
+        });
+        // onSnapshot will automatically re-render the card with the final badge
+    } catch (err) {
+        console.error('Failed to mark as responded:', err);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> Responded';
+    }
 }
 
-async function getAllHelpRequests() {
-    const snap = await getDocs(collection(db, 'helpRequests'));
-    return snap.docs.map(d => ({ ...d.data(), id: d.id, type: 'help' }));
-}
+window.markAsResponded = markAsResponded;
 
+// ─── Enrich report names from Firestore users/responders collection ───────
 async function enrichReportNames(items) {
     const cache = new Map();
     const promises = items.map(async item => {
@@ -155,7 +189,7 @@ async function enrichReportNames(items) {
             return;
         }
         try {
-            const userRef = doc(db, 'users', item.userId);
+            const userRef  = doc(db, 'users', item.userId);
             const userSnap = await getDoc(userRef);
             let name = null;
             if (userSnap.exists()) {
@@ -163,7 +197,7 @@ async function enrichReportNames(items) {
                 name = data.name || data.fullName || data.displayName || null;
             }
             if (!name) {
-                const responderRef = doc(db, 'responders', item.userId);
+                const responderRef  = doc(db, 'responders', item.userId);
                 const responderSnap = await getDoc(responderRef);
                 if (responderSnap.exists()) {
                     const data = responderSnap.data();
@@ -209,36 +243,91 @@ function buildImageGallery(imageUrls) {
     return `<div class="image-gallery">${thumbnails}${moreLabel}</div>`;
 }
 
+// ─── Responder status display (read-only badges + "Responded" button) ────────
+//
+// What the USER sees on their own card:
+//
+//   No status / 'respond'  → nothing shown
+//   'responding'           → amber "Responding…" badge  +  green "Responded" button
+//   'responded'            → green "Responded ✓" badge  (no further action needed)
+//
+function buildResponderStatusHtml(r) {
+    const status = r.responderStatus || 'respond';
+
+    if (status === 'responded') {
+        return `
+            <div class="responder-status-area" style="margin-top:12px;">
+                <span class="responder-status-badge badge-responded">
+                    <i class="fas fa-check-circle"></i> Responded
+                </span>
+            </div>`;
+    }
+
+    if (status === 'responding') {
+        return `
+            <div class="responder-status-area">
+                <div class="responder-action-box">
+                    <div class="action-hint">
+                        <i class="fas fa-bell"></i>
+                        A responder is on the way — tap below once they've arrived or resolved your report.
+                    </div>
+                    <div class="action-row">
+                        <span class="responder-status-badge badge-responding">
+                            <i class="fas fa-spinner fa-spin"></i> Responding…
+                        </span>
+                        <button class="mark-responded-btn"
+                                onclick="markAsResponded('${escapeHtml(r.id)}', '${escapeHtml(r.type)}', this)"
+                                title="Confirm the responder has arrived / resolved your report">
+                            <i class="fas fa-check-circle"></i> Responded
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    // 'respond' or no status — show nothing
+    return '';
+}
+
 // ─── Build a single card's HTML ───────────────────────────────────────────
 function buildCard(r) {
     const isHelp    = r.type === 'help';
-    const isOwner   = currentUser && r.userId === currentUser.uid;
+    // Match by uid, email, or displayName — covers all Firestore storage patterns
+    const isOwner   = currentUser && (
+        r.userId      === currentUser.uid                                          ||
+        r.submittedBy === currentUser.email                                        ||
+        r.submittedBy === currentUser.displayName                                  ||
+        (currentUser.email && r.submittedBy &&
+            r.submittedBy.toLowerCase() === currentUser.email.toLowerCase())
+    );
     const hasCoords = r.latitude && r.longitude;
 
-    const cardClass   = `report-card${isHelp ? ' help-card' : ''}${isOwner ? ' own-card' : ''}`;
+    const cardClass    = `report-card${isHelp ? ' help-card' : ''}${isOwner ? ' own-card' : ''}`;
     const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
-    const iconClass   = isHelp ? 'row-icon help-row-icon' : 'row-icon';
-    const ownerName       = escapeHtml(r.reporterName || r.name || r.submittedBy || 'Unknown');
+    const iconClass    = isHelp ? 'row-icon help-row-icon' : 'row-icon';
+    const ownerName    = escapeHtml(r.reporterName || r.name || r.submittedBy || 'Unknown');
 
     // Delete button (only for own entries)
     const deleteBtn = isOwner
         ? `<button class="card-delete-btn"
-                       data-id="${escapeHtml(r.id)}"
-                       data-isflood="${r.type === 'flood'}"
-                       title="Delete">
-                   <i class="fas fa-trash-alt"></i>
-               </button>`
+                   data-id="${escapeHtml(r.id)}"
+                   data-isflood="${r.type === 'flood'}"
+                   title="Delete">
+               <i class="fas fa-trash-alt"></i>
+           </button>`
         : '';
 
-    // Location button (if coordinates exist)
+    // Location button
     let locationBtn = '';
     if (hasCoords) {
-        const lat = r.latitude;
-        const lng = r.longitude;
-        const title = isHelp ? `Help request by ${escapeHtml(r.name || r.submittedBy || 'Anonymous')}` : `Flood report at ${escapeHtml(r.location || 'unknown location')}`;
+        const lat   = r.latitude;
+        const lng   = r.longitude;
+        const title = isHelp
+            ? `Help request by ${escapeHtml(r.name || r.submittedBy || 'Anonymous')}`
+            : `Flood report at ${escapeHtml(r.location || 'unknown location')}`;
         locationBtn = `<button class="card-location-btn" onclick="openMapPreview(${lat}, ${lng}, '${escapeHtml(title)}')">
-                               <i class="fas fa-map-marker-alt"></i> View on map
-                           </button>`;
+                           <i class="fas fa-map-marker-alt"></i> View on map
+                       </button>`;
     }
 
     const situationText = isHelp ? (r.description || '—') : (r.details || '—');
@@ -262,6 +351,12 @@ function buildCard(r) {
 
     const imageHtml = buildImageGallery(r.imageUrls);
 
+    // Show responder status on own cards OR any card currently being responded to
+    // (MyReports is a user-only page, so showing respond UI is always appropriate)
+    const statusHtml = (isOwner || r.responderStatus === 'responding' || r.responderStatus === 'responded')
+        ? buildResponderStatusHtml(r)
+        : '';
+
     return `
             <div class="${cardClass}" data-id="${escapeHtml(r.id)}">
                 <div class="card-top" style="display:flex; justify-content:space-between; align-items:center;">
@@ -274,16 +369,21 @@ function buildCard(r) {
                 <div class="${dividerClass}"></div>
                 ${imageHtml}
                 ${rows}
+                ${statusHtml}
             </div>`;
 }
 
 // ─── Main render ──────────────────────────────────────────────────────────
 async function renderList() {
-    const queryStr = searchInput.value.toLowerCase();
-    reportsList.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
+    const queryStr = searchInput ? searchInput.value.toLowerCase() : '';
 
-    const [floods, helps] = await Promise.all([getAllFloodReports(), getAllHelpRequests()]);
-    let items = [...floods, ...helps];
+    // Show loading only on very first load
+    if (allItems.length === 0) {
+        reportsList.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">Loading...</div>';
+        return;
+    }
+
+    let items = [...allItems];
     await enrichReportNames(items);
 
     if (currentFilter === 'flood') items = items.filter(i => i.type === 'flood');
@@ -308,9 +408,6 @@ async function renderList() {
         return dateB - dateA;
     });
 
-    // ── Sync report images to homepage carousel ──────────────────────
-    // Collect all imageUrls from every report and save them to localStorage
-    // so Homepage.js can pick them up and display them in the carousel.
     syncReportImagesToCarousel(items);
 
     if (items.length === 0) {
@@ -341,21 +438,18 @@ async function renderList() {
     });
 }
 
-// ─── Expose globals for inline onclick handlers ───────────────────────────
-window.navigateTo       = navigateTo;
-window.setFilter        = setFilter;
-window.openImagePreview = openImagePreview;
+// ─── Expose globals ───────────────────────────────────────────────────────
+window.navigateTo        = navigateTo;
+window.setFilter         = setFilter;
+window.openImagePreview  = openImagePreview;
 window.closeImagePreview = closeImagePreview;
-window.openMapPreview   = openMapPreview;
-window.closeMapPreview  = closeMapPreview;
+window.openMapPreview    = openMapPreview;
+window.closeMapPreview   = closeMapPreview;
 
 // ─── Sync report images → homepage carousel ───────────────────────────────
-// Saves all unique image URLs from reports into localStorage.
-// Homepage.js reads this key on load and adds them as carousel slides.
 function syncReportImagesToCarousel(items) {
     try {
         const CAROUSEL_REPORT_KEY = 'tabang_carousel_report_images';
-        // Gather every imageUrl from every report, flatten, deduplicate
         const allUrls = items
             .flatMap(item => Array.isArray(item.imageUrls) ? item.imageUrls : [])
             .filter(url => typeof url === 'string' && url.trim() !== '');

@@ -12,7 +12,7 @@ body {
 
 .phone {
     width: 390px;
-    height: 844px;
+    height: min(844px, calc(100vh - 24px));
     background: linear-gradient(175deg, #1a4599 0%, #0a2470 50%, #071852 100%);
     border-radius: 44px;
     box-shadow: 0 40px 80px rgba(0,0,0,0.6);
@@ -143,14 +143,24 @@ body {
 /* ── SCROLL AREA ── */
 .scroll-area {
     flex: 1;
-    overflow-y: auto;
+    overflow-y: scroll;
     padding: 12px 20px 0;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    scrollbar-width: none;
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(116,185,255,0.85) rgba(255,255,255,0.08);
 }
-.scroll-area::-webkit-scrollbar { display: none; }
+.scroll-area::-webkit-scrollbar { width: 8px; }
+.scroll-area::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.08);
+    border-radius: 999px;
+}
+.scroll-area::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(116,185,255,0.95), rgba(26,69,153,0.95));
+    border-radius: 999px;
+}
 
 .list-count {
     color: rgba(255,255,255,0.4);
