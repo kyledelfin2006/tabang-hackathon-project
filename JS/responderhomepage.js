@@ -8,6 +8,10 @@ import {
 
 let currentUser = null;
 
+function getRequesterName(data) {
+    return data.submittedBy || data.name || 'Unknown';
+}
+
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
@@ -164,7 +168,7 @@ window.initMap = function() {
                         .bindPopup(`
                             <div style="font-size:12px;font-family:Inter,sans-serif;">
                                 <strong>Help Request</strong><br>
-                                <b>Name:</b> ${data.name || 'Unknown'}<br>
+                                <b>Requester:</b> ${getRequesterName(data)}<br>
                                 <b>Situation:</b> ${data.description || 'No details'}<br>
                                 <b>Phone:</b> ${data.phone || 'N/A'}<br>
                                 <b>Status:</b> ${status}<br>

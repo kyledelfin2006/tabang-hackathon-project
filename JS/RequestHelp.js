@@ -206,7 +206,6 @@ document.getElementById('submitBtn').onclick = async function() {
         const submittedBy = userData?.fullName || userData?.name || userData?.displayName || currentUser.displayName || currentUser.email || 'Unknown';
 
         await addDoc(collection(db, "helpRequests"), {
-            name: submittedBy,
             phone: phone,
             location: loc,
             description: desc,

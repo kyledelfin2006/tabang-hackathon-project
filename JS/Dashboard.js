@@ -2,6 +2,10 @@
 
 (function () {
 
+    function getRequesterName(data) {
+        return data.submittedBy || data.name || 'Anonymous';
+    }
+
     // ----- Static fallback data (Aklan only, used when Firebase collections are empty) -----
     const staticFloods = [
         { name: 'Flood — Kalibo',   lat: 11.710, lng: 122.364, detail: 'Sample flood report' },
@@ -163,7 +167,7 @@
                 const d = doc.data();
                 if (d.latitude && d.longitude) {
                     dynamicFloodHelp.push({
-                        name: `Help: ${d.name || d.submittedBy || 'Anonymous'}`,
+                        name: `Help: ${getRequesterName(d)}`,
                         lat: d.latitude,
                         lng: d.longitude,
                         status: d.status || 'unresolved',

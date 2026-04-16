@@ -58,6 +58,10 @@ function formatSubmittedAt(timestamp) {
     });
 }
 
+function getRequesterName(report) {
+    return report.reporterName || report.submittedBy || report.name || 'Unknown';
+}
+
 // ─── Map preview functions ───────────────────────────────────────────────
 function openMapPreview(lat, lng, title) {
     mapModal.style.display = 'flex';
@@ -305,7 +309,8 @@ function buildCard(r) {
     const cardClass    = `report-card${isHelp ? ' help-card' : ''}${isOwner ? ' own-card' : ''}`;
     const dividerClass = isHelp ? 'card-divider help-divider' : 'card-divider';
     const iconClass    = isHelp ? 'row-icon help-row-icon' : 'row-icon';
-    const ownerName    = escapeHtml(r.reporterName || r.name || r.submittedBy || 'Unknown');
+    const requesterName = getRequesterName(r);
+    const ownerName    = escapeHtml(requesterName);
 
     // Delete button (only for own entries)
     const deleteBtn = isOwner
@@ -323,7 +328,7 @@ function buildCard(r) {
         const lat   = r.latitude;
         const lng   = r.longitude;
         const title = isHelp
-            ? `Help request by ${escapeHtml(r.name || r.submittedBy || 'Anonymous')}`
+            ? `Help request by ${escapeHtml(requesterName || 'Anonymous')}`
             : `Flood report at ${escapeHtml(r.location || 'unknown location')}`;
         locationBtn = `<button class="card-location-btn" onclick="openMapPreview(${lat}, ${lng}, '${escapeHtml(title)}')">
                            <i class="fas fa-map-marker-alt"></i> View on map
@@ -393,7 +398,7 @@ async function renderList() {
         items = items.filter(r => {
             const searchable = [
                 r.location    || '',
-                r.name        || '',
+                getRequesterName(r),
                 r.description || '',
                 r.details     || '',
                 r.submittedBy || ''

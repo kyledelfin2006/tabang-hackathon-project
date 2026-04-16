@@ -19,6 +19,10 @@ let allItems = [];
 let unsubFlood = null;
 let unsubHelp  = null;
 
+function getRequesterName(report) {
+    return report.reporterName || report.submittedBy || report.name || 'Unknown';
+}
+
 // Redirect to login if no user is authenticated; otherwise store the user and start listeners
 onAuthStateChanged(auth, (user) => {
     if (!user) {
@@ -212,7 +216,7 @@ function renderFloodReports() {
         const q = (document.getElementById('repSearch')?.value || '').toLowerCase();
         if (q) {
             items = items.filter(r =>
-                (r.location + r.name + r.description + r.details + r.submittedBy)
+                (r.location + getRequesterName(r) + r.description + r.details + r.submittedBy)
                     .toLowerCase().includes(q)
             );
         }
@@ -246,7 +250,7 @@ function renderFloodReports() {
                     : `<div class="card-row"><i class="fas fa-map-marker-alt row-icon"></i><div><div class="row-label">Location</div><div class="row-val">${escHtml(r.location)}</div></div></div>
                        ${r.details ? `<div class="card-row"><i class="fas fa-info-circle row-icon"></i><div><div class="row-label">Details</div><div class="row-val">${escHtml(r.details)}</div></div></div>` : ''}`;
 
-                const submittedByName = isHelp ? (r.name || r.submittedBy) : r.submittedBy;
+                const submittedByName = isHelp ? getRequesterName(r) : r.submittedBy;
                 const imageHtml = buildImageGallery(r.imageUrls);
 
                 // Use the actual Firestore status — all three states are rendered correctly
