@@ -3,6 +3,22 @@ import { auth, db } from './firebase.js';
 import { createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import { setDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
+// Back button: return to Account Info
+const backBtn = document.getElementById('backBtn');
+if (backBtn) {
+    const goBackToAccountInfo = () => {
+        window.location.href = 'AccountInfo.html';
+    };
+
+    backBtn.addEventListener('click', goBackToAccountInfo);
+    backBtn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            goBackToAccountInfo();
+        }
+    });
+}
+
 // Tracks whether the responder details section is toggled on or off
 let responderOn = true;
 
