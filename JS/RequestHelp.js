@@ -47,7 +47,6 @@ function initMap() {
         updateCoords(e.latlng);
     });
 
-    updateCoords({ lat: defaultCenter[0], lng: defaultCenter[1] });
     mapInitialized = true;
 }
 
@@ -62,9 +61,10 @@ function updateCoords(latlng) {
 
 function useGPS() {
     if (!navigator.geolocation) {
-        showToast("Geolocation not supported");
+        showToast("Your browser does not support GPS location. Please tap the map to pin your location.");
         return;
     }
+    showToast("Getting your current location...");
     navigator.geolocation.getCurrentPosition(
         (position) => {
             const lat = position.coords.latitude;
@@ -73,12 +73,13 @@ function useGPS() {
             map.setView([lat, lng], 14);
             marker.setLatLng([lat, lng]);
             updateCoords({ lat, lng });
-            showToast("Location updated");
+            showToast("Location pinned from GPS. Drag the marker if needed.");
         },
         (error) => {
-            let msg = "Could not get location. ";
-            if (error.code === 1) msg += "Permission denied.";
-            else msg += "Try again later.";
+            let msg = "Could not get your location. ";
+            if (error.code === 1) msg += "Allow location access or tap the map manually.";
+            else if (error.code === 2) msg += "Please check GPS or tap the map manually.";
+            else msg += "Please try again or tap the map manually.";
             showToast(msg);
         }
     );
@@ -107,16 +108,16 @@ uploadBox.onclick = () => fileInput.click();
 fileInput.onchange = function(e) {
     const files = Array.from(e.target.files);
     if (selectedImages.length + files.length > MAX_IMAGES) {
-        showToast(`Maximum ${MAX_IMAGES} images allowed`);
+        showToast(`You can upload up to ${MAX_IMAGES} images. Remove one before adding more.`);
         return;
     }
     files.forEach(file => {
         if (file.size > MAX_FILE_SIZE) {
-            showToast(`File ${file.name} is too large (max 5MB)`);
+            showToast(`${file.name} is too large. Please choose an image under 5MB.`);
             return;
         }
         if (!file.type.startsWith('image/')) {
-            showToast(`File ${file.name} is not an image`);
+            showToast(`${file.name} is not an image. Please choose a photo file.`);
             return;
         }
         const reader = new FileReader();
@@ -151,6 +152,7 @@ function updatePreview() {
 window.removeImage = function(index) {
     selectedImages.splice(index, 1);
     updatePreview();
+    showToast('Photo removed.');
 };
 
 // Cloudinary upload
@@ -168,27 +170,50 @@ async function uploadToCloudinary(file) {
     return data.secure_url;
 }
 
+function markInvalid(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const wrapper = el.closest('.input-box, .textarea-box') || el;
+    wrapper.style.boxShadow = '0 0 0 2px #ff3b30';
+    el.focus();
+    el.addEventListener('input', () => wrapper.style.boxShadow = '', { once: true });
+}
+
+function showMapPrompt(message) {
+    showToast(message);
+    mapContainer.classList.add('visible');
+    if (!mapInitialized) {
+        initMap();
+        setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+    }
+    toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide map';
+    document.getElementById('coordHint').textContent = 'Tap the map or use GPS to set your exact location.';
+}
+
 // ----- Submit -----
 document.getElementById('submitBtn').onclick = async function() {
     if (!currentUser) {
-        showToast('You must be logged in.');
+        showToast('Please log in before requesting help.');
         return;
     }
+    const submitBtn = document.getElementById('submitBtn');
     const phone = document.getElementById('phoneInput').value.trim();
     const loc   = document.getElementById('locationInput').value.trim();
     const desc  = document.getElementById('descInput').value.trim();
 
-    if (!phone) { showToast('Please enter your phone number'); return; }
-    if (!loc)   { showToast('Please enter your location'); return; }
-    if (!desc)  { showToast('Please describe your situation'); return; }
+    if (!phone) { showToast('Please enter the phone number responders can call.'); markInvalid('phoneInput'); return; }
+    if (!/^[\d\s\+\-\(\)]{7,15}$/.test(phone)) { showToast('Please enter a valid phone number, 7 to 15 digits.'); markInvalid('phoneInput'); return; }
+    if (!loc)   { showToast('Please enter your barangay, street, or nearby landmark.'); markInvalid('locationInput'); return; }
+    if (!desc)  { showToast('Please describe what help you need.'); markInvalid('descInput'); return; }
     if (!selectedLat || !selectedLng) {
-        showToast('Please pin your exact location on the map (click "Pin your exact location" button)');
+        showMapPrompt('Please pin your exact location on the map before submitting.');
         return;
     }
 
     const loadingDiv = document.getElementById('loading');
     loadingDiv.style.display = 'block';
-    document.getElementById('submitBtn').disabled = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
 
     try {
         let imageUrls = [];
@@ -217,13 +242,15 @@ document.getElementById('submitBtn').onclick = async function() {
             imageUrls: imageUrls,
             type: "help"
         });
-        navigateTo('MyReports.html');
+        showToast('Help request submitted. Redirecting...');
+        setTimeout(() => navigateTo('MyReports.html'), 800);
     } catch (err) {
         console.error(err);
-        showToast('Error: ' + err.message);
+        showToast('Could not submit your request. Please check your connection and try again.');
     } finally {
         loadingDiv.style.display = 'none';
-        document.getElementById('submitBtn').disabled = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Request Help';
     }
 };
 
@@ -231,7 +258,8 @@ function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.style.opacity = '1';
-    setTimeout(() => t.style.opacity = '0', 3000);
+    clearTimeout(t.hideTimer);
+    t.hideTimer = setTimeout(() => t.style.opacity = '0', 4000);
 }
 
 // Auth

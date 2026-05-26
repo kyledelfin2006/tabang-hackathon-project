@@ -12,7 +12,8 @@ function showToast(msg, success = false) {
     t.textContent = msg;
     t.className = 'toast' + (success ? ' success' : '');
     t.style.opacity = '1';
-    setTimeout(() => { t.style.opacity = '0'; }, 3500);
+    clearTimeout(t.hideTimer);
+    t.hideTimer = setTimeout(() => { t.style.opacity = '0'; }, 4000);
 }
 
 // Highlights an input with a red outline and clears it as soon as the user starts typing
@@ -20,8 +21,27 @@ function markInvalid(id) {
     const el = document.getElementById(id);
     if (el) {
         el.style.boxShadow = '0 0 0 2px #ff3b30';
+        el.focus();
         el.addEventListener('input', () => el.style.boxShadow = '', { once: true });
+        el.addEventListener('change', () => el.style.boxShadow = '', { once: true });
     }
+}
+
+function friendlySignupError(error) {
+    const code = error && error.code;
+    if (code === 'auth/email-already-in-use') {
+        return 'This email is already registered. Log in instead or use another email.';
+    }
+    if (code === 'auth/invalid-email') {
+        return 'Please enter a valid email address, like name@example.com.';
+    }
+    if (code === 'auth/weak-password') {
+        return 'Password is too weak. Use at least 6 characters.';
+    }
+    if (code === 'auth/network-request-failed') {
+        return 'Network problem. Please check your connection and try again.';
+    }
+    return error.message || 'Could not create the responder account. Please review the fields and try again.';
 }
 
 // Shorthand helpers to read trimmed text input and select values by element ID
@@ -55,20 +75,21 @@ document.getElementById('signupBtn').onclick = async function () {
     const confirm   = val('confirmInput');
 
     // Base field validation — checks for empty values, email format, phone format, and password match
-    if (!firstName)           { showToast('⚠️ Please enter your first name');         markInvalid('firstNameInput'); return; }
-    if (!lastName)            { showToast('⚠️ Please enter your last name');          markInvalid('lastNameInput');  return; }
-    if (!username)            { showToast('⚠️ Please enter a username');              markInvalid('usernameInput');  return; }
-    if (!email)               { showToast('⚠️ Please enter your email');             markInvalid('emailInput');     return; }
+    if (!firstName)           { showToast('Please enter your first name.');         markInvalid('firstNameInput'); return; }
+    if (!lastName)            { showToast('Please enter your last name.');          markInvalid('lastNameInput');  return; }
+    if (!username)            { showToast('Please enter a username.');              markInvalid('usernameInput');  return; }
+    if (username.length < 3)   { showToast('Username must be at least 3 characters.'); markInvalid('usernameInput'); return; }
+    if (!email)               { showToast('Please enter your email.');             markInvalid('emailInput');     return; }
     if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-        showToast('⚠️ Please enter a valid email address');   markInvalid('emailInput');     return; }
-    if (!phone)               { showToast('⚠️ Please enter your phone number');      markInvalid('phoneInput');     return; }
+        showToast('Please enter a valid email address, like name@example.com.');   markInvalid('emailInput');     return; }
+    if (!phone)               { showToast('Please enter your phone number.');      markInvalid('phoneInput');     return; }
     // Allows digits, spaces, and common phone punctuation; enforces 7–15 character length
     if (!/^[\d\s\+\-\(\)]{7,15}$/.test(phone)) {
-        showToast('⚠️ Please enter a valid phone number');    markInvalid('phoneInput');     return; }
-    if (!pass)                { showToast('⚠️ Please enter a password');             markInvalid('passInput');      return; }
-    if (pass.length < 6)      { showToast('⚠️ Password must be at least 6 characters'); markInvalid('passInput'); return; }
-    if (!confirm)             { showToast('⚠️ Please confirm your password');        markInvalid('confirmInput');   return; }
-    if (pass !== confirm)     { showToast('⚠️ Passwords do not match');              markInvalid('confirmInput');   return; }
+        showToast('Please enter a valid phone number, 7 to 15 digits.');    markInvalid('phoneInput');     return; }
+    if (!pass)                { showToast('Please enter a password.');             markInvalid('passInput');      return; }
+    if (pass.length < 6)      { showToast('Password must be at least 6 characters.'); markInvalid('passInput'); return; }
+    if (!confirm)             { showToast('Please confirm your password.');        markInvalid('confirmInput');   return; }
+    if (pass !== confirm)     { showToast('Passwords do not match. Please re-enter the confirmation.');              markInvalid('confirmInput');   return; }
 
     // Responder-specific validation — only runs if the responder section is toggled on
     let responderData = null;
@@ -79,13 +100,14 @@ document.getElementById('signupBtn').onclick = async function () {
         const barangay     = val('barangayInput');
         const municipality = selVal('municipalityInput');
 
-        if (!status)       { showToast('⚠️ Please enter your responder status');      markInvalid('responderStatus');    return; }
-        if (!org)          { showToast('⚠️ Please enter your organization / agency'); markInvalid('orgInput');           return; }
-        if (!badge)        { showToast('⚠️ Please enter your ID / Badge Number');     markInvalid('badgeInput');         return; }
-        if (!barangay)     { showToast('⚠️ Please enter your barangay');              markInvalid('barangayInput');      return; }
+        if (!status)       { showToast('Please enter your responder status.');      markInvalid('responderStatus');    return; }
+        if (!org)          { showToast('Please select your organization / agency.'); markInvalid('orgInput');           return; }
+        if (!badge)        { showToast('Please enter your ID / Badge Number.');     markInvalid('badgeInput');         return; }
+        if (!barangay)     { showToast('Please enter your barangay.');              markInvalid('barangayInput');      return; }
         // Select elements don't fire 'input', so a 'change' listener is used for the red outline reset
-        if (!municipality) { showToast('⚠️ Please select your municipality');
+        if (!municipality) { showToast('Please select your municipality.');
             document.getElementById('municipalityInput').style.boxShadow = '0 0 0 2px #ff3b30';
+            document.getElementById('municipalityInput').focus();
             document.getElementById('municipalityInput').addEventListener('change', () => {
                 document.getElementById('municipalityInput').style.boxShadow = '';
             }, { once: true });
@@ -95,9 +117,12 @@ document.getElementById('signupBtn').onclick = async function () {
         responderData = { status, org, badge, barangay, municipality, province: 'Aklan' };
     }
 
-    showToast('🔄 Creating account...', true);
+    const signupBtn = document.getElementById('signupBtn');
+    showToast('Creating account...', true);
 
     try {
+        signupBtn.disabled = true;
+        signupBtn.textContent = 'Creating...';
         // Firebase Auth enforces email uniqueness; username uniqueness is handled via localStorage elsewhere
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         const uid = userCredential.user.uid;
@@ -119,13 +144,18 @@ document.getElementById('signupBtn').onclick = async function () {
         // Write to the 'responders' collection, keyed by Firebase UID, as required by security rules
         await setDoc(doc(db, 'responders', uid), userDoc);
 
-        showToast('✅ Account created! Redirecting to login…', true);
+        showToast('Account created. Redirecting to login...', true);
         // Short delay so the user can read the success toast before being redirected
         setTimeout(() => { window.location.href = 'Loginresponder.html'; }, 1500);
 
     } catch (error) {
         // Covers Firebase Auth errors (duplicate email, weak password) and Firestore write failures
         console.error('Sign-up failed', error);
-        showToast('⚠️ ' + (error.message || 'Sign-up failed'));
+        showToast(friendlySignupError(error));
+        if (error.code === 'auth/email-already-in-use' || error.code === 'auth/invalid-email') markInvalid('emailInput');
+        if (error.code === 'auth/weak-password') markInvalid('passInput');
+    } finally {
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Create Account';
     }
 };

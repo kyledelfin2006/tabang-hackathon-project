@@ -26,12 +26,12 @@
 
     <div class="form-card">
         <div class="name-row">
-            <input class="input-field" id="firstNameInput" type="text" placeholder="First Name">
-            <input class="input-field" id="lastNameInput"  type="text" placeholder="Last Name">
+            <input class="input-field" id="firstNameInput" type="text" placeholder="First Name" autocomplete="given-name" required>
+            <input class="input-field" id="lastNameInput"  type="text" placeholder="Last Name" autocomplete="family-name" required>
         </div>
-        <input class="input-field" id="usernameInput" type="text"     placeholder="Enter Username">
-        <input class="input-field" id="emailInput"    type="email"    placeholder="Enter Email">
-        <input class="input-field" id="passInput"     type="password" placeholder="Enter Password" style="margin-bottom:0">    
+        <input class="input-field" id="usernameInput" type="text"     placeholder="Enter Username" autocomplete="username" minlength="3" required>
+        <input class="input-field" id="emailInput"    type="email"    placeholder="Enter Email" autocomplete="email" required>
+        <input class="input-field" id="passInput"     type="password" placeholder="Enter Password" autocomplete="new-password" minlength="6" required style="margin-bottom:0">    
     </div>
 
     <button class="signup-btn" id="signupBtn">Create Account</button>
@@ -39,7 +39,7 @@
     <div class="login-link">Already have an account? <span onclick="window.location.href='Login.html'">Log In</span></div>
 
     <div class="home-indicator"></div>
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
 <script type="module" src="JS/signup.js"></script>
 </body>

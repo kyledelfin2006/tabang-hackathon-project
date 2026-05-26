@@ -52,8 +52,6 @@ function initMap() {
         updateCoords(e.latlng);
     });
 
-    // Store the default center as the initial coordinate selection
-    updateCoords({ lat: defaultCenter[0], lng: defaultCenter[1] });
     mapInitialized = true;
 }
 
@@ -71,9 +69,10 @@ function updateCoords(latlng) {
 // Requests the device's GPS location and moves the map marker to that position
 function useGPS() {
     if (!navigator.geolocation) {
-        showToast("Geolocation not supported");
+        showToast("Your browser does not support GPS location. Please tap the map to pin the flood location.");
         return;
     }
+    showToast("Getting your current location...");
     navigator.geolocation.getCurrentPosition(
         (position) => {
             const lat = position.coords.latitude;
@@ -83,13 +82,14 @@ function useGPS() {
             map.setView([lat, lng], 14);
             marker.setLatLng([lat, lng]);
             updateCoords({ lat, lng });
-            showToast("Location updated");
+            showToast("Location pinned from GPS. Drag the marker if needed.");
         },
         (error) => {
             // Provide a specific message for permission denial vs other errors
-            let msg = "Could not get location. ";
-            if (error.code === 1) msg += "Permission denied.";
-            else msg += "Try again later.";
+            let msg = "Could not get your location. ";
+            if (error.code === 1) msg += "Allow location access or tap the map manually.";
+            else if (error.code === 2) msg += "Please check GPS or tap the map manually.";
+            else msg += "Please try again or tap the map manually.";
             showToast(msg);
         }
     );
@@ -121,16 +121,16 @@ uploadBox.onclick = () => fileInput.click();
 fileInput.onchange = function(e) {
     const files = Array.from(e.target.files);
     if (selectedImages.length + files.length > MAX_IMAGES) {
-        showToast(`Maximum ${MAX_IMAGES} images allowed`);
+        showToast(`You can upload up to ${MAX_IMAGES} images. Remove one before adding more.`);
         return;
     }
     files.forEach(file => {
         if (file.size > MAX_FILE_SIZE) {
-            showToast(`File ${file.name} is too large (max 5MB)`);
+            showToast(`${file.name} is too large. Please choose an image under 5MB.`);
             return;
         }
         if (!file.type.startsWith('image/')) {
-            showToast(`File ${file.name} is not an image`);
+            showToast(`${file.name} is not an image. Please choose a photo file.`);
             return;
         }
         // Read the file as a Data URL so it can be previewed before uploading
@@ -169,6 +169,7 @@ function updatePreview() {
 window.removeImage = function(index) {
     selectedImages.splice(index, 1);
     updatePreview();
+    showToast('Photo removed.');
 };
 
 // Uploads a single image file to Cloudinary and returns its secure CDN URL
@@ -186,31 +187,54 @@ async function uploadToCloudinary(file) {
     return data.secure_url;
 }
 
+function markInvalid(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const wrapper = el.closest('.input-box, .textarea-box') || el;
+    wrapper.style.boxShadow = '0 0 0 2px #ff3b30';
+    el.focus();
+    el.addEventListener('input', () => wrapper.style.boxShadow = '', { once: true });
+}
+
+function showMapPrompt(message) {
+    showToast(message);
+    mapContainer.classList.add('visible');
+    if (!mapInitialized) {
+        initMap();
+        setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+    }
+    toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide map';
+    document.getElementById('coordHint').textContent = 'Tap the map or use GPS to set the exact flood location.';
+}
+
 // ----- Submit report -----
 // Validates inputs, uploads images in parallel, resolves the submitter's name,
 // then writes the flood report document to Firestore
 document.getElementById('submitBtn').onclick = async function() {
     if (!currentUser) {
-        showToast('You must be logged in.');
+        showToast('Please log in before submitting a flood report.');
         return;
     }
+    const submitBtn = document.getElementById('submitBtn');
     const loc = document.getElementById('locationInput').value.trim();
     const det = document.getElementById('detailsInput').value.trim();
 
     // Require a text location description
     if (!loc) {
-        showToast('Please enter a location');
+        showToast('Please enter the barangay, street, or nearby landmark.');
+        markInvalid('locationInput');
         return;
     }
     // Require a map pin — GPS or manual click
     if (!selectedLat || !selectedLng) {
-        showToast('Please pin the exact location on the map (click "Pin location on map" button)');
+        showMapPrompt('Please pin the exact flood location on the map before submitting.');
         return;
     }
 
     const loadingDiv = document.getElementById('loading');
     loadingDiv.style.display = 'block';
-    document.getElementById('submitBtn').disabled = true;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
 
     try {
         // Upload all staged images to Cloudinary in parallel for efficiency
@@ -239,15 +263,16 @@ document.getElementById('submitBtn').onclick = async function() {
             type: "flood"
         });
 
-        // Navigate to the reports list on success
-        navigateTo('MyReports.html');
+        showToast('Flood report submitted. Redirecting...');
+        setTimeout(() => navigateTo('MyReports.html'), 800);
     } catch (err) {
         console.error(err);
-        showToast('Error: ' + err.message);
+        showToast('Could not submit your report. Please check your connection and try again.');
     } finally {
         // Always re-enable the submit button and hide the loader regardless of outcome
         loadingDiv.style.display = 'none';
-        document.getElementById('submitBtn').disabled = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Report';
     }
 };
 
@@ -256,7 +281,8 @@ function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.style.opacity = '1';
-    setTimeout(() => t.style.opacity = '0', 3000);
+    clearTimeout(t.hideTimer);
+    t.hideTimer = setTimeout(() => t.style.opacity = '0', 4000);
 }
 
 // Enable or disable the submit button based on the user's auth state

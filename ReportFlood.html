@@ -97,7 +97,7 @@
         <div class="field-label">Location (text)</div>
         <div class="input-box">
             <i class="fas fa-map-marker-alt"></i>
-            <input type="text" id="locationInput" placeholder="Enter Location (e.g., Barangay, City)">
+            <input type="text" id="locationInput" placeholder="Enter Location (e.g., Barangay, City)" required>
         </div>
 
         <!-- Collapsible map picker -->
@@ -143,7 +143,7 @@
         <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>All Reports</span></button>
         <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
     </div>
-    <div class="toast" id="toast"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <div class="loading" id="loading">Submitting...</div>
 </div>
 <script type="module" src="JS/ReportFlood.js"></script>

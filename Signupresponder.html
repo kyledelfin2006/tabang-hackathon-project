@@ -27,14 +27,14 @@
 
   <div class="form-card">
     <div class="name-row">
-      <input class="input-field" id="firstNameInput" type="text" placeholder="Rescuer First Name">
-      <input class="input-field" id="lastNameInput"  type="text" placeholder="Rescuer Last Name">
+      <input class="input-field" id="firstNameInput" type="text" placeholder="Rescuer First Name" autocomplete="given-name" required>
+      <input class="input-field" id="lastNameInput"  type="text" placeholder="Rescuer Last Name" autocomplete="family-name" required>
     </div>
-    <input class="input-field" id="usernameInput" type="text"     placeholder="Username">
-    <input class="input-field" id="emailInput"    type="email"    placeholder="Email Address">
-    <input class="input-field" id="phoneInput"    type="tel"      placeholder="Phone Number">
-    <input class="input-field" id="passInput"     type="password" placeholder="Password">
-    <input class="input-field" id="confirmInput"  type="password" placeholder="Confirm Password" style="margin-bottom:0">
+    <input class="input-field" id="usernameInput" type="text"     placeholder="Username" autocomplete="username" minlength="3" required>
+    <input class="input-field" id="emailInput"    type="email"    placeholder="Email Address" autocomplete="email" required>
+    <input class="input-field" id="phoneInput"    type="tel"      placeholder="Phone Number" autocomplete="tel" inputmode="tel" required>
+    <input class="input-field" id="passInput"     type="password" placeholder="Password" autocomplete="new-password" minlength="6" required>
+    <input class="input-field" id="confirmInput"  type="password" placeholder="Confirm Password" autocomplete="new-password" minlength="6" required style="margin-bottom:0">
 
   </div>
 
@@ -49,14 +49,14 @@
 
   <div class="responder-section" id="responderSection">
     <div class="section-label">Responder Information</div>
-    <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)">
-    <select class="select-field" id="orgInput">
+    <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)" required>
+    <select class="select-field" id="orgInput" required>
       <option value="" selected>Organization / Agency </option>
       <option>MDRRMO</option>
     </select>
-    <input class="input-field" id="badgeInput"      type="text" placeholder="ID / Badge Number">
-    <input class="input-field" id="barangayInput"   type="text" placeholder="Barangay">
-    <select class="select-field" id="municipalityInput" style="margin-bottom:0">
+    <input class="input-field" id="badgeInput"      type="text" placeholder="ID / Badge Number" required>
+    <input class="input-field" id="barangayInput"   type="text" placeholder="Barangay" required>
+    <select class="select-field" id="municipalityInput" required style="margin-bottom:0">
       <option value="" disabled selected>Municipality</option>
       <option>Altavas</option>
       <option>Balete</option>
@@ -84,7 +84,7 @@
   <div class="login-link">Already have an account? <a href="Loginresponder.html">Log In</a></div>
 
   <div class="home-indicator"></div>
-  <div class="toast" id="toast"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
 <script type="module" src="JS/Signupresponder.js"></script>
 </body>
