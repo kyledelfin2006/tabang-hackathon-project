@@ -1,4 +1,4 @@
-# Team Tabang Entry (7TH PLACE FINISH OVER 25 TEAMS)
+# Tabang — 7th Place Finish Among 25+ Teams
 ## UPV KomsaiHack 2026 — Risk Ready 
 
 **Tabang** is a web-based mobile application designed to support communities in Aklan during flood-related emergencies. It provides a centralized platform for real-time reporting, assistance coordination, and evaluation of emergency hotlines.
