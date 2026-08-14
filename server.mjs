@@ -1,8 +1,14 @@
 import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
+import {
+  buildSignedUploadParams,
+  signUploadParams,
+  verifyFirebaseIdToken,
+} from "./scripts/uploads/cloudinarySignature.mjs";
 
 const root = resolve(".");
+const distRoot = resolve("dist");
 const port = Number(process.env.PORT || 8000);
 const host = process.env.HOST || "127.0.0.1";
 
@@ -27,31 +33,193 @@ function getPath(url) {
   return fullPath === root || fullPath.startsWith(root + sep) ? fullPath : null;
 }
 
-createServer((req, res) => {
-  let filePath = getPath(req.url);
+function getDistPath(url) {
+  const pathname = decodeURIComponent(new URL(url, `http://${host}:${port}`).pathname);
+  const clean = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
+  const fullPath = resolve(join(distRoot, clean));
+  return fullPath === distRoot || fullPath.startsWith(distRoot + sep) ? fullPath : null;
+}
 
-  if (!filePath) {
+function serveFile(res, filePath, status = 200) {
+  res.writeHead(status, {
+    "Content-Type": types[extname(filePath).toLowerCase()] || "application/octet-stream",
+  });
+  createReadStream(filePath).pipe(res);
+}
+
+function serveNotFound(res) {
+  const notFoundPage = join(root, "404.html");
+
+  if (existsSync(notFoundPage)) {
+    serveFile(res, notFoundPage, 404);
+    return;
+  }
+
+  res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+  res.end("Not found");
+}
+
+const SIGNATURE_ROUTE = "/api/uploads/cloudinary-signature";
+const MAX_SIGNATURE_BODY_BYTES = 8 * 1024;
+
+function sendJson(res, status, payload) {
+  const body = JSON.stringify(payload);
+
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
+  res.end(body);
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+
+    req.on("data", (chunk) => {
+      size += chunk.length;
+
+      if (size > MAX_SIGNATURE_BODY_BYTES) {
+        reject(new Error("Request body too large."));
+        req.destroy();
+
+        return;
+      }
+
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"));
+      } catch {
+        reject(new Error("Request body was not valid JSON."));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+/**
+ * Issues a short-lived Cloudinary upload signature to a verified account.
+ *
+ * The API secret stays in this process. The client cannot choose any signed
+ * parameter, so it cannot widen the folder, size, or format it uploads with.
+ */
+async function handleSignatureRequest(req, res) {
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "Use POST." });
+
+    return;
+  }
+
+  const apiKey = process.env.FIREBASE_WEB_API_KEY;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+  if (!apiKey || !cloudName || !cloudinaryApiKey || !apiSecret) {
+    // Fail closed: never fall back to an unsigned upload path.
+    sendJson(res, 503, { error: "Uploads are not configured on this server." });
+
+    return;
+  }
+
+  let body;
+
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, { error: error.message });
+
+    return;
+  }
+
+  let account;
+
+  try {
+    account = await verifyFirebaseIdToken({ idToken: body.idToken, apiKey });
+  } catch {
+    sendJson(res, 503, { error: "Could not verify the session." });
+
+    return;
+  }
+
+  if (!account) {
+    sendJson(res, 401, { error: "Sign in before uploading." });
+
+    return;
+  }
+
+  const params = buildSignedUploadParams({
+    uid: account.uid,
+    timestampSeconds: Math.floor(Date.now() / 1000),
+  });
+
+  sendJson(res, 200, {
+    cloudName,
+    apiKey: cloudinaryApiKey,
+    params,
+    signature: signUploadParams(params, apiSecret),
+  });
+}
+
+createServer((req, res) => {
+  const pathname = decodeURIComponent(new URL(req.url, `http://${host}:${port}`).pathname);
+
+  if (pathname === SIGNATURE_ROUTE) {
+    handleSignatureRequest(req, res).catch(() => {
+      sendJson(res, 500, { error: "Unexpected server error." });
+    });
+
+    return;
+  }
+  const hasExtension = extname(pathname) !== "";
+  const distIndex = join(distRoot, "index.html");
+  const legacyLanding = join(root, "legacy-index.html");
+  const distReady = existsSync(distIndex);
+  let filePath = getPath(req.url);
+  let distPath = getDistPath(req.url);
+
+  if (!filePath || !distPath) {
     res.writeHead(403);
     res.end("Forbidden");
     return;
   }
 
-  if (!existsSync(filePath)) {
-    filePath = join(root, "404.html");
-  } else if (statSync(filePath).isDirectory()) {
-    filePath = join(filePath, "index.html");
-  }
-
-  if (!existsSync(filePath)) {
-    res.writeHead(404);
-    res.end("Not found");
+  if (pathname === "/" && !distReady && existsSync(legacyLanding)) {
+    serveFile(res, legacyLanding);
     return;
   }
 
-  res.writeHead(200, {
-    "Content-Type": types[extname(filePath).toLowerCase()] || "application/octet-stream",
-  });
-  createReadStream(filePath).pipe(res);
+  if (distReady && existsSync(distPath)) {
+    if (statSync(distPath).isDirectory()) {
+      distPath = join(distPath, "index.html");
+    }
+
+    if (existsSync(distPath)) {
+      serveFile(res, distPath);
+      return;
+    }
+  }
+
+  if (existsSync(filePath)) {
+    if (statSync(filePath).isDirectory()) {
+      filePath = join(filePath, "index.html");
+    }
+
+    if (existsSync(filePath)) {
+      serveFile(res, filePath);
+      return;
+    }
+  }
+
+  if (distReady && !hasExtension) {
+    serveFile(res, distIndex);
+    return;
+  }
+
+  serveNotFound(res);
 }).listen(port, host, () => {
   console.log(`Tabang is running at http://${host}:${port}/`);
 });

@@ -1,5 +1,43 @@
 {
+  "name": "project_tabang",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "start": "node server.mjs"
+    "dev": "node ./node_modules/vite/bin/vite.js",
+    "build": "node ./node_modules/vite/bin/vite.js build",
+    "preview": "node ./node_modules/vite/bin/vite.js preview",
+    "firebase:emulators": "node ./node_modules/firebase-tools/lib/bin/firebase.js emulators:start --project demo-tabang --only auth,firestore,storage",
+    "lint": "node ./node_modules/eslint/bin/eslint.js src server.mjs vite.config.js eslint.config.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "node ./node_modules/vitest/vitest.mjs run src/test",
+    "test:rules": "node ./node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --project demo-tabang --only firestore,storage \"node --test --test-concurrency=1 tests/rules/firestore.rules.test.mjs tests/rules/storage.rules.test.mjs\"",
+    "start": "node server.mjs",
+    "baseline:inventory": "node scripts/legacy-baseline/build-inventory.mjs",
+    "test:links": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs",
+    "test:smoke": "node --test tests/legacy/http-smoke.test.mjs",
+    "test:baseline": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs tests/legacy/http-smoke.test.mjs"
+  },
+  "dependencies": {
+    "firebase": "^12.17.1",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@firebase/rules-unit-testing": "^5.0.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@vitejs/plugin-react": "^6.0.5",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "firebase-tools": "^15.27.0",
+    "globals": "^17.11.0",
+    "jsdom": "^29.1.1",
+    "prettier": "^3.9.6",
+    "vite": "^8.2.1",
+    "vitest": "^4.1.10"
   }
 }

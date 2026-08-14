@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Storage Rules cannot read Firestore, so elevated roles must arrive as a
+    // custom claim here even though Firestore resolves roles from
+    // roleAssignments/{uid}. Owner-scoped access below does not depend on roles.
+    function hasRole(role) {
+      return isSignedIn() && request.auth.token.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isReviewer() {
+      return hasRole('reviewer') || isAdmin();
+    }
+
+    function isTrustedResponder() {
+      return hasRole('responder') || isReviewer();
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /responderApplications/{userId}/{allPaths=**} {
+      allow read, write: if isOwner(userId) || isReviewer();
+    }
+
+    match /reportUploads/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId) || isTrustedResponder();
+      allow write: if isOwner(userId) || isReviewer();
+    }
+
+    match /publicFeed/{allPaths=**} {
+      allow read: if true;
+      allow write: if isTrustedResponder();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

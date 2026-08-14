@@ -1,0 +1,34 @@
+:root {
+  --font-display: "Sora", "Segoe UI", sans-serif;
+  --font-body: "Space Grotesk", "Segoe UI", sans-serif;
+  --color-ink: #10212f;
+  --color-ink-soft: #476175;
+  --color-shell: #f6efe3;
+  --color-surface: rgba(255, 255, 255, 0.8);
+  --color-surface-strong: #fffaf1;
+  --color-border: rgba(16, 33, 47, 0.12);
+  --color-primary: #0d6e6e;
+  --color-primary-strong: #0a4f52;
+  --color-accent: #e66b2f;
+  --color-accent-soft: #fff0e4;
+  --color-resident: #12638d;
+  --color-responder: #a53b22;
+  --color-success: #1f7a52;
+  --color-warning: #be7c11;
+  --color-danger: #b13b2e;
+  --color-shadow: rgba(16, 33, 47, 0.14);
+  --radius-card: 28px;
+  --radius-pill: 999px;
+  --radius-input: 18px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --shadow-soft: 0 22px 50px -24px var(--color-shadow);
+  --shadow-panel: 0 24px 60px -30px rgba(11, 40, 62, 0.45);
+  --focus-ring: 0 0 0 4px rgba(13, 110, 110, 0.22);
+  --max-shell-width: 1180px;
+}

@@ -1,0 +1,189 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Roles are stored in roleAssignments/{uid}, which no client can write.
+    // A custom claim is still honoured when a trusted backend sets one, so a
+    // later migration to claims does not require a rules rewrite.
+    function assignedRole() {
+      return exists(/databases/$(database)/documents/roleAssignments/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/roleAssignments/$(request.auth.uid)).data.role
+        : 'resident';
+    }
+
+    function hasRole(role) {
+      return isSignedIn()
+        && (request.auth.token.role == role || assignedRole() == role);
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isReviewer() {
+      return hasRole('reviewer') || isAdmin();
+    }
+
+    function isTrustedResponder() {
+      return hasRole('responder') || isReviewer();
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).changedKeys();
+    }
+
+    function reportOwner(reportId) {
+      return get(/databases/$(database)/documents/reports/$(reportId)).data.reporterId;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isReviewer();
+      allow create: if isOwner(userId)
+        && request.resource.data.role == 'resident';
+      allow update: if isOwner(userId)
+        && request.resource.data.role == resource.data.role
+        && !changedKeys().hasAny(['role']);
+      allow delete: if false;
+    }
+
+    match /roleAssignments/{userId} {
+      allow read: if isOwner(userId) || isReviewer();
+      allow create, update: if isReviewer()
+        && request.resource.data.userId == userId
+        && request.resource.data.role in ['resident', 'responder', 'reviewer', 'admin'];
+      allow delete: if isAdmin();
+    }
+
+    match /responders/{userId} {
+      allow read: if isOwner(userId) || isReviewer();
+      allow write: if isReviewer();
+    }
+
+    match /responderApplications/{userId} {
+      allow read: if isOwner(userId) || isReviewer();
+      allow create: if isOwner(userId)
+        && request.resource.data.applicantId == userId
+        && request.resource.data.status == 'pending'
+        && !request.resource.data.keys().hasAny(['reviewedAt', 'reviewedBy']);
+      allow update: if (
+          isOwner(userId)
+          && resource.data.status == 'pending'
+          && request.resource.data.applicantId == resource.data.applicantId
+          && request.resource.data.status == resource.data.status
+          && !changedKeys().hasAny(['status', 'reviewedAt', 'reviewedBy', 'reviewNotes'])
+        ) || (
+          isReviewer()
+          && request.resource.data.applicantId == resource.data.applicantId
+          && request.resource.data.status in ['pending', 'approved', 'rejected']
+        );
+      allow delete: if false;
+    }
+
+    match /reports/{reportId} {
+      allow read: if isOwner(resource.data.reporterId) || isTrustedResponder();
+      allow create: if isSignedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.kind in ['flood', 'help']
+        && request.resource.data.verificationStatus == 'pending'
+        && request.resource.data.incidentStatus == 'new'
+        && !request.resource.data.keys().hasAny([
+          'assignedResponderIds',
+          'acknowledgedAt',
+          'resolvedAt'
+        ]);
+      allow update: if (
+          isOwner(resource.data.reporterId)
+          && request.resource.data.reporterId == resource.data.reporterId
+          && request.resource.data.kind == resource.data.kind
+          && request.resource.data.incidentStatus == resource.data.incidentStatus
+          && request.resource.data.verificationStatus == resource.data.verificationStatus
+          && request.resource.data.assignedResponderIds == resource.data.assignedResponderIds
+          && request.resource.data.publicImagePaths == resource.data.publicImagePaths
+          && request.resource.data.acknowledgedAt == resource.data.acknowledgedAt
+          && request.resource.data.resolvedAt == resource.data.resolvedAt
+        ) || (
+          isTrustedResponder()
+          && request.resource.data.reporterId == resource.data.reporterId
+          && request.resource.data.kind == resource.data.kind
+          && request.resource.data.createdAt == resource.data.createdAt
+          && changedKeys().hasOnly([
+            'incidentStatus',
+            'verificationStatus',
+            'assignedResponderIds',
+            'priority',
+            'publicSummary',
+            'publicImagePaths',
+            'updatedAt',
+            'acknowledgedAt',
+            'resolvedAt'
+          ])
+        ) || (
+          // Residents cancel rather than delete, so the incident history a
+          // responder may already have acted on is never destroyed. Cancelling
+          // stops once responders are committed, otherwise an active dispatch
+          // could be hidden from the people carrying it out.
+          isOwner(resource.data.reporterId)
+          && changedKeys().hasOnly(['incidentStatus', 'updatedAt'])
+          && request.resource.data.incidentStatus == 'cancelled'
+          && resource.data.incidentStatus in ['new', 'acknowledged']
+        );
+      allow delete: if isReviewer();
+
+      match /events/{eventId} {
+        allow read: if isOwner(reportOwner(reportId)) || isTrustedResponder();
+        allow create: if isTrustedResponder()
+          && request.resource.data.actorId == request.auth.uid
+          && request.resource.data.actorRole in ['responder', 'reviewer', 'admin'];
+        allow update, delete: if false;
+      }
+    }
+
+    match /publicFeed/{itemId} {
+      allow read: if true;
+      allow write: if isTrustedResponder();
+    }
+
+    match /hotlines/{hotlineId} {
+      allow read: if true;
+      allow create, update, delete: if isReviewer();
+
+      match /reviews/{userId} {
+        allow read: if true;
+        allow create, update: if isOwner(userId);
+        allow delete: if isOwner(userId) || isReviewer();
+      }
+    }
+
+    match /floodReports/{reportId} {
+      allow read: if isOwner(resource.data.userId) || isTrustedResponder();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId
+        && !changedKeys().hasAny(['userId', 'assignedResponderIds', 'role']);
+      allow delete: if false;
+    }
+
+    match /helpRequests/{requestId} {
+      allow read: if isOwner(resource.data.userId) || isTrustedResponder();
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.userId == resource.data.userId
+        && !changedKeys().hasAny(['userId', 'assignedResponderIds', 'role']);
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
