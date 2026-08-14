@@ -6,6 +6,7 @@ import {
   RequireAnonymous,
   RequireAuth,
   RequireResponder,
+  RequireReviewer,
 } from "../components/routing/RouteGuards.jsx";
 import LoginPage from "../routes/auth/LoginPage.jsx";
 import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
@@ -17,6 +18,7 @@ import ReportFormPage from "../routes/reports/ReportFormPage.jsx";
 import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
 import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
 import ResponderApplicationPage from "../routes/responder/ResponderApplicationPage.jsx";
+import ReviewQueuePage from "../routes/responder/ReviewQueuePage.jsx";
 import {
   HotlinesRoute,
   IncidentDetailRoute,
@@ -93,6 +95,14 @@ export const appRoutes = [
       { index: true, element: <ResponderDashboardRoute /> },
       { path: "incidents", element: <IncidentsRoute /> },
       { path: "incidents/:id", element: <IncidentDetailRoute /> },
+      {
+        path: "applications",
+        element: (
+          <RequireReviewer>
+            <ReviewQueuePage />
+          </RequireReviewer>
+        ),
+      },
       { path: "hotlines", element: <ResponderHotlinesRoute /> },
       { path: "account", element: <AccountPage area="Responder route" /> },
     ],

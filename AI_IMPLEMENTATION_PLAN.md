@@ -683,20 +683,20 @@ Replace broken self-verification and self-authorized responder signup.
 - [x] Upload government ID and selfie evidence to protected storage.
 - [x] Implement application states: draft if needed, pending, approved, rejected.
 - [x] Prevent applicants from editing review fields or approving themselves.
-- [ ] Add an authorized reviewer workflow or document an initial Firebase Admin-only approval procedure. *(Slice 2.)*
+- [x] Add an authorized reviewer workflow or document an initial Firebase Admin-only approval procedure.
 - [x] Grant responder custom claims only through a trusted environment. *(Satisfied by reviewer-only `roleAssignments`; applying writes nothing that grants access.)*
-- [ ] Record approval and rejection audit information. *(Slice 2.)*
+- [x] Record approval and rejection audit information.
 - [x] Define evidence retention and deletion policies.
-- [ ] Add comprehensive rule and browser tests. *(Unit coverage added; rule and browser coverage in slice 2.)*
+- [ ] Add comprehensive rule and browser tests. *(Unit and rule coverage added; browser tests remain outstanding across the project.)*
 
 ### Phase 7 slice plan
 
 - **Slice 1 (done):** removal of the self-authorization path, the authenticated application flow, identity evidence upload, and consent capture.
-- **Slice 2 (next):** the reviewer screen, approval and rejection with audit fields, evidence deletion on decision, and the emulator and browser tests.
+- **Slice 2 (done):** the reviewer screen, approval and rejection with audit fields, evidence deletion on decision, and the emulator tests.
 
 ### Evidence retention decision
 
-Government ID and selfie evidence is deleted as soon as an application is approved or rejected. The decision, the reviewing account, the timestamp, and any review notes are retained; the images are not. Slice 2 implements the deletion call, so until then evidence uploaded during testing must be removed manually from Cloudinary.
+Government ID and selfie evidence is deleted as soon as an application is approved or rejected. The decision, the reviewing account, the timestamp, and any review notes are retained; the images are not. Deletion runs immediately after the decision transaction commits. If the delete call fails, the decision still stands and the stored paths are already cleared, so the orphaned asset must be purged from Cloudinary manually.
 
 ### Identity storage caveat
 
@@ -1066,9 +1066,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 6 complete pending its test run; Phase 7 slice 1 implemented**
+- Current phase: **Phase 7 implemented, at the mandatory privacy review checkpoint**
 - Last completed phase: **Phase 5 - Reports and secure uploads**
-- Next exact action: **Run `npm run test:unit`, `npm run test:rules`, and `npm run test:baseline` on Windows to verify Phases 6 and 7 slice 1, then complete Phase 7 slice 2 (reviewer screen, audit fields, evidence deletion). Phase 7 ends in a mandatory privacy review checkpoint.**
+- Next exact action: **Run `npm run test:unit` and `npm run test:rules` on Windows to verify Phases 6 and 7, seed the first reviewer by creating `roleAssignments/{uid}` in the console, then complete the privacy review checkpoint before Phase 8.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1086,7 +1086,7 @@ Update only after the corresponding verification has been run.
 | 4. Resident shell and home | Complete | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:unit` passed all 11 `residentHome` tests covering skeleton/empty/error/retry states, drawer focus trap and restoration, drawer router navigation, the bounded page size, and the field projection that drops protected data. Manual keyboard, touch, back/forward, and mobile-viewport checks remain outstanding. |
 | 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
 | 6. Personal and community feeds | In progress | `feat(reports): add the resident personal report view` | `npm run lint` passed in this session. New unit tests cover the owner-scoped projection, bounded pagination, confirm-before-cancel, and that the public feed variant cannot render a description, phone number, or coordinates. Four new emulator tests cover resident cancellation and its limits. Both suites need a Windows run. |
-| 7. Responder application | In progress | `fix(verification): replace broken contact verification flow` | Slice 1 of 2. `npm run lint` passed and the legacy link/asset baseline test passes again after recording one new expected entry. New unit tests cover consent, evidence requirements, authenticated upload scoping, delivery-URL signing, and reviewer-only access. Unit run pending. |
+| 7. Responder application | In progress | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | Both slices implemented. `npm run lint` passed and the legacy link/asset baseline passes. Unit tests cover consent, evidence requirements, upload scoping, delivery-URL signing, the decision transaction, and confirm-before-decide. Two new emulator tests cover reviewer self-approval and decision attribution. Unit and rules runs pending. |
 | 8. Incident lifecycle | Not started | — | — |
 | 9. Dashboard integrity | Not started | — | — |
 | 10. Hotline consolidation | Not started | — | — |
@@ -1141,6 +1141,9 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Record `index.html` referencing `/src/main.jsx` as an expected baseline entry | Vite resolves the SPA entry at build and dev time, so there is deliberately no file on disk | The link/asset baseline passes again without weakening what it checks |
 | 2026-08-14 | Stay on Firebase rather than migrating to Supabase | Firebase Storage is not used by any application code, so the Blaze prompt blocked nothing. Migrating would rewrite every repository, all security rules as RLS, and the whole emulator suite, discarding verification already earned | The Cloudinary identity-evidence caveat stands; revisit only if that boundary proves insufficient |
 | 2026-08-14 | Deploy with `--only firestore` via `npm run deploy:rules` | A bare `firebase deploy` targets the top-level `storage` block and fails, because provisioning a Storage bucket requires the Blaze plan | The `storage` block stays in `firebase.json` so the free local Storage emulator and its three rules tests keep working |
+| 2026-08-14 | Write the decision and the role grant in one transaction | An approved application without a role assignment is a responder who cannot work, and a role assignment without a recorded decision is an unattributable grant | Approval is all-or-nothing; evidence deletion happens after the transaction commits |
+| 2026-08-14 | Require `reviewedBy` to equal the acting account, and forbid reviewing your own application | Without these, a reviewer could approve themselves or record someone else as the decision maker, which destroys the audit trail exactly where it matters | Two emulator tests cover both; a reviewer needing responder access must be approved by a different reviewer |
+| 2026-08-14 | Hide the reviewer navigation item from non-reviewer responders | The guard would only redirect them, so showing the link advertises a screen they cannot use | Nav items are derived from the session role rather than hard-coded |
 
 ## 14. Handoff Log
 
@@ -1273,6 +1276,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Slice 2 still owes the reviewer screen, approval and rejection audit fields, evidence deletion on decision, and rule and browser tests. Until deletion exists, test evidence must be removed from Cloudinary by hand. Phase 7 ends in a mandatory privacy review checkpoint.
 - Commit: `fix(verification): replace broken contact verification flow`
 - Next exact action: Complete Phase 7 slice 2, then present the privacy review checkpoint and wait.
+
+### 2026-08-14 — Phase 7 slice 2: reviewer approval workflow
+
+- Completed: Added a reviewer-only queue of pending applications, approval and rejection that write audit fields and grant the role in one transaction, identity evidence deletion once a decision is recorded, a `RequireReviewer` guard, role-derived responder navigation, and rules that force a decision to name its author and forbid reviewing your own application.
+- Files/components changed: `scripts/uploads/cloudinarySignature.mjs`, `server.mjs`, `src/services/responders/reviewRepository.js`, `src/routes/responder/ReviewQueuePage.jsx`, `src/components/routing/RouteGuards.jsx`, `src/layouts/ResponderLayout.jsx`, `src/app/router.jsx`, `src/test/reviewQueue.test.jsx`, `tests/rules/firestore.rules.test.mjs`, `firebase/firestore.rules`, `firebase/firestore.indexes.json`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `npm run test:unit` and `npm run test:rules` were not run in the assistant sandbox and are unverified.
+- Decisions/deviations: Disambiguated the reject confirmation label after finding two buttons named `Reject`, which made the confirmation dialog ambiguous to assistive technology as well as to tests. Evidence deletion is deliberately outside the transaction, since a failed delete must not roll back a recorded decision.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None. A new `responderApplications` composite index is in source control and must be deployed with `npm run deploy:rules`.
+- Blockers: Unit and rules runs are outstanding for Phases 6 and 7. The first reviewer must be seeded by hand. Browser tests remain outstanding project-wide. Phase 7 ends in a mandatory privacy review checkpoint.
+- Commit: `feat(responders): add responder application review states`
+- Next exact action: Present the privacy review checkpoint and wait for user review before Phase 8.
 
 ### Handoff entry template
 

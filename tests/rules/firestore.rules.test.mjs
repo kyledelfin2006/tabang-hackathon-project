@@ -208,6 +208,66 @@ describe("Firestore rules", () => {
     );
   });
 
+  it("stops a reviewer approving their own application", async () => {
+    await seedDocument(["roleAssignments", "reviewer-3"], {
+      userId: "reviewer-3",
+      role: "reviewer",
+    });
+    await seedDocument(["responderApplications", "reviewer-3"], {
+      applicantId: "reviewer-3",
+      organization: "Aklan MDRRMO",
+      status: "pending",
+      submittedAt: sampleTimestamp,
+    });
+
+    const reviewerDb = testEnvironment
+      .authenticatedContext("reviewer-3")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(reviewerDb, "responderApplications", "reviewer-3"), {
+        status: "approved",
+        reviewedBy: "reviewer-3",
+        reviewedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("requires a decision to name the reviewer who made it", async () => {
+    await seedDocument(["roleAssignments", "reviewer-4"], {
+      userId: "reviewer-4",
+      role: "reviewer",
+    });
+    await seedDocument(["responderApplications", "resident-9"], {
+      applicantId: "resident-9",
+      organization: "Aklan MDRRMO",
+      status: "pending",
+      submittedAt: sampleTimestamp,
+    });
+
+    const reviewerDb = testEnvironment
+      .authenticatedContext("reviewer-4")
+      .firestore();
+
+    // Attributing the decision to somebody else is rejected.
+    await assertFails(
+      updateDoc(doc(reviewerDb, "responderApplications", "resident-9"), {
+        status: "approved",
+        reviewedBy: "reviewer-1",
+        reviewedAt: sampleTimestamp,
+      }),
+    );
+
+    await assertSucceeds(
+      updateDoc(doc(reviewerDb, "responderApplications", "resident-9"), {
+        status: "approved",
+        reviewedBy: "reviewer-4",
+        reviewedAt: sampleTimestamp,
+        reviewNotes: "Badge confirmed with the office.",
+      }),
+    );
+  });
+
   it("lets a resident cancel their own report but never delete it", async () => {
     await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
 

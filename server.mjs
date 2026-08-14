@@ -2,6 +2,7 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import {
+  buildDestroyParams,
   buildIdentityUploadParams,
   buildSignedDeliveryUrl,
   buildSignedUploadParams,
@@ -66,6 +67,7 @@ function serveNotFound(res) {
 const SIGNATURE_ROUTE = "/api/uploads/cloudinary-signature";
 const IDENTITY_SIGNATURE_ROUTE = "/api/uploads/identity-signature";
 const IDENTITY_VIEW_ROUTE = "/api/uploads/identity-view";
+const IDENTITY_DELETE_ROUTE = "/api/uploads/identity-delete";
 const MAX_SIGNATURE_BODY_BYTES = 8 * 1024;
 
 function sendJson(res, status, payload) {
@@ -326,8 +328,116 @@ async function handleIdentityViewRequest(req, res) {
   });
 }
 
+/**
+ * Destroys identity evidence once a decision has been recorded.
+ *
+ * Reviewer-only: an applicant must not be able to erase the evidence a
+ * reviewer is about to judge, and nobody else should be able to destroy it at
+ * all.
+ */
+async function handleIdentityDeleteRequest(req, res) {
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "Use POST." });
+
+    return;
+  }
+
+  const config = uploadConfig();
+
+  if (!config.apiKey || !config.projectId || !config.cloudName || !config.apiSecret) {
+    sendJson(res, 503, { error: "Uploads are not configured on this server." });
+
+    return;
+  }
+
+  let body;
+
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, { error: error.message });
+
+    return;
+  }
+
+  let account;
+
+  try {
+    account = await verifyFirebaseIdToken({
+      idToken: body.idToken,
+      apiKey: config.apiKey,
+    });
+  } catch {
+    sendJson(res, 503, { error: "Could not verify the session." });
+
+    return;
+  }
+
+  if (!account) {
+    sendJson(res, 401, { error: "Sign in first." });
+
+    return;
+  }
+
+  const role = await readCallerRole({
+    uid: account.uid,
+    idToken: body.idToken,
+    projectId: config.projectId,
+  });
+
+  if (!isReviewerRole(role)) {
+    sendJson(res, 403, { error: "Only a reviewer can delete evidence." });
+
+    return;
+  }
+
+  let params;
+
+  try {
+    params = buildDestroyParams({
+      publicId: body.publicId,
+      timestampSeconds: Math.floor(Date.now() / 1000),
+    });
+  } catch (error) {
+    sendJson(res, 400, { error: error.message });
+
+    return;
+  }
+
+  const form = new URLSearchParams({
+    ...params,
+    api_key: config.cloudinaryApiKey,
+    signature: signUploadParams(params, config.apiSecret),
+  });
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${encodeURIComponent(config.cloudName)}/image/destroy`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: form,
+    },
+  );
+
+  if (!response.ok) {
+    sendJson(res, 502, { error: "The evidence could not be deleted." });
+
+    return;
+  }
+
+  sendJson(res, 200, { deleted: true });
+}
+
 createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, `http://${host}:${port}`).pathname);
+
+  if (pathname === IDENTITY_DELETE_ROUTE) {
+    handleIdentityDeleteRequest(req, res).catch(() => {
+      sendJson(res, 500, { error: "Unexpected server error." });
+    });
+
+    return;
+  }
 
   if (pathname === IDENTITY_SIGNATURE_ROUTE) {
     handleIdentitySignatureRequest(req, res).catch(() => {

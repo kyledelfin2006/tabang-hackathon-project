@@ -83,6 +83,12 @@ service cloud.firestore {
           isReviewer()
           && request.resource.data.applicantId == resource.data.applicantId
           && request.resource.data.status in ['pending', 'approved', 'rejected']
+          // A decision must name the account that made it, so approvals are
+          // attributable and a reviewer cannot record someone else as the
+          // decision maker.
+          && request.resource.data.reviewedBy == request.auth.uid
+          // A reviewer must never be able to approve their own application.
+          && request.auth.uid != resource.data.applicantId
         );
       allow delete: if false;
     }
