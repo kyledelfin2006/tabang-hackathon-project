@@ -134,40 +134,6 @@ export function LandingRoute() {
   );
 }
 
-export function CommunityRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Community Feed"
-      summary="This route is reserved for the sanitized community feed that will replace the current report leakage."
-      statusLabel="Resident layout"
-      routePath="/app/community"
-      legacyHref="/MyReports.html"
-      checklist={[
-        "Dedicated route exists for a future sanitized feed.",
-        "The new shell no longer requires one HTML file per route.",
-      ]}
-    />
-  );
-}
-
-export function ReportsRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="My Reports"
-      summary="Resident report history will move here behind the shared resident shell."
-      statusLabel="Resident layout"
-      routePath="/app/reports"
-      legacyHref="/MyReports.html"
-      checklist={[
-        "Route exists for the resident's private report list.",
-        "Bottom navigation is shared instead of duplicated.",
-      ]}
-    />
-  );
-}
-
 export function HotlinesRoute() {
   return (
     <RouteShellPage

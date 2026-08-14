@@ -631,18 +631,22 @@ Correct the privacy and naming problems in the current `MyReports` implementatio
 
 ### Tasks
 
-- [ ] Implement `/app/reports` using a query restricted to the current resident.
-- [ ] Implement `/app/community` using only explicitly public, sanitized fields.
-- [ ] Add pagination or bounded incremental loading.
-- [ ] Add deterministic ordering and required indexes.
-- [ ] Remove per-report profile enrichment queries.
-- [ ] Build one reusable report-card component with privacy-aware variants.
-- [ ] Restrict resident edits/deletion to allowed fields and ownership in rules.
-- [ ] Define whether deletion is hard deletion, soft deletion, or cancellation; document retention requirements.
-- [ ] Obscure exact map coordinates in the public feed.
-- [ ] Do not show contact phone numbers publicly.
-- [ ] Provide clear verification and stale-information badges.
-- [ ] Clean up subscriptions when leaving a route.
+- [x] Implement `/app/reports` using a query restricted to the current resident.
+- [x] Implement `/app/community` using only explicitly public, sanitized fields.
+- [x] Add pagination or bounded incremental loading.
+- [x] Add deterministic ordering and required indexes.
+- [x] Remove per-report profile enrichment queries.
+- [x] Build one reusable report-card component with privacy-aware variants.
+- [x] Restrict resident edits/deletion to allowed fields and ownership in rules.
+- [x] Define whether deletion is hard deletion, soft deletion, or cancellation; document retention requirements.
+- [x] Obscure exact map coordinates in the public feed.
+- [x] Do not show contact phone numbers publicly.
+- [x] Provide clear verification and stale-information badges.
+- [x] Clean up subscriptions when leaving a route.
+
+### Retention decision
+
+Residents cancel; they never delete. Cancelling sets `incidentStatus` to `cancelled` and changes nothing else. The document, its protected fields, and its `events` subcollection are retained so the response history stays auditable, and rules block resident deletion entirely. Cancellation is refused once `incidentStatus` has moved past `acknowledged`, because a resident should not be able to hide a dispatch from the people carrying it out. Purging cancelled records is an operational decision for Phase 13, not a user-facing action.
 
 ### Acceptance checks
 
@@ -1049,9 +1053,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Hard stop after completing Phase 5**
+- Current phase: **Phase 6 implemented, awaiting a verification run**
 - Last completed phase: **Phase 5 - Reports and secure uploads**
-- Next exact action: **Wait for an instruction, then begin Phase 6 only. Before Phase 13, decide where `server.mjs` runs in production, since signed uploads cannot work on static hosting alone.**
+- Next exact action: **Run `npm run test:unit` and `npm run test:rules` on Windows. If clean, mark Phase 6 Complete and stop. Before Phase 13, decide where `server.mjs` runs in production, since signed uploads cannot work on static hosting alone.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1068,7 +1072,7 @@ Update only after the corresponding verification has been run.
 | 3. Authentication and profiles | Complete | `feat(auth): centralize session handling and migrate auth routes`, `test: restore dom cleanup between component tests` | On Windows: `npm run lint` passed; `npm run test:rules` passed 14/14 emulator tests including four role-assignment cases proving a resident cannot self-promote; `npm run build` succeeded; `npm run test:unit` passed all Phase 3 suites (`router` 4, `authGuards` 9, `authForms` 7, `profile` 10, `firebase-config` 6). An earlier run failed 12 tests from a missing Testing Library cleanup; fixed in `a362435`. |
 | 4. Resident shell and home | Complete | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:unit` passed all 11 `residentHome` tests covering skeleton/empty/error/retry states, drawer focus trap and restoration, drawer router navigation, the bounded page size, and the field projection that drops protected data. Manual keyboard, touch, back/forward, and mobile-viewport checks remain outstanding. |
 | 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
-| 6. Personal and community feeds | Not started | — | — |
+| 6. Personal and community feeds | In progress | `feat(reports): add the resident personal report view` | `npm run lint` passed in this session. New unit tests cover the owner-scoped projection, bounded pagination, confirm-before-cancel, and that the public feed variant cannot render a description, phone number, or coordinates. Four new emulator tests cover resident cancellation and its limits. Both suites need a Windows run. |
 | 7. Responder application | Not started | — | — |
 | 8. Incident lifecycle | Not started | — | — |
 | 9. Dashboard integrity | Not started | — | — |
@@ -1111,6 +1115,12 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Give each form session one report id and write inside a transaction | A duplicate click or a retry after a timeout that actually succeeded would otherwise file the same emergency twice and inflate the incident queue | Retries are safe; a genuinely new report needs a new form session |
 | 2026-08-14 | Make geolocation optional with manual coordinate entry always available | Geolocation fails indoors, during power cuts, and on older handsets, which is exactly when a flood report matters | Slightly more form work for the resident, but the flow never dead-ends |
 | 2026-08-14 | Inject `documentRef` and `transactionRunner` into the report repository | Idempotency is the security-relevant behaviour here and needed a real test, not a mock of the Firestore module | Duplicate-submission protection is covered by unit tests without an emulator |
+| 2026-08-14 | Residents cancel reports rather than delete them | User decision. An emergency record that responders may already have acted on must not disappear, and a mistaken cancel should not destroy a dispatch history | The document and its event history are retained; rules block resident deletion outright |
+| 2026-08-14 | Refuse cancellation once an incident is past `acknowledged` | Otherwise a resident could hide an active dispatch from the responders already travelling to it | Residents must contact responders directly to stand down a live response |
+| 2026-08-14 | Show barangay names only in the public feed, never coordinates | User decision. Even coordinates rounded to a kilometre can identify a specific household in a sparse rural barangay | A public map needs a separate, deliberately coarse dataset if it is ever wanted |
+| 2026-08-14 | Order personal reports by `createdAt` then `__name__` | Two reports filed in the same second would otherwise have an unstable order, letting a page boundary duplicate or skip a record | Requires the composite index now checked into `firestore.indexes.json` |
+| 2026-08-14 | Give `ReportCard` no code path that can render protected fields in its public variant | A shared card that merely omits fields by convention will eventually leak one | The public variant is structurally incapable of showing a description, phone number, or coordinates, and a test asserts it |
+| 2026-08-14 | Compute report staleness at fetch time rather than during render | `Date.now()` in render is impure and the React compiler lint rejects it | Staleness is relative to when the page loaded, which is also what the badge means |
 
 ## 14. Handoff Log
 
@@ -1219,6 +1229,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Signed uploads still need a Node runtime in production. Browser tests and the Phase 4 manual keyboard, touch, back/forward, and mobile checks remain outstanding.
 - Commit: `docs: record phase 5 verification`
 - Next exact action: Wait for an instruction, then begin Phase 6 only.
+
+### 2026-08-14 — Phase 6: personal reports and sanitized community feed
+
+- Completed: Replaced the two remaining placeholder routes with real views. `/app/reports` runs an owner-scoped, deterministically ordered, cursor-paginated query and offers cancellation behind an explicit confirmation. `/app/community` reads `publicFeed` only. One `ReportCard` serves both with privacy-aware variants, verification and stale badges, and no per-report profile lookups. Rules now permit resident cancellation within limits and still forbid resident deletion.
+- Files/components changed: `src/services/reports/reportRepository.js`, `src/components/reports/ReportCard.jsx`, `src/components/feedback/Modal.jsx`, `src/routes/reports/MyReportsPage.jsx`, `src/routes/community/CommunityFeedPage.jsx`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/styles/global.css`, `src/test/feeds.test.jsx`, `tests/rules/firestore.rules.test.mjs`, `firebase/firestore.rules`, `firebase/firestore.indexes.json`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `npm run test:unit` and `npm run test:rules` could not run in the assistant sandbox and are unverified; nothing here claims they pass.
+- Decisions/deviations: Cancellation over deletion and barangay-only public location, both at the user's direction and recorded in the Decision Log. Extended the shared `Modal` with a real confirm/dismiss pair, because the destructive cancel action previously would have fired on dismissal. Moved staleness out of render to satisfy the React purity lint.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None. The new `reports` composite index is in source control only and must be deployed before the personal report query works against production.
+- Blockers: Unit and rules runs are needed. Signed uploads still need a Node runtime in production. Phase 4 manual checks remain outstanding.
+- Commit: `feat(reports): add the resident personal report view`
+- Next exact action: Run `npm run test:unit` and `npm run test:rules` on Windows. If clean, mark Phase 6 Complete and wait before starting Phase 7.
 
 ### Handoff entry template
 

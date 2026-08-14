@@ -14,14 +14,14 @@ import SignupPage from "../routes/auth/SignupPage.jsx";
 import AccountPage from "../routes/account/AccountPage.jsx";
 import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
 import ReportFormPage from "../routes/reports/ReportFormPage.jsx";
+import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
+import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
 import {
-  CommunityRoute,
   HotlinesRoute,
   IncidentDetailRoute,
   IncidentsRoute,
   LandingRoute,
   NotFoundRoute,
-  ReportsRoute,
   ResponderApplicationRoute,
   ResponderDashboardRoute,
   ResponderHotlinesRoute,
@@ -72,8 +72,8 @@ export const appRoutes = [
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <ResidentHomePage /> },
-      { path: "community", element: <CommunityRoute /> },
-      { path: "reports", element: <ReportsRoute /> },
+      { path: "community", element: <CommunityFeedPage /> },
+      { path: "reports", element: <MyReportsPage /> },
       { path: "reports/new", element: <ReportFormPage kind="flood" /> },
       { path: "help/new", element: <ReportFormPage kind="help" /> },
       { path: "hotlines", element: <HotlinesRoute /> },

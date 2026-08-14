@@ -6,6 +6,8 @@ export default function Modal({
   description,
   confirmLabel = "Close",
   onClose,
+  onConfirm,
+  dismissLabel = "Go back",
 }) {
   const titleId = useId();
   const descriptionId = useId();
@@ -52,14 +54,27 @@ export default function Modal({
       >
         <h2 id={titleId}>{title}</h2>
         <p id={descriptionId}>{description}</p>
-        <button
-          className="action-button"
-          onClick={onClose}
-          ref={closeButtonRef}
-          type="button"
-        >
-          {confirmLabel}
-        </button>
+        <div className="button-row">
+          {/* When a confirm action exists, dismissing must never perform it. */}
+          {onConfirm ? (
+            <button
+              className="action-button action-button--secondary"
+              onClick={onClose}
+              ref={closeButtonRef}
+              type="button"
+            >
+              {dismissLabel}
+            </button>
+          ) : null}
+          <button
+            className="action-button"
+            onClick={onConfirm ?? onClose}
+            ref={onConfirm ? undefined : closeButtonRef}
+            type="button"
+          >
+            {confirmLabel}
+          </button>
+        </div>
       </div>
     </div>
   );

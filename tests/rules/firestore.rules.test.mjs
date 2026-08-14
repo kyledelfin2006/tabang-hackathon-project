@@ -1,6 +1,13 @@
 import { after, before, beforeEach, describe, it } from "node:test";
 import { assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, Timestamp, updateDoc } from "firebase/firestore";
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  Timestamp,
+  updateDoc,
+} from "firebase/firestore";
 import {
   cleanupRulesTestEnvironment,
   getRulesTestEnvironment,
@@ -197,6 +204,72 @@ describe("Firestore rules", () => {
     await assertFails(
       updateDoc(doc(residentDb, "responderApplications", "resident-1"), {
         status: "approved",
+      }),
+    );
+  });
+
+  it("lets a resident cancel their own report but never delete it", async () => {
+    await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    await assertSucceeds(
+      updateDoc(doc(residentDb, "reports", "report-1"), {
+        incidentStatus: "cancelled",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+
+    await assertFails(deleteDoc(doc(residentDb, "reports", "report-1")));
+  });
+
+  it("stops a resident cancelling once responders are on the way", async () => {
+    await seedDocument(["reports", "report-1"], {
+      ...buildManagedReport("resident-1"),
+      incidentStatus: "dispatched",
+    });
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(residentDb, "reports", "report-1"), {
+        incidentStatus: "cancelled",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("stops a resident smuggling other changes into a cancellation", async () => {
+    await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(residentDb, "reports", "report-1"), {
+        incidentStatus: "cancelled",
+        verificationStatus: "verified",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("stops a resident cancelling someone else's report", async () => {
+    await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
+
+    const otherDb = testEnvironment
+      .authenticatedContext("resident-2")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(otherDb, "reports", "report-1"), {
+        incidentStatus: "cancelled",
+        updatedAt: sampleTimestamp,
       }),
     );
   });

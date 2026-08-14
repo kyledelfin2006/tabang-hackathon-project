@@ -125,6 +125,15 @@ service cloud.firestore {
             'acknowledgedAt',
             'resolvedAt'
           ])
+        ) || (
+          // Residents cancel rather than delete, so the incident history a
+          // responder may already have acted on is never destroyed. Cancelling
+          // stops once responders are committed, otherwise an active dispatch
+          // could be hidden from the people carrying it out.
+          isOwner(resource.data.reporterId)
+          && changedKeys().hasOnly(['incidentStatus', 'updatedAt'])
+          && request.resource.data.incidentStatus == 'cancelled'
+          && resource.data.incidentStatus in ['new', 'acknowledged']
         );
       allow delete: if isReviewer();
 
