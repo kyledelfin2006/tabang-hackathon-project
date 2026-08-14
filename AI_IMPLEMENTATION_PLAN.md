@@ -580,16 +580,27 @@ Consolidate flood and help submission into secure, reusable components.
 - [ ] Build shared location picker, image uploader, validation, submission state, and retry components.
 - [ ] Keep flood-specific and help-specific fields in separate schemas.
 - [ ] Use server timestamps.
-- [ ] Validate types, required fields, lengths, phone format, coordinate range, image MIME type, decoded image type, dimensions, file size, and file count.
-- [ ] Strip unnecessary image metadata where practical.
-- [ ] Decide whether to migrate images to Firebase Storage or add trusted signed Cloudinary uploads.
-- [ ] Never upload responder IDs or selfies through an unsigned public preset.
+- [x] Validate image MIME type, decoded image type, dimensions, file size, and file count. *(Field, length, phone, and coordinate validation lands with the forms in slice 2.)*
+- [x] Strip unnecessary image metadata where practical.
+- [x] Decide whether to migrate images to Firebase Storage or add trusted signed Cloudinary uploads.
+- [x] Never upload responder IDs or selfies through an unsigned public preset.
 - [ ] Add idempotency protection against accidental duplicate submissions.
 - [ ] Add submission progress, cancellation where supported, retry, and offline-aware messaging.
 - [ ] Store precise coordinates and contact phone only in protected fields.
 - [ ] Generate or moderate a separate public location label and public summary.
 - [ ] Escape all values passed to map popups and URLs.
 - [ ] Add unit, integration, rule, and browser tests.
+
+### Phase 5 slice plan
+
+Phase 5 is being delivered in two slices, per Section 2.2.
+
+- **Slice 1 (done):** signed upload endpoint, image validation, metadata stripping, uploader client.
+- **Slice 2 (next):** shared form infrastructure, flood and help schemas, server timestamps, idempotency, retry and offline messaging, protected-field placement, map popup escaping.
+
+### Deployment constraint introduced by signed uploads
+
+Signed Cloudinary uploads require a trusted runtime to hold `CLOUDINARY_API_SECRET`. Firebase Hosting serves static files only, so `server.mjs` must run somewhere (a small Node host, or a Cloud Function once Blaze is acceptable). Until then, image upload works locally and anywhere Node runs, and fails closed with a 503 rather than falling back to an unsigned upload. Resolve before Phase 13 deployment.
 
 ### Acceptance checks
 
@@ -1038,7 +1049,7 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phases 3 and 4 implemented, both awaiting verification on the Windows workstation**
+- Current phase: **Phase 5 slice 1 complete; Phases 3 and 4 verified except for one confirming unit-test run**
 - Last completed phase: **Phase 2 - Firebase security design**
 - Next exact action: **Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows. If they pass, mark Phases 3 and 4 Complete in the Phase Status table and stop. If any fail, fix within the owning phase before starting Phase 5.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
@@ -1054,9 +1065,9 @@ Update only after the corresponding verification has been run.
 | 0. Baseline and safety net | Complete | `test: capture legacy application baseline` | `npm run baseline:inventory` generated baseline docs; `npm run test:baseline` passed 4 tests covering link/import validation, expected legacy failures, and HTTP smoke coverage for key pages. |
 | 1. Vite and React shell | Complete | `build: scaffold the Vite React application` | `npm run dev -- --host 127.0.0.1 --port 4175` started successfully; `npm run lint` passed; `npm run test:unit` passed 4 route-shell tests; `npm run build` succeeded and produced the SPA shell bundle. |
 | 2. Firebase security design | Complete | `security(rules): add emulator-backed firebase access controls` | `npm run lint` passed; `npm run test:unit` passed 10 tests including Firebase env validation; `npm run build` succeeded; `npm run test:rules` passed 10 emulator-backed Firestore/Storage permission tests against local demo emulators after selecting conflict-free local ports. |
-| 3. Authentication and profiles | In progress | `feat(auth): centralize session handling and migrate auth routes` | `npm run lint` passed. `npm run test:unit`, `npm run test:rules`, and `npm run build` are unrun: the Vite/Vitest toolchain aborts with SIGBUS in the assistant sandbox. Verification is pending on the Windows workstation. |
-| 4. Resident shell and home | In progress | `feat(home): migrate the resident shell and dashboard` | `npm run lint` passed. Unit, rules, and build checks are unrun for the sandbox reason recorded in Phase 3. |
-| 5. Reports and secure uploads | Not started | — | — |
+| 3. Authentication and profiles | In progress | `feat(auth): centralize session handling and migrate auth routes`, `test: restore dom cleanup between component tests` | On Windows: `npm run lint` passed; `npm run test:rules` passed 14/14 emulator tests including the four new role-assignment cases; `npm run build` succeeded. The first `npm run test:unit` run failed 12 of 47 tests, all caused by a missing Testing Library cleanup plus two assertions left on the Phase 1 heading; fixed in `a362435` and awaiting a confirming re-run. |
+| 4. Resident shell and home | In progress | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:rules` unaffected and passing. Unit tests share the Phase 3 cleanup defect and await the same confirming re-run. Manual keyboard, touch, back/forward, and mobile checks are still outstanding. |
+| 5. Reports and secure uploads | In progress | `security(uploads): sign and validate report image uploads` | Slice 1 of 2 complete (upload infrastructure). `npm run lint` passed. New unit tests cover byte sniffing, size/dimension/count limits, and signature scoping; they need a Windows run. Form migration is the next slice. |
 | 6. Personal and community feeds | Not started | — | — |
 | 7. Responder application | Not started | — | — |
 | 8. Incident lifecycle | Not started | — | — |
@@ -1092,6 +1103,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Drop the hard-coded notification panel instead of migrating it | Its four entries were fabricated flood and typhoon alerts, which Section 2.2 forbids in a production-visible mode | Notifications will return only when backed by real published advisories |
 | 2026-08-14 | Project feed documents through `toPublicAdvisory` before they reach a component | Rules alone cannot stop an over-broad document from being rendered once it is readable | Protected fields are dropped at the repository boundary, so a view cannot leak a field the projection does not list |
 | 2026-08-14 | Decode the landing logo to `images/tabang-logo.png` at 512px | The landing embedded a 2000px logo as an 830 KB Base64 string, which dominated the page weight | `legacy-index.html` shrank from about 832 KB to about 2.4 KB and the logo is now a cacheable 14 KB file |
+| 2026-08-14 | Keep Cloudinary but require server-signed uploads | User decision. The legacy unsigned preset shipped an upload credential in the browser bundle, so anyone could write to the account | `server.mjs` now issues signatures and must run as a real process; Firebase Hosting alone cannot serve the upload path |
+| 2026-08-14 | Verify Firebase ID tokens through the Identity Toolkit REST endpoint | Signing must be restricted to signed-in accounts, and the Admin SDK would add a dependency and a service-account file for what is one HTTPS call | No new dependency and no Blaze requirement, at the cost of one network round trip per signature request |
+| 2026-08-14 | Derive the Cloudinary folder from the verified uid and sign all constraints server-side | A client that can choose its own signed parameters can widen its own permissions | A signature issued to one account cannot write into another account's folder, and size and format caps are enforced by Cloudinary rather than trusted from the browser |
+| 2026-08-14 | Re-encode every image through a canvas before upload | Phone photos carry EXIF GPS, which would leak precise locations that the data model deliberately protects | All metadata is dropped; the cost is a re-encode to JPEG at quality 0.82 |
 
 ## 14. Handoff Log
 
@@ -1164,6 +1179,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Phases 3 and 4 are both unverified. Manual keyboard, touch, back/forward, and mobile-viewport checks are also outstanding.
 - Commit: `feat(home): migrate the resident shell and dashboard`
 - Next exact action: Run the four verification commands on Windows plus the manual navigation checks, record the results in the Phase Status table, then wait for an instruction before starting Phase 5.
+
+### 2026-08-14 — Phase 3 and 4 verification, then Phase 5 slice 1: secure upload infrastructure
+
+- Completed: Fixed the unit-test harness defects found by the first Windows run, then built the Phase 5 upload infrastructure: a server-signed Cloudinary endpoint, Firebase ID token verification, strict image validation, EXIF-stripping re-encode, and a progress- and cancellation-aware uploader client.
+- Files/components changed: `src/test/setup.js`, `src/test/authGuards.test.jsx`, `src/test/residentHome.test.jsx`, `scripts/uploads/cloudinarySignature.mjs`, `server.mjs`, `src/services/uploads/{imageValidation.js,prepareImage.js,cloudinaryUploader.js}`, `src/test/uploads.test.js`, `.env.example`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: On Windows, `npm run lint` passed, `npm run test:rules` passed 14 of 14 emulator tests, and `npm run build` succeeded. `npm run test:unit` failed 12 of 47; every failure traced to Testing Library cleanup never being registered (Vitest globals are off) plus two assertions still naming the Phase 1 heading. Both fixed. In this session only `npm run lint` could be re-run; the corrected unit suite has not yet been observed passing and nothing here claims that it does.
+- Decisions/deviations: Kept Cloudinary at the user's direction but removed the unsigned path entirely. Verified sessions through the Identity Toolkit REST endpoint rather than adding the Admin SDK. Split Phase 5 into two slices; only the upload infrastructure is in this commit.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None.
+- Blockers: The corrected unit suite needs one confirming run. Signed uploads need a Node runtime in production, which Firebase Hosting alone does not provide. Phase 4 manual keyboard, touch, back/forward, and mobile checks are still outstanding.
+- Commit: `security(uploads): sign and validate report image uploads`
+- Next exact action: Run `npm run test:unit` on Windows and confirm 0 failures, then continue Phase 5 slice 2, which migrates the flood and help report forms onto this infrastructure.
 
 ### Handoff entry template
 
