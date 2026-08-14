@@ -13,15 +13,14 @@ import ResetPasswordPage from "../routes/auth/ResetPasswordPage.jsx";
 import SignupPage from "../routes/auth/SignupPage.jsx";
 import AccountPage from "../routes/account/AccountPage.jsx";
 import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
+import ReportFormPage from "../routes/reports/ReportFormPage.jsx";
 import {
   CommunityRoute,
-  HelpRequestRoute,
   HotlinesRoute,
   IncidentDetailRoute,
   IncidentsRoute,
   LandingRoute,
   NotFoundRoute,
-  ReportFloodRoute,
   ReportsRoute,
   ResponderApplicationRoute,
   ResponderDashboardRoute,
@@ -75,8 +74,8 @@ export const appRoutes = [
       { index: true, element: <ResidentHomePage /> },
       { path: "community", element: <CommunityRoute /> },
       { path: "reports", element: <ReportsRoute /> },
-      { path: "reports/new", element: <ReportFloodRoute /> },
-      { path: "help/new", element: <HelpRequestRoute /> },
+      { path: "reports/new", element: <ReportFormPage kind="flood" /> },
+      { path: "help/new", element: <ReportFormPage kind="help" /> },
       { path: "hotlines", element: <HotlinesRoute /> },
       { path: "account", element: <AccountPage /> },
       { path: "responder-application", element: <ResponderApplicationRoute /> },

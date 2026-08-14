@@ -93,7 +93,7 @@ describe("upload validation", () => {
       describeDimensionRejection({ name: "tiny.jpg", width: 10, height: 10 }),
     ).toMatch(/too small/);
     expect(
-      describeDimensionRejection({ name: "vast.jpg", width: 9000, height: 12 }),
+      describeDimensionRejection({ name: "vast.jpg", width: 9000, height: 9000 }),
     ).toMatch(/larger than 4096/);
     expect(
       describeDimensionRejection({ name: "ok.jpg", width: 1280, height: 720 }),

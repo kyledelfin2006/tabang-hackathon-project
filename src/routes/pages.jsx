@@ -168,40 +168,6 @@ export function ReportsRoute() {
   );
 }
 
-export function ReportFloodRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Report Flood"
-      summary="The form migration will plug into the shell here without creating another HTML page."
-      statusLabel="Resident layout"
-      routePath="/app/reports/new"
-      legacyHref="/ReportFlood.html"
-      checklist={[
-        "Future flood report form has a stable route.",
-        "Common loading, empty, and error patterns are already available.",
-      ]}
-    />
-  );
-}
-
-export function HelpRequestRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Request Help"
-      summary="The future help-request form will use the same shell and shared components as the flood report flow."
-      statusLabel="Resident layout"
-      routePath="/app/help/new"
-      legacyHref="/RequestHelp.html"
-      checklist={[
-        "Route exists for help requests.",
-        "Shared modal and toast interactions are already wired.",
-      ]}
-    />
-  );
-}
-
 export function HotlinesRoute() {
   return (
     <RouteShellPage

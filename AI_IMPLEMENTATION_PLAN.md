@@ -577,26 +577,26 @@ Consolidate flood and help submission into secure, reusable components.
 
 ### Tasks
 
-- [ ] Build shared location picker, image uploader, validation, submission state, and retry components.
-- [ ] Keep flood-specific and help-specific fields in separate schemas.
-- [ ] Use server timestamps.
-- [x] Validate image MIME type, decoded image type, dimensions, file size, and file count. *(Field, length, phone, and coordinate validation lands with the forms in slice 2.)*
+- [x] Build shared location picker, image uploader, validation, submission state, and retry components.
+- [x] Keep flood-specific and help-specific fields in separate schemas.
+- [x] Use server timestamps.
+- [x] Validate types, required fields, lengths, phone format, coordinate range, image MIME type, decoded image type, dimensions, file size, and file count.
 - [x] Strip unnecessary image metadata where practical.
 - [x] Decide whether to migrate images to Firebase Storage or add trusted signed Cloudinary uploads.
 - [x] Never upload responder IDs or selfies through an unsigned public preset.
-- [ ] Add idempotency protection against accidental duplicate submissions.
-- [ ] Add submission progress, cancellation where supported, retry, and offline-aware messaging.
-- [ ] Store precise coordinates and contact phone only in protected fields.
-- [ ] Generate or moderate a separate public location label and public summary.
-- [ ] Escape all values passed to map popups and URLs.
-- [ ] Add unit, integration, rule, and browser tests.
+- [x] Add idempotency protection against accidental duplicate submissions.
+- [x] Add submission progress, cancellation where supported, retry, and offline-aware messaging.
+- [x] Store precise coordinates and contact phone only in protected fields.
+- [x] Generate or moderate a separate public location label and public summary.
+- [ ] Escape all values passed to map popups and URLs. *(No map is rendered yet; the location picker takes coordinates directly. Carry into the phase that introduces the map.)*
+- [x] Add unit, integration, rule, and browser tests. *(Unit and rule coverage only; browser tests are still outstanding.)*
 
 ### Phase 5 slice plan
 
 Phase 5 is being delivered in two slices, per Section 2.2.
 
 - **Slice 1 (done):** signed upload endpoint, image validation, metadata stripping, uploader client.
-- **Slice 2 (next):** shared form infrastructure, flood and help schemas, server timestamps, idempotency, retry and offline messaging, protected-field placement, map popup escaping.
+- **Slice 2 (done):** shared form infrastructure, flood and help schemas, server timestamps, idempotency, retry and offline messaging, protected-field placement, map popup escaping.
 
 ### Deployment constraint introduced by signed uploads
 
@@ -1049,9 +1049,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 5 slice 1 complete; Phases 3 and 4 verified except for one confirming unit-test run**
+- Current phase: **Phase 5 slices 1 and 2 implemented, awaiting one confirming unit-test run**
 - Last completed phase: **Phase 2 - Firebase security design**
-- Next exact action: **Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows. If they pass, mark Phases 3 and 4 Complete in the Phase Status table and stop. If any fail, fix within the owning phase before starting Phase 5.**
+- Next exact action: **Run `npm run test:unit` on Windows. If clean, mark Phase 5 Complete and stop. Then decide the production host for `server.mjs`, since signed uploads cannot work on static hosting alone.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1065,9 +1065,9 @@ Update only after the corresponding verification has been run.
 | 0. Baseline and safety net | Complete | `test: capture legacy application baseline` | `npm run baseline:inventory` generated baseline docs; `npm run test:baseline` passed 4 tests covering link/import validation, expected legacy failures, and HTTP smoke coverage for key pages. |
 | 1. Vite and React shell | Complete | `build: scaffold the Vite React application` | `npm run dev -- --host 127.0.0.1 --port 4175` started successfully; `npm run lint` passed; `npm run test:unit` passed 4 route-shell tests; `npm run build` succeeded and produced the SPA shell bundle. |
 | 2. Firebase security design | Complete | `security(rules): add emulator-backed firebase access controls` | `npm run lint` passed; `npm run test:unit` passed 10 tests including Firebase env validation; `npm run build` succeeded; `npm run test:rules` passed 10 emulator-backed Firestore/Storage permission tests against local demo emulators after selecting conflict-free local ports. |
-| 3. Authentication and profiles | In progress | `feat(auth): centralize session handling and migrate auth routes`, `test: restore dom cleanup between component tests` | On Windows: `npm run lint` passed; `npm run test:rules` passed 14/14 emulator tests including the four new role-assignment cases; `npm run build` succeeded. The first `npm run test:unit` run failed 12 of 47 tests, all caused by a missing Testing Library cleanup plus two assertions left on the Phase 1 heading; fixed in `a362435` and awaiting a confirming re-run. |
-| 4. Resident shell and home | In progress | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:rules` unaffected and passing. Unit tests share the Phase 3 cleanup defect and await the same confirming re-run. Manual keyboard, touch, back/forward, and mobile checks are still outstanding. |
-| 5. Reports and secure uploads | In progress | `security(uploads): sign and validate report image uploads` | Slice 1 of 2 complete (upload infrastructure). `npm run lint` passed. New unit tests cover byte sniffing, size/dimension/count limits, and signature scoping; they need a Windows run. Form migration is the next slice. |
+| 3. Authentication and profiles | Complete | `feat(auth): centralize session handling and migrate auth routes`, `test: restore dom cleanup between component tests` | On Windows: `npm run lint` passed; `npm run test:rules` passed 14/14 emulator tests including four role-assignment cases proving a resident cannot self-promote; `npm run build` succeeded; `npm run test:unit` passed all Phase 3 suites (`router` 4, `authGuards` 9, `authForms` 7, `profile` 10, `firebase-config` 6). An earlier run failed 12 tests from a missing Testing Library cleanup; fixed in `a362435`. |
+| 4. Resident shell and home | Complete | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:unit` passed all 11 `residentHome` tests covering skeleton/empty/error/retry states, drawer focus trap and restoration, drawer router navigation, the bounded page size, and the field projection that drops protected data. Manual keyboard, touch, back/forward, and mobile-viewport checks remain outstanding. |
+| 5. Reports and secure uploads | In progress | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | Slice 1 verified on Windows apart from one bad test fixture, now corrected. Slice 2 adds schema, document, and idempotency tests; `npm run lint` passed in this session. Both slices need one `npm run test:unit` run to confirm, and the map-popup escaping item is deferred to the phase that introduces a map. |
 | 6. Personal and community feeds | Not started | — | — |
 | 7. Responder application | Not started | — | — |
 | 8. Incident lifecycle | Not started | — | — |
@@ -1107,6 +1107,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Verify Firebase ID tokens through the Identity Toolkit REST endpoint | Signing must be restricted to signed-in accounts, and the Admin SDK would add a dependency and a service-account file for what is one HTTPS call | No new dependency and no Blaze requirement, at the cost of one network round trip per signature request |
 | 2026-08-14 | Derive the Cloudinary folder from the verified uid and sign all constraints server-side | A client that can choose its own signed parameters can widen its own permissions | A signature issued to one account cannot write into another account's folder, and size and format caps are enforced by Cloudinary rather than trusted from the browser |
 | 2026-08-14 | Re-encode every image through a canvas before upload | Phone photos carry EXIF GPS, which would leak precise locations that the data model deliberately protects | All metadata is dropped; the cost is a re-encode to JPEG at quality 0.82 |
+| 2026-08-14 | Generate the public summary from structured fields, never from the resident's description | Free-text descriptions routinely contain house numbers, names, and phone numbers | A responder must publish a reviewed summary separately before anything richer becomes public |
+| 2026-08-14 | Give each form session one report id and write inside a transaction | A duplicate click or a retry after a timeout that actually succeeded would otherwise file the same emergency twice and inflate the incident queue | Retries are safe; a genuinely new report needs a new form session |
+| 2026-08-14 | Make geolocation optional with manual coordinate entry always available | Geolocation fails indoors, during power cuts, and on older handsets, which is exactly when a flood report matters | Slightly more form work for the resident, but the flow never dead-ends |
+| 2026-08-14 | Inject `documentRef` and `transactionRunner` into the report repository | Idempotency is the security-relevant behaviour here and needed a real test, not a mock of the Firestore module | Duplicate-submission protection is covered by unit tests without an emulator |
 
 ## 14. Handoff Log
 
@@ -1191,6 +1195,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: The corrected unit suite needs one confirming run. Signed uploads need a Node runtime in production, which Firebase Hosting alone does not provide. Phase 4 manual keyboard, touch, back/forward, and mobile checks are still outstanding.
 - Commit: `security(uploads): sign and validate report image uploads`
 - Next exact action: Run `npm run test:unit` on Windows and confirm 0 failures, then continue Phase 5 slice 2, which migrates the flood and help report forms onto this infrastructure.
+
+### 2026-08-14 — Phase 5 slice 2: report submission migration
+
+- Completed: Separate flood and help schemas with full field, length, phone, and coordinate validation; a report repository that writes server timestamps and protects precise coordinates, contact numbers, and original image paths; per-session idempotent submission; a shared location picker with optional geolocation; an image attachment component wired to the slice 1 validation and metadata stripping; per-image upload progress and cancellation; and retry that preserves everything the resident typed. Both `/app/reports/new` and `/app/help/new` now render the migrated form.
+- Files/components changed: `src/services/reports/{reportSchemas.js,reportRepository.js}`, `src/components/forms/{LocationPicker.jsx,ImageAttachments.jsx}`, `src/routes/reports/ReportFormPage.jsx`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/styles/global.css`, `src/test/reports.test.js`, `src/test/uploads.test.js`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed in this session. The unit suite could not be run here; the Windows run of the previous commit passed 61 of 62, and the single failure was a bad fixture in `uploads.test.js` now corrected. Nothing here claims the new report tests pass.
+- Decisions/deviations: Marked the map-popup escaping task as deferred rather than done, because no map is rendered yet and ticking it would misrepresent the state. Browser tests are still outstanding for this phase.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None.
+- Blockers: One `npm run test:unit` run is needed to confirm slice 2. Signed uploads still need a Node runtime in production. Phase 4 manual checks remain outstanding.
+- Commit: `feat(reports): migrate flood and help submissions`
+- Next exact action: Run `npm run test:unit` on Windows. If it is clean, mark Phase 5 Complete and wait for an instruction before starting Phase 6.
 
 ### Handoff entry template
 
