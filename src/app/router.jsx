@@ -16,13 +16,13 @@ import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
 import ReportFormPage from "../routes/reports/ReportFormPage.jsx";
 import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
 import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
+import ResponderApplicationPage from "../routes/responder/ResponderApplicationPage.jsx";
 import {
   HotlinesRoute,
   IncidentDetailRoute,
   IncidentsRoute,
   LandingRoute,
   NotFoundRoute,
-  ResponderApplicationRoute,
   ResponderDashboardRoute,
   ResponderHotlinesRoute,
   RouteErrorPage,
@@ -78,7 +78,7 @@ export const appRoutes = [
       { path: "help/new", element: <ReportFormPage kind="help" /> },
       { path: "hotlines", element: <HotlinesRoute /> },
       { path: "account", element: <AccountPage /> },
-      { path: "responder-application", element: <ResponderApplicationRoute /> },
+      { path: "responder-application", element: <ResponderApplicationPage /> },
     ],
   },
   {

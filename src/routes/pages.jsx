@@ -151,23 +151,6 @@ export function HotlinesRoute() {
   );
 }
 
-export function ResponderApplicationRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Responder Application"
-      summary="This route replaces the idea of public self-verification with a future authenticated application flow."
-      statusLabel="Resident layout"
-      routePath="/app/responder-application"
-      legacyHref="/VerAcc.html"
-      checklist={[
-        "A dedicated application route now exists in the new shell.",
-        "The broken public verification page remains available only as a legacy reference.",
-      ]}
-    />
-  );
-}
-
 export function ResponderDashboardRoute() {
   return (
     <RouteShellPage

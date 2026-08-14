@@ -57,6 +57,15 @@ export const smokePages = [
 
 export const expectedMissingRefs = [
   {
+    owner: "index.html",
+    sourceType: "html-script",
+    reference: "/src/main.jsx",
+    resolvedPath:
+      "../../../../../../../../../src/main.jsx",
+    reason:
+      "The SPA entry is resolved by Vite at build and dev time rather than served as a static file, so this reference is correct despite having no file on disk.",
+  },
+  {
     owner: "AccountInfo.html",
     sourceType: "html-image",
     reference: "tabang-badge.png",

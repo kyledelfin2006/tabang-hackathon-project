@@ -1,91 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <title>Create Account – Responder</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/Signupresponder.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responder signup has moved — Tabang</title>
+    <!--
+      Public responder self-registration is no longer an authorization path.
+      Anyone may register as a resident; responder access is granted only by a
+      reviewer writing roleAssignments, which no client can modify.
+    -->
+    <meta http-equiv="refresh" content="0; url=/signup">
 </head>
 <body>
-
-<div class="phone">
-
-  <div class="status-bar">
-    <span>9:41</span>
-    <div class="status-icons">
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><rect x="0" y="8" width="3" height="4" rx="0.5"/><rect x="4.5" y="5" width="3" height="7" rx="0.5"/><rect x="9" y="2" width="3" height="10" rx="0.5"/><rect x="13.5" y="0" width="2.5" height="12" rx="0.5"/></svg>
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="white"><path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/><path d="M8 6c1.5 0 2.8.6 3.8 1.6l1.4-1.4A7.5 7.5 0 008 4a7.5 7.5 0 00-5.2 2.2l1.4 1.4A5.5 5.5 0 018 6z" opacity="0.7"/><path d="M8 2.5c2.5 0 4.7 1 6.3 2.6l1.4-1.4A10 10 0 008 .5a10 10 0 00-7.7 3.2l1.4 1.4A8 8 0 018 2.5z" opacity="0.4"/></svg>
-      <svg width="22" height="12" viewBox="0 0 22 12" fill="white"><rect x="0" y="1" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="1.5" y="2.5" width="13" height="7" rx="1.2" fill="white"/><path d="M19 4v4a2 2 0 000-4z"/></svg>
-    </div>
-  </div>
-
-  <a class="back-btn" href="Loginresponder.html">← Back to Login</a>
-
-  <div class="page-title">Create Account</div>
-  <div class="page-subtitle">Sign up to get started</div>
-
-  <div class="form-card">
-    <div class="name-row">
-      <input class="input-field" id="firstNameInput" type="text" placeholder="Rescuer First Name" autocomplete="given-name" required>
-      <input class="input-field" id="lastNameInput"  type="text" placeholder="Rescuer Last Name" autocomplete="family-name" required>
-    </div>
-    <input class="input-field" id="usernameInput" type="text"     placeholder="Username" autocomplete="username" minlength="3" required>
-    <input class="input-field" id="emailInput"    type="email"    placeholder="Email Address" autocomplete="email" required>
-    <input class="input-field" id="phoneInput"    type="tel"      placeholder="Phone Number" autocomplete="tel" inputmode="tel" required>
-    <input class="input-field" id="passInput"     type="password" placeholder="Password" autocomplete="new-password" minlength="6" required>
-    <input class="input-field" id="confirmInput"  type="password" placeholder="Confirm Password" autocomplete="new-password" minlength="6" required style="margin-bottom:0">
-
-  </div>
-
-  <div class="responder-toggle" onclick="toggleResponder()">
-    <div class="toggle-switch" id="responderToggle"></div>
-    <div class="toggle-text">
-      <strong>Register as a Responder</strong>
-      <small>Enable to fill in your responder details</small>
-    </div>
-    <div class="flag-icon"><div class="f1"></div><div class="f2"></div></div>
-  </div>
-
-  <div class="responder-section" id="responderSection">
-    <div class="section-label">Responder Information</div>
-    <input class="input-field" id="responderStatus" type="text" placeholder="Responder Status (e.g. Active)" required>
-    <select class="select-field" id="orgInput" required>
-      <option value="" selected>Organization / Agency </option>
-      <option>MDRRMO</option>
-    </select>
-    <input class="input-field" id="badgeInput"      type="text" placeholder="ID / Badge Number" required>
-    <input class="input-field" id="barangayInput"   type="text" placeholder="Barangay" required>
-    <select class="select-field" id="municipalityInput" required style="margin-bottom:0">
-      <option value="" disabled selected>Municipality</option>
-      <option>Altavas</option>
-      <option>Balete</option>
-      <option>Banga</option>
-      <option>Batan</option>
-      <option>Buruanga</option>
-      <option>Ibajay</option>
-      <option>Kalibo</option>
-      <option>Lezo</option>
-      <option>Libacao</option>
-      <option>Madalag</option>
-      <option>Makato</option>
-      <option>Malay</option>
-      <option>Malinao</option>
-      <option>Nabas</option>
-      <option>New Washington</option>
-      <option>Numancia</option>
-      <option>Tangalan</option>
-    </select>
-    <input class="input-field province-field" type="text" value="Aklan" readonly style="margin-top:10px;margin-bottom:0">
-  </div>
-
-  <button class="signup-btn" id="signupBtn">Create Account</button>
-
-  <div class="login-link">Already have an account? <a href="Loginresponder.html">Log In</a></div>
-
-  <div class="home-indicator"></div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-</div>
-<script type="module" src="JS/Signupresponder.js"></script>
+    <main>
+        <h1>Responder signup has moved</h1>
+        <p>
+            Create a resident account first. Once signed in, you can apply for
+            responder access and a reviewer will verify it.
+        </p>
+        <p><a href="/signup">Create an account</a></p>
+        <p><a href="/app/responder-application">Apply as a responder</a></p>
+    </main>
 </body>
 </html>

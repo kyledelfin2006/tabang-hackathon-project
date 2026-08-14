@@ -2,7 +2,11 @@ import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 import {
+  buildIdentityUploadParams,
+  buildSignedDeliveryUrl,
   buildSignedUploadParams,
+  isReviewerRole,
+  readCallerRole,
   signUploadParams,
   verifyFirebaseIdToken,
 } from "./scripts/uploads/cloudinarySignature.mjs";
@@ -60,6 +64,8 @@ function serveNotFound(res) {
 }
 
 const SIGNATURE_ROUTE = "/api/uploads/cloudinary-signature";
+const IDENTITY_SIGNATURE_ROUTE = "/api/uploads/identity-signature";
+const IDENTITY_VIEW_ROUTE = "/api/uploads/identity-view";
 const MAX_SIGNATURE_BODY_BYTES = 8 * 1024;
 
 function sendJson(res, status, payload) {
@@ -164,8 +170,180 @@ async function handleSignatureRequest(req, res) {
   });
 }
 
+function uploadConfig() {
+  return {
+    apiKey: process.env.FIREBASE_WEB_API_KEY,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  };
+}
+
+/**
+ * Signs an upload of government ID or selfie evidence.
+ *
+ * Uses Cloudinary's authenticated delivery type so the asset is not reachable
+ * on the public URL space, and scopes the folder to the verified uid.
+ */
+async function handleIdentitySignatureRequest(req, res) {
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "Use POST." });
+
+    return;
+  }
+
+  const config = uploadConfig();
+
+  if (!config.apiKey || !config.cloudName || !config.cloudinaryApiKey || !config.apiSecret) {
+    sendJson(res, 503, { error: "Uploads are not configured on this server." });
+
+    return;
+  }
+
+  let body;
+
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, { error: error.message });
+
+    return;
+  }
+
+  let account;
+
+  try {
+    account = await verifyFirebaseIdToken({
+      idToken: body.idToken,
+      apiKey: config.apiKey,
+    });
+  } catch {
+    sendJson(res, 503, { error: "Could not verify the session." });
+
+    return;
+  }
+
+  if (!account) {
+    sendJson(res, 401, { error: "Sign in before uploading." });
+
+    return;
+  }
+
+  const params = buildIdentityUploadParams({
+    uid: account.uid,
+    timestampSeconds: Math.floor(Date.now() / 1000),
+  });
+
+  sendJson(res, 200, {
+    cloudName: config.cloudName,
+    apiKey: config.cloudinaryApiKey,
+    params,
+    signature: signUploadParams(params, config.apiSecret),
+  });
+}
+
+/**
+ * Mints a signed delivery URL for identity evidence.
+ *
+ * Only an applicant viewing their own upload, or a reviewer, may obtain one.
+ * The role is read from roleAssignments through Firestore, which no client can
+ * write, rather than trusted from the request.
+ */
+async function handleIdentityViewRequest(req, res) {
+  if (req.method !== "POST") {
+    sendJson(res, 405, { error: "Use POST." });
+
+    return;
+  }
+
+  const config = uploadConfig();
+
+  if (!config.apiKey || !config.projectId || !config.cloudName || !config.apiSecret) {
+    sendJson(res, 503, { error: "Uploads are not configured on this server." });
+
+    return;
+  }
+
+  let body;
+
+  try {
+    body = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, { error: error.message });
+
+    return;
+  }
+
+  const publicId = typeof body.publicId === "string" ? body.publicId : "";
+
+  if (!publicId.startsWith("tabang/responder-applications/")) {
+    sendJson(res, 400, { error: "That asset is not identity evidence." });
+
+    return;
+  }
+
+  let account;
+
+  try {
+    account = await verifyFirebaseIdToken({
+      idToken: body.idToken,
+      apiKey: config.apiKey,
+    });
+  } catch {
+    sendJson(res, 503, { error: "Could not verify the session." });
+
+    return;
+  }
+
+  if (!account) {
+    sendJson(res, 401, { error: "Sign in first." });
+
+    return;
+  }
+
+  const ownsAsset = publicId.startsWith(
+    `tabang/responder-applications/${account.uid}/`,
+  );
+  const role = await readCallerRole({
+    uid: account.uid,
+    idToken: body.idToken,
+    projectId: config.projectId,
+  });
+
+  if (!ownsAsset && !isReviewerRole(role)) {
+    sendJson(res, 403, { error: "Only a reviewer can open this evidence." });
+
+    return;
+  }
+
+  sendJson(res, 200, {
+    url: buildSignedDeliveryUrl({
+      cloudName: config.cloudName,
+      publicId,
+      apiSecret: config.apiSecret,
+    }),
+  });
+}
+
 createServer((req, res) => {
   const pathname = decodeURIComponent(new URL(req.url, `http://${host}:${port}`).pathname);
+
+  if (pathname === IDENTITY_SIGNATURE_ROUTE) {
+    handleIdentitySignatureRequest(req, res).catch(() => {
+      sendJson(res, 500, { error: "Unexpected server error." });
+    });
+
+    return;
+  }
+
+  if (pathname === IDENTITY_VIEW_ROUTE) {
+    handleIdentityViewRequest(req, res).catch(() => {
+      sendJson(res, 500, { error: "Unexpected server error." });
+    });
+
+    return;
+  }
 
   if (pathname === SIGNATURE_ROUTE) {
     handleSignatureRequest(req, res).catch(() => {
