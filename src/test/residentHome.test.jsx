@@ -148,6 +148,9 @@ describe("resident shell navigation", () => {
     });
 
     expect(menuButton).toHaveAttribute("aria-expanded", "false");
+    // A real browser focuses a button when it is clicked; fireEvent does not,
+    // and focus restoration has nothing to restore to without this.
+    menuButton.focus();
     fireEvent.click(menuButton);
 
     const dialog = await screen.findByRole("dialog", { name: "Menu" });

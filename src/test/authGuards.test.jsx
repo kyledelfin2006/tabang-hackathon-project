@@ -76,7 +76,7 @@ describe("route guards", () => {
   it("drops a resident out of protected routes when the session ends", async () => {
     const { gateway, router } = renderRoute("/app", residentSession());
 
-    await screen.findByText("Resident Home");
+    await screen.findByText("What do you need right now?");
     gateway.emit(null);
 
     await waitFor(() => {
@@ -87,7 +87,7 @@ describe("route guards", () => {
   it("re-evaluates access when a role is granted mid-session", async () => {
     const { gateway, router } = renderRoute("/app", residentSession());
 
-    await screen.findByText("Resident Home");
+    await screen.findByText("What do you need right now?");
     gateway.emit(responderSession());
     router.navigate("/responder");
 
