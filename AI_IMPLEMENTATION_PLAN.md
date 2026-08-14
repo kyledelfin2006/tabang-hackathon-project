@@ -353,16 +353,16 @@ Create reproducible evidence of current behavior before changing architecture.
 
 ### Tasks
 
-- [ ] Confirm a clean or intentionally understood working tree.
-- [ ] Document the existing page-to-script-to-stylesheet mapping.
-- [ ] Document current Firebase collections and every read/write location without querying production data.
-- [ ] Document all public, resident, and responder flows.
-- [ ] Add a lightweight link/asset validation test for legacy pages.
-- [ ] Add browser smoke tests for landing, login, signup, resident home, report form, help form, report list, responder dashboard, and all reports.
-- [ ] Capture current accessibility and performance baselines using local test data where possible.
-- [ ] Record known failures as expected baseline failures rather than hiding them.
-- [ ] Add environment-variable examples containing placeholders only.
-- [ ] Expand `.gitignore` for dependencies, builds, coverage, emulator state, local environment files, and sensitive artifacts.
+- [x] Confirm a clean or intentionally understood working tree.
+- [x] Document the existing page-to-script-to-stylesheet mapping.
+- [x] Document current Firebase collections and every read/write location without querying production data.
+- [x] Document all public, resident, and responder flows.
+- [x] Add a lightweight link/asset validation test for legacy pages.
+- [x] Add browser smoke tests for landing, login, signup, resident home, report form, help form, report list, responder dashboard, and all reports.
+- [x] Capture current accessibility and performance baselines using local test data where possible.
+- [x] Record known failures as expected baseline failures rather than hiding them.
+- [x] Add environment-variable examples containing placeholders only.
+- [x] Expand `.gitignore` for dependencies, builds, coverage, emulator state, local environment files, and sensitive artifacts.
 
 ### Acceptance checks
 
@@ -1014,9 +1014,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Planning complete; Phase 0 not started**
-- Last completed phase: **None**
-- Next exact action: **Begin Phase 0 by documenting the existing page/asset and data-access inventory**
+- Current phase: **Hard stop after completing Phase 0**
+- Last completed phase: **Phase 0 - Baseline, inventory, and safety net**
+- Next exact action: **Wait for user instruction, then begin Phase 1 by scaffolding the Vite React shell without removing legacy pages**
 - Working tree expectation after this plan is committed: **Clean**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Choice of Firebase Storage versus signed Cloudinary uploads can be deferred until Phase 5; production hosting and migration require later approval**
@@ -1027,7 +1027,7 @@ Update only after the corresponding verification has been run.
 
 | Phase | Status | Commit(s) | Verification summary |
 |---|---|---|---|
-| 0. Baseline and safety net | Not started | — | — |
+| 0. Baseline and safety net | Complete | `test: capture legacy application baseline` | `npm run baseline:inventory` generated baseline docs; `npm run test:baseline` passed 4 tests covering link/import validation, expected legacy failures, and HTTP smoke coverage for key pages. |
 | 1. Vite and React shell | Not started | — | — |
 | 2. Firebase security design | Not started | — | — |
 | 3. Authentication and profiles | Not started | — | — |
@@ -1054,6 +1054,7 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Use an incremental Vite + React SPA migration | The app has shared interactive state, real-time listeners, maps, forms, role-based layouts, and extensive duplication | Legacy pages remain until verified replacements exist |
 | 2026-08-14 | Treat Firebase Security Rules as the authorization boundary | Browser route guards can be bypassed | All sensitive phases require emulator permission tests |
 | 2026-08-14 | Require a hard stop after each major phase | Keeps work within model context and forces durable handoff state | Progress continues across separate sessions using this file |
+| 2026-08-14 | Use built-in Node scripts and tests for the Phase 0 baseline | The legacy repo had no existing test tooling and this phase needed reproducible checks without introducing dependency-install risk | Later phases can replace or extend the harness once the Vite/React toolchain exists |
 
 ## 14. Handoff Log
 
@@ -1066,6 +1067,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Verification: Plan reviewed against the previously inspected repository structure and known defects.
 - Production changes: None.
 - Next action: Execute Phase 0 only, then update this document, commit, and stop.
+
+### 2026-08-14 — Phase 0: baseline capture and safety net
+
+- Completed: Added reproducible legacy baseline documentation, placeholder environment examples, expanded ignore rules, and a built-in Node baseline test suite.
+- Files/components changed: `package.json`, `.gitignore`, `.env.example`, `scripts/legacy-baseline/build-inventory.mjs`, `tests/legacy/*`, `docs/legacy-baseline/*`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run baseline:inventory` succeeded; `npm run test:baseline` passed 4 tests; the smoke suite started the legacy server and covered landing, login, signup, resident home, report form, help form, resident reports, responder dashboard, and all reports.
+- Decisions/deviations: Recorded additional baseline failures discovered during implementation, including missing `tabang-badge.png` references and missing local Cloudflare email-decode script references in account pages.
+- Uncommitted work: None intended after the Phase 0 commit.
+- Production changes: None.
+- Blockers: None for this completed phase; Phase 1 should wait for a new instruction per the hard-stop rule.
+- Commit: `test: capture legacy application baseline`
+- Next exact action: Wait for user instruction, then start Phase 1 only.
 
 ### Handoff entry template
 

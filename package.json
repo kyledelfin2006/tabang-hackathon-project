@@ -1,5 +1,11 @@
 {
+  "name": "project_tabang",
+  "private": true,
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "baseline:inventory": "node scripts/legacy-baseline/build-inventory.mjs",
+    "test:links": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs",
+    "test:smoke": "node --test tests/legacy/http-smoke.test.mjs",
+    "test:baseline": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs tests/legacy/http-smoke.test.mjs"
   }
 }
