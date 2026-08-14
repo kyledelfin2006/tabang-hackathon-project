@@ -426,16 +426,16 @@ Establish a testable authorization boundary before migrating sensitive features.
 
 ### Tasks
 
-- [ ] Centralize Firebase initialization and validate required configuration.
-- [ ] Add Firebase emulator configuration.
-- [ ] Add Firestore rules, Storage rules, and required indexes to source control.
-- [ ] Implement roles using trusted custom claims or an equally trusted server-controlled mechanism.
-- [ ] Define the approval path that grants responder claims.
-- [ ] Prevent clients from assigning or changing their own roles.
-- [ ] Define access for public feed data, personal reports, protected report fields, responder incident details, applications, identity uploads, hotline reviews, and audit events.
-- [ ] Add emulator tests that explicitly prove allowed and denied operations.
-- [ ] Write a migration note for existing `users`, `responders`, `floodReports`, and `helpRequests` data.
-- [ ] Do not run a production migration in this phase without explicit user approval and a rollback plan.
+- [x] Centralize Firebase initialization and validate required configuration.
+- [x] Add Firebase emulator configuration.
+- [x] Add Firestore rules, Storage rules, and required indexes to source control.
+- [x] Implement roles using trusted custom claims or an equally trusted server-controlled mechanism.
+- [x] Define the approval path that grants responder claims.
+- [x] Prevent clients from assigning or changing their own roles.
+- [x] Define access for public feed data, personal reports, protected report fields, responder incident details, applications, identity uploads, hotline reviews, and audit events.
+- [x] Add emulator tests that explicitly prove allowed and denied operations.
+- [x] Write a migration note for existing `users`, `responders`, `floodReports`, and `helpRequests` data.
+- [x] Do not run a production migration in this phase without explicit user approval and a rollback plan.
 
 ### Required rule tests
 
@@ -1014,12 +1014,12 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Hard stop after completing Phase 1**
-- Last completed phase: **Phase 1 - Vite and React shell**
-- Next exact action: **Wait for user instruction, then begin Phase 2 by centralizing Firebase configuration and adding emulator-backed security rules**
+- Current phase: **Hard stop after completing Phase 2**
+- Last completed phase: **Phase 2 - Firebase security design**
+- Next exact action: **Wait for user review of the role and privacy model, then begin Phase 3 by wiring the shared Firebase runtime into authentication and route guards**
 - Working tree expectation after this plan is committed: **Clean**
 - Production changes performed: **None**
-- Known blockers requiring user input: **Choice of Firebase Storage versus signed Cloudinary uploads can be deferred until Phase 5; production hosting and migration require later approval**
+- Known blockers requiring user input: **Review and approve the Phase 2 role/privacy model before Phase 3; the long-term Cloudinary-versus-Firebase-Storage upload path can still be finalized in Phase 5; production hosting and migration require later approval**
 
 ## 12. Phase Status
 
@@ -1029,7 +1029,7 @@ Update only after the corresponding verification has been run.
 |---|---|---|---|
 | 0. Baseline and safety net | Complete | `test: capture legacy application baseline` | `npm run baseline:inventory` generated baseline docs; `npm run test:baseline` passed 4 tests covering link/import validation, expected legacy failures, and HTTP smoke coverage for key pages. |
 | 1. Vite and React shell | Complete | `build: scaffold the Vite React application` | `npm run dev -- --host 127.0.0.1 --port 4175` started successfully; `npm run lint` passed; `npm run test:unit` passed 4 route-shell tests; `npm run build` succeeded and produced the SPA shell bundle. |
-| 2. Firebase security design | Not started | — | — |
+| 2. Firebase security design | Complete | `security(rules): add emulator-backed firebase access controls` | `npm run lint` passed; `npm run test:unit` passed 10 tests including Firebase env validation; `npm run build` succeeded; `npm run test:rules` passed 10 emulator-backed Firestore/Storage permission tests against local demo emulators after selecting conflict-free local ports. |
 | 3. Authentication and profiles | Not started | — | — |
 | 4. Resident shell and home | Not started | — | — |
 | 5. Reports and secure uploads | Not started | — | — |
@@ -1057,6 +1057,9 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Use built-in Node scripts and tests for the Phase 0 baseline | The legacy repo had no existing test tooling and this phase needed reproducible checks without introducing dependency-install risk | Later phases can replace or extend the harness once the Vite/React toolchain exists |
 | 2026-08-14 | Preserve the original landing page as `legacy-index.html` during Phase 1 | The new SPA shell needed the primary `index.html` entry without deleting the old prototype | The legacy landing remains directly reachable while the route-based shell takes over the main entry |
 | 2026-08-14 | Use package-local Node entry points for Vite, Vitest, and ESLint scripts | The workspace path contains `&`, which broke bare CLI shim resolution in PowerShell | Tooling scripts remain reliable in this workspace without changing the repo location |
+| 2026-08-14 | Use trusted Auth custom claims plus reviewer-controlled applications for responder access | Client-managed responder documents are not a trustworthy authorization boundary | Phase 3 and later must route approval through a trusted backend path before granting responder access |
+| 2026-08-14 | Split sanitized community data into `publicFeed` instead of exposing raw report collections | Public feeds should never reveal precise locations, contact numbers, or private descriptions | Later feed migration work must publish or derive sanitized records separately from protected reports |
+| 2026-08-14 | Reserve local emulator ports `18085` and `19195` for this repository | Default Firebase emulator ports were already occupied on this machine during verification | The checked-in local emulator defaults avoid the observed collisions in this workspace |
 
 ## 14. Handoff Log
 
@@ -1093,6 +1096,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: None for this completed phase; Phase 2 should wait for a new instruction per the hard-stop rule.
 - Commit: `build: scaffold the Vite React application`
 - Next exact action: Wait for user instruction, then start Phase 2 only.
+
+### 2026-08-14 — Phase 2: Firebase security boundary
+
+- Completed: Added shared Firebase runtime configuration helpers, local emulator configuration, source-controlled Firestore and Storage rules, emulator-backed rules tests, and a migration note for legacy Firebase collections.
+- Files/components changed: `.env.example`, `package.json`, `package-lock.json`, `src/config/*`, `src/test/firebase-config.test.js`, `firebase.json`, `firebase/*`, `tests/rules/*`, `docs/firebase-migration-note.md`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed; `npm run test:unit` passed 10 tests; `npm run build` succeeded; `npm run test:rules` passed 10 Firestore and Storage emulator permission tests after downloading the local emulators, moving the repo defaults to ports `18085` and `19195`, and clearing one orphaned Firestore emulator process left by an earlier failed run.
+- Decisions/deviations: Chose trusted Auth custom claims for responder authorization, kept the new Firebase runtime module ready for Phase 3 wiring rather than forcing the placeholder SPA shell to require live Firebase credentials immediately, and added temporary legacy collection protections in the rules plus a dedicated `publicFeed` collection for sanitized public data.
+- Uncommitted work: None intended after the Phase 2 commit.
+- Production changes: None.
+- Blockers: Mandatory user review checkpoint for the Phase 2 role and privacy model before Phase 3.
+- Commit: `security(rules): add emulator-backed firebase access controls`
+- Next exact action: Wait for user review/approval of the Phase 2 role and privacy model, then start Phase 3 only.
 
 ### Handoff entry template
 
