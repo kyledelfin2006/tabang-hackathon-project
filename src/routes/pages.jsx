@@ -1,0 +1,458 @@
+import { useMemo, useState } from "react";
+import { Link, useRouteError } from "react-router-dom";
+import EmptyState from "../components/feedback/EmptyState.jsx";
+import ErrorState from "../components/feedback/ErrorState.jsx";
+import LoadingState from "../components/feedback/LoadingState.jsx";
+import Modal from "../components/feedback/Modal.jsx";
+import { useToast } from "../components/feedback/useToast.js";
+
+function RouteShellPage({
+  area,
+  title,
+  summary,
+  statusLabel,
+  routePath,
+  legacyHref,
+  checklist,
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const { pushToast } = useToast();
+  const routeChecklist = useMemo(() => checklist ?? [], [checklist]);
+
+  return (
+    <>
+      <section className="page-hero">
+        <div>
+          <span className="section-tag">{area}</span>
+          <h2>{title}</h2>
+          <p>{summary}</p>
+        </div>
+        <div className="hero-pill">{statusLabel}</div>
+      </section>
+
+      <section className="card-grid">
+        <article className="surface-card">
+          <h3>Route placeholder</h3>
+          <p>This route is now owned by the new React shell while the working legacy page remains reachable.</p>
+          <div className="detail-list">
+            <span>
+              <strong>New route</strong>
+              {routePath}
+            </span>
+            <span>
+              <strong>Legacy page</strong>
+              <a href={legacyHref}>{legacyHref}</a>
+            </span>
+          </div>
+          <div className="button-row">
+            <button className="action-button" onClick={() => pushToast(`${title} toast preview`)} type="button">
+              Show toast
+            </button>
+            <button
+              className="action-button action-button--secondary"
+              onClick={() => setModalOpen(true)}
+              type="button"
+            >
+              Open modal
+            </button>
+          </div>
+        </article>
+
+        <LoadingState
+          title="Reusable loading pattern"
+          message="The migration now has one loading component instead of repeating bespoke spinners per page."
+        />
+        <EmptyState
+          title="Reusable empty pattern"
+          message="Future data-backed routes can reuse this placeholder when no reports, hotlines, or incidents are available."
+        />
+        <ErrorState
+          title="Reusable error pattern"
+          message="Each route now has a shared recoverable error treatment instead of page-specific ad hoc alerts."
+          actionLabel="Acknowledge"
+          onAction={() => pushToast(`${title} error state acknowledged`)}
+        />
+      </section>
+
+      <section className="surface-card">
+        <h3>Phase 1 completion notes</h3>
+        <ul className="checklist">
+          {routeChecklist.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </section>
+
+      <Modal
+        open={modalOpen}
+        title={`${title} modal preview`}
+        description="This shared modal proves the shell has a common dialog treatment before feature migrations begin."
+        onClose={() => setModalOpen(false)}
+      />
+    </>
+  );
+}
+
+export function LandingRoute() {
+  return (
+    <div className="landing-grid">
+      <section className="landing-panel">
+        <span className="section-tag">Public routes</span>
+        <h2>One shell, many migration checkpoints</h2>
+        <p>
+          Phase 1 replaces the main entry with a Vite + React shell, keeps the old prototype reachable,
+          and establishes the layouts, routing, and feedback system the later phases will build on.
+        </p>
+        <div className="button-row">
+          <Link className="action-button" to="/login">
+            Open login route
+          </Link>
+          <Link className="action-button action-button--secondary" to="/app">
+            Open resident shell
+          </Link>
+        </div>
+      </section>
+
+      <section className="surface-card">
+        <h3>Migration map</h3>
+        <ul className="link-list">
+          <li>
+            <Link to="/signup">Resident signup placeholder</Link>
+          </li>
+          <li>
+            <Link to="/privacy">Privacy placeholder</Link>
+          </li>
+          <li>
+            <Link to="/responder">Responder placeholder</Link>
+          </li>
+          <li>
+            <a href="/legacy-index.html">Legacy landing prototype</a>
+          </li>
+          <li>
+            <a href="/Homepage.html">Legacy resident home</a>
+          </li>
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+export function LoginRoute() {
+  return (
+    <RouteShellPage
+      area="Public route"
+      title="Resident Login"
+      summary="This placeholder stands in for the future centralized authentication flow."
+      statusLabel="Public layout"
+      routePath="/login"
+      legacyHref="/Login.html"
+      checklist={[
+        "Public layout is active.",
+        "Shared toast and modal components are wired.",
+        "Legacy resident login remains available while migration continues.",
+      ]}
+    />
+  );
+}
+
+export function SignupRoute() {
+  return (
+    <RouteShellPage
+      area="Public route"
+      title="Resident Signup"
+      summary="The eventual signup form will plug into the same shell instead of a dedicated HTML document."
+      statusLabel="Public layout"
+      routePath="/signup"
+      legacyHref="/signup.html"
+      checklist={[
+        "Shared typography, spacing, and surfaces are active.",
+        "The route is ready for a centralized auth provider in Phase 3.",
+        "Legacy signup is still reachable for comparison.",
+      ]}
+    />
+  );
+}
+
+export function PrivacyRoute() {
+  return (
+    <RouteShellPage
+      area="Public route"
+      title="Privacy Policy"
+      summary="Policy content will move here once the public route migration begins."
+      statusLabel="Public layout"
+      routePath="/privacy"
+      legacyHref="/Privacypolicy.html"
+      checklist={[
+        "Public route shell is in place.",
+        "Not-found and error states now share one visual language.",
+      ]}
+    />
+  );
+}
+
+export function ResidentHomeRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Resident Home"
+      summary="Resident routes now share one layout, one header pattern, and one bottom navigation."
+      statusLabel="Resident layout"
+      routePath="/app"
+      legacyHref="/Homepage.html"
+      checklist={[
+        "Resident layout renders shared bottom navigation.",
+        "Shell keeps the legacy resident home reachable.",
+        "This route is ready for the real home migration in Phase 4.",
+      ]}
+    />
+  );
+}
+
+export function CommunityRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Community Feed"
+      summary="This route is reserved for the sanitized community feed that will replace the current report leakage."
+      statusLabel="Resident layout"
+      routePath="/app/community"
+      legacyHref="/MyReports.html"
+      checklist={[
+        "Dedicated route exists for a future sanitized feed.",
+        "The new shell no longer requires one HTML file per route.",
+      ]}
+    />
+  );
+}
+
+export function ReportsRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="My Reports"
+      summary="Resident report history will move here behind the shared resident shell."
+      statusLabel="Resident layout"
+      routePath="/app/reports"
+      legacyHref="/MyReports.html"
+      checklist={[
+        "Route exists for the resident's private report list.",
+        "Bottom navigation is shared instead of duplicated.",
+      ]}
+    />
+  );
+}
+
+export function ReportFloodRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Report Flood"
+      summary="The form migration will plug into the shell here without creating another HTML page."
+      statusLabel="Resident layout"
+      routePath="/app/reports/new"
+      legacyHref="/ReportFlood.html"
+      checklist={[
+        "Future flood report form has a stable route.",
+        "Common loading, empty, and error patterns are already available.",
+      ]}
+    />
+  );
+}
+
+export function HelpRequestRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Request Help"
+      summary="The future help-request form will use the same shell and shared components as the flood report flow."
+      statusLabel="Resident layout"
+      routePath="/app/help/new"
+      legacyHref="/RequestHelp.html"
+      checklist={[
+        "Route exists for help requests.",
+        "Shared modal and toast interactions are already wired.",
+      ]}
+    />
+  );
+}
+
+export function HotlinesRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Hotlines"
+      summary="Resident hotline access now has a stable route in the new shell."
+      statusLabel="Resident layout"
+      routePath="/app/hotlines"
+      legacyHref="/Hotline.html"
+      checklist={[
+        "Hotline route will eventually be shared by resident and responder flows.",
+        "Legacy hotline page remains reachable during migration.",
+      ]}
+    />
+  );
+}
+
+export function AccountRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Resident Account"
+      summary="Account pages now have a consistent home in the shell before profile migration work begins."
+      statusLabel="Resident layout"
+      routePath="/app/account"
+      legacyHref="/AccountInfo.html"
+      checklist={[
+        "Resident account route is anchored in the shared shell.",
+        "The shell is ready for centralized session state in Phase 3.",
+      ]}
+    />
+  );
+}
+
+export function ResponderApplicationRoute() {
+  return (
+    <RouteShellPage
+      area="Resident route"
+      title="Responder Application"
+      summary="This route replaces the idea of public self-verification with a future authenticated application flow."
+      statusLabel="Resident layout"
+      routePath="/app/responder-application"
+      legacyHref="/VerAcc.html"
+      checklist={[
+        "A dedicated application route now exists in the new shell.",
+        "The broken public verification page remains available only as a legacy reference.",
+      ]}
+    />
+  );
+}
+
+export function ResponderDashboardRoute() {
+  return (
+    <RouteShellPage
+      area="Responder route"
+      title="Responder Dashboard"
+      summary="Responder routes now share one operational layout instead of separate HTML entry screens."
+      statusLabel="Responder layout"
+      routePath="/responder"
+      legacyHref="/responderhomepage.html"
+      checklist={[
+        "Responder layout renders shared bottom navigation.",
+        "A dedicated responder route tree now exists in the shell.",
+      ]}
+    />
+  );
+}
+
+export function IncidentsRoute() {
+  return (
+    <RouteShellPage
+      area="Responder route"
+      title="Incident Queue"
+      summary="This placeholder reserves the route that will later host the indexed incident queue."
+      statusLabel="Responder layout"
+      routePath="/responder/incidents"
+      legacyHref="/AllReports.html"
+      checklist={[
+        "Responder queue route is established.",
+        "Future incident tools can migrate here incrementally.",
+      ]}
+    />
+  );
+}
+
+export function IncidentDetailRoute() {
+  return (
+    <RouteShellPage
+      area="Responder route"
+      title="Incident Detail"
+      summary="A protected detail route now exists for future responder workflows and audits."
+      statusLabel="Responder layout"
+      routePath="/responder/incidents/:id"
+      legacyHref="/AllReports.html"
+      checklist={[
+        "Parameterized responder route works inside the shell.",
+        "This route will host event history in later phases.",
+      ]}
+    />
+  );
+}
+
+export function ResponderHotlinesRoute() {
+  return (
+    <RouteShellPage
+      area="Responder route"
+      title="Responder Hotlines"
+      summary="Responder hotline analytics now have a stable destination in the new route tree."
+      statusLabel="Responder layout"
+      routePath="/responder/hotlines"
+      legacyHref="/responderhotline.html"
+      checklist={[
+        "Responder hotline route now lives in the shared shell.",
+        "Later hotline consolidation can reuse the same route model.",
+      ]}
+    />
+  );
+}
+
+export function ResponderAccountRoute() {
+  return (
+    <RouteShellPage
+      area="Responder route"
+      title="Responder Account"
+      summary="Responder account information now has a dedicated shell route before the data migration begins."
+      statusLabel="Responder layout"
+      routePath="/responder/account"
+      legacyHref="/AccountInformation.html"
+      checklist={[
+        "Responder account route is separated from resident routes.",
+        "Legacy responder account view remains reachable in parallel.",
+      ]}
+    />
+  );
+}
+
+export function RouteErrorPage() {
+  const error = useRouteError();
+  const detail = error instanceof Error ? error.message : "The route failed before it could render.";
+
+  return (
+    <div className="shell shell--public">
+      <main className="shell__content">
+        <ErrorState
+          title="Route error boundary"
+          message={detail}
+          actionLabel="Return home"
+          onAction={() => {
+            window.location.assign("/");
+          }}
+        />
+      </main>
+    </div>
+  );
+}
+
+export function NotFoundRoute() {
+  return (
+    <div className="shell shell--public">
+      <main className="shell__content">
+        <section className="surface-card surface-card--wide">
+          <span className="section-tag">Not found</span>
+          <h2>That route is outside the current migration scope.</h2>
+          <p>
+            The Phase 1 shell now has a proper not-found page. Clean routes should be rewritten to the
+            app shell in Vite or production hosting, while missing file assets should return a real 404.
+          </p>
+          <div className="button-row">
+            <Link className="action-button" to="/">
+              Back to shell home
+            </Link>
+            <a className="action-button action-button--secondary" href="/legacy-index.html">
+              Open legacy landing
+            </a>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}

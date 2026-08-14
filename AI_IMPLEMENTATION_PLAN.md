@@ -389,15 +389,15 @@ Introduce the new application without breaking legacy routes.
 
 ### Tasks
 
-- [ ] Add Vite, React, React DOM, and a routing library.
-- [ ] Add linting, formatting, and unit-test tooling.
-- [ ] Create the application entry point and error boundary.
-- [ ] Create public, resident, and responder layouts.
-- [ ] Establish design tokens for colors, spacing, typography, breakpoints, focus, elevation, and status semantics.
-- [ ] Build shared header, bottom navigation, loading indicator, empty state, error state, modal, and toast components.
-- [ ] Add a not-found route with a correct HTTP/deployment fallback strategy.
-- [ ] Keep legacy pages reachable during migration.
-- [ ] Ensure external dependencies are versioned and documented.
+- [x] Add Vite, React, React DOM, and a routing library.
+- [x] Add linting, formatting, and unit-test tooling.
+- [x] Create the application entry point and error boundary.
+- [x] Create public, resident, and responder layouts.
+- [x] Establish design tokens for colors, spacing, typography, breakpoints, focus, elevation, and status semantics.
+- [x] Build shared header, bottom navigation, loading indicator, empty state, error state, modal, and toast components.
+- [x] Add a not-found route with a correct HTTP/deployment fallback strategy.
+- [x] Keep legacy pages reachable during migration.
+- [x] Ensure external dependencies are versioned and documented.
 
 ### Acceptance checks
 
@@ -1014,9 +1014,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Hard stop after completing Phase 0**
-- Last completed phase: **Phase 0 - Baseline, inventory, and safety net**
-- Next exact action: **Wait for user instruction, then begin Phase 1 by scaffolding the Vite React shell without removing legacy pages**
+- Current phase: **Hard stop after completing Phase 1**
+- Last completed phase: **Phase 1 - Vite and React shell**
+- Next exact action: **Wait for user instruction, then begin Phase 2 by centralizing Firebase configuration and adding emulator-backed security rules**
 - Working tree expectation after this plan is committed: **Clean**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Choice of Firebase Storage versus signed Cloudinary uploads can be deferred until Phase 5; production hosting and migration require later approval**
@@ -1028,7 +1028,7 @@ Update only after the corresponding verification has been run.
 | Phase | Status | Commit(s) | Verification summary |
 |---|---|---|---|
 | 0. Baseline and safety net | Complete | `test: capture legacy application baseline` | `npm run baseline:inventory` generated baseline docs; `npm run test:baseline` passed 4 tests covering link/import validation, expected legacy failures, and HTTP smoke coverage for key pages. |
-| 1. Vite and React shell | Not started | — | — |
+| 1. Vite and React shell | Complete | `build: scaffold the Vite React application` | `npm run dev -- --host 127.0.0.1 --port 4175` started successfully; `npm run lint` passed; `npm run test:unit` passed 4 route-shell tests; `npm run build` succeeded and produced the SPA shell bundle. |
 | 2. Firebase security design | Not started | — | — |
 | 3. Authentication and profiles | Not started | — | — |
 | 4. Resident shell and home | Not started | — | — |
@@ -1055,6 +1055,8 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Treat Firebase Security Rules as the authorization boundary | Browser route guards can be bypassed | All sensitive phases require emulator permission tests |
 | 2026-08-14 | Require a hard stop after each major phase | Keeps work within model context and forces durable handoff state | Progress continues across separate sessions using this file |
 | 2026-08-14 | Use built-in Node scripts and tests for the Phase 0 baseline | The legacy repo had no existing test tooling and this phase needed reproducible checks without introducing dependency-install risk | Later phases can replace or extend the harness once the Vite/React toolchain exists |
+| 2026-08-14 | Preserve the original landing page as `legacy-index.html` during Phase 1 | The new SPA shell needed the primary `index.html` entry without deleting the old prototype | The legacy landing remains directly reachable while the route-based shell takes over the main entry |
+| 2026-08-14 | Use package-local Node entry points for Vite, Vitest, and ESLint scripts | The workspace path contains `&`, which broke bare CLI shim resolution in PowerShell | Tooling scripts remain reliable in this workspace without changing the repo location |
 
 ## 14. Handoff Log
 
@@ -1079,6 +1081,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: None for this completed phase; Phase 1 should wait for a new instruction per the hard-stop rule.
 - Commit: `test: capture legacy application baseline`
 - Next exact action: Wait for user instruction, then start Phase 1 only.
+
+### 2026-08-14 — Phase 1: Vite shell scaffolding
+
+- Completed: Added the Vite + React SPA shell, shared layouts, route placeholders, design tokens, reusable feedback components, route tests, and compatibility handling for legacy pages.
+- Files/components changed: `index.html`, `legacy-index.html`, `package.json`, `package-lock.json`, `server.mjs`, `vite.config.js`, `eslint.config.js`, `.prettierrc.json`, `src/**/*`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run dev -- --host 127.0.0.1 --port 4175` started successfully and served the new shell; `npm run lint` passed; `npm run test:unit` passed 4 tests; `npm run build` succeeded and generated the SPA bundle in `dist/`.
+- Decisions/deviations: Kept legacy HTML pages in place, preserved the old landing as `legacy-index.html`, and updated the static server to return a real 404 for missing files while serving built SPA routes when `dist/` exists.
+- Uncommitted work: None intended after the Phase 1 commit.
+- Production changes: None.
+- Blockers: None for this completed phase; Phase 2 should wait for a new instruction per the hard-stop rule.
+- Commit: `build: scaffold the Vite React application`
+- Next exact action: Wait for user instruction, then start Phase 2 only.
 
 ### Handoff entry template
 
