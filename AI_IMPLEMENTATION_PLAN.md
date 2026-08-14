@@ -526,15 +526,28 @@ Replace duplicated resident navigation and establish the real application home.
 
 ### Tasks
 
-- [ ] Build one accessible resident header/drawer and bottom navigation.
-- [ ] Migrate the resident home route.
-- [ ] Remove decorative fake device status bars from application content.
-- [ ] Replace inline navigation handlers with router links/actions.
-- [ ] Create reusable card, section, badge, and action components.
-- [ ] Do not load every report image into the homepage carousel.
-- [ ] Replace the carousel with verified advisories or a bounded, sanitized query.
-- [ ] Add skeleton, empty, error, and stale-data states.
-- [ ] Optimize the landing logo and other images; remove the embedded Base64 asset.
+- [x] Build one accessible resident header/drawer and bottom navigation.
+- [x] Migrate the resident home route.
+- [x] Remove decorative fake device status bars from application content.
+- [x] Replace inline navigation handlers with router links/actions.
+- [x] Create reusable card, section, badge, and action components.
+- [x] Do not load every report image into the homepage carousel.
+- [x] Replace the carousel with verified advisories or a bounded, sanitized query.
+- [x] Add skeleton, empty, error, and stale-data states.
+- [x] Optimize the landing logo and other images; remove the embedded Base64 asset.
+
+### Phase 4 verification note
+
+`npm run lint` passed. `npm run test:unit`, `npm run test:rules`, and `npm run build` remain unrun for the same sandbox limitation recorded under Phase 3, and the user chose to implement Phase 4 before verifying Phase 3. Both phases must be verified together on the Windows workstation before Phase 5:
+
+```text
+npm run lint
+npm run test:unit
+npm run test:rules
+npm run build
+```
+
+Manual checks still outstanding: keyboard and touch navigation on a real device, browser back/forward across resident routes, and a mobile viewport pass.
 
 ### Acceptance checks
 
@@ -1025,9 +1038,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 3 implemented, awaiting verification on the Windows workstation**
+- Current phase: **Phases 3 and 4 implemented, both awaiting verification on the Windows workstation**
 - Last completed phase: **Phase 2 - Firebase security design**
-- Next exact action: **Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows. If they pass, mark Phase 3 Complete in the Phase Status table and stop. If any fail, fix within Phase 3 before starting Phase 4.**
+- Next exact action: **Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows. If they pass, mark Phases 3 and 4 Complete in the Phase Status table and stop. If any fail, fix within the owning phase before starting Phase 5.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1042,7 +1055,7 @@ Update only after the corresponding verification has been run.
 | 1. Vite and React shell | Complete | `build: scaffold the Vite React application` | `npm run dev -- --host 127.0.0.1 --port 4175` started successfully; `npm run lint` passed; `npm run test:unit` passed 4 route-shell tests; `npm run build` succeeded and produced the SPA shell bundle. |
 | 2. Firebase security design | Complete | `security(rules): add emulator-backed firebase access controls` | `npm run lint` passed; `npm run test:unit` passed 10 tests including Firebase env validation; `npm run build` succeeded; `npm run test:rules` passed 10 emulator-backed Firestore/Storage permission tests against local demo emulators after selecting conflict-free local ports. |
 | 3. Authentication and profiles | In progress | `feat(auth): centralize session handling and migrate auth routes` | `npm run lint` passed. `npm run test:unit`, `npm run test:rules`, and `npm run build` are unrun: the Vite/Vitest toolchain aborts with SIGBUS in the assistant sandbox. Verification is pending on the Windows workstation. |
-| 4. Resident shell and home | Not started | — | — |
+| 4. Resident shell and home | In progress | `feat(home): migrate the resident shell and dashboard` | `npm run lint` passed. Unit, rules, and build checks are unrun for the sandbox reason recorded in Phase 3. |
 | 5. Reports and secure uploads | Not started | — | — |
 | 6. Personal and community feeds | Not started | — | — |
 | 7. Responder application | Not started | — | — |
@@ -1075,6 +1088,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Keep custom claims as the only role source in Storage Rules | Storage Rules cannot read Firestore, so a document-based role is invisible there | Owner-scoped Storage paths work unchanged, but reviewer and responder access to other users' uploads needs claims or a redesign before Phase 5 ships uploads |
 | 2026-08-14 | Inject the auth gateway into `AuthProvider` instead of importing Firebase in components | Unit tests must never reach a real Firebase project, and Section 5.3 forbids components calling Firestore directly | Tests pass a fake gateway; only `firebaseAuthGateway.js` imports the Firebase SDK |
 | 2026-08-14 | Use `fireEvent` rather than adding `@testing-library/user-event` | Adding the dependency would have changed `package.json` and the lockfile for a small test-ergonomics gain, and `npm install` is very slow over the mounted workspace | Form tests stay dependency-free; `package.json` and `package-lock.json` are unchanged in this phase |
+| 2026-08-14 | Replace the homepage report-image carousel with a bounded `publicFeed` advisory list | The legacy carousel read every `floodReports` and `helpRequests` document and rendered resident-submitted photos to anyone who opened the page | The home page performs one query capped at six documents and renders only sanitized fields; report photos never appear there |
+| 2026-08-14 | Drop the hard-coded notification panel instead of migrating it | Its four entries were fabricated flood and typhoon alerts, which Section 2.2 forbids in a production-visible mode | Notifications will return only when backed by real published advisories |
+| 2026-08-14 | Project feed documents through `toPublicAdvisory` before they reach a component | Rules alone cannot stop an over-broad document from being rendered once it is readable | Protected fields are dropped at the repository boundary, so a view cannot leak a field the projection does not list |
+| 2026-08-14 | Decode the landing logo to `images/tabang-logo.png` at 512px | The landing embedded a 2000px logo as an 830 KB Base64 string, which dominated the page weight | `legacy-index.html` shrank from about 832 KB to about 2.4 KB and the logo is now a cacheable 14 KB file |
 
 ## 14. Handoff Log
 
@@ -1135,6 +1152,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Phase 3 acceptance checks are unverified. Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows before starting Phase 4, and fix any failure inside Phase 3.
 - Commit: `feat(auth): centralize session handling and migrate auth routes`
 - Next exact action: Run the four verification commands on Windows, record the results in the Phase Status table, then wait for an instruction before starting Phase 4.
+
+### 2026-08-14 — Phase 4: shared resident shell and home
+
+- Completed: Added one accessible navigation drawer with focus trapping, Escape handling, and focus restoration, wired it into the resident layout with router-based navigation, migrated the resident home route, replaced the unbounded report-image carousel with a bounded sanitized advisory query, added skeleton/empty/error/stale states, added shared card, section, badge, action, and skeleton primitives, and removed the 830 KB Base64 landing logo.
+- Files/components changed: `src/components/navigation/{NavDrawer.jsx,AppHeader.jsx,BottomNav.jsx}`, `src/components/ui/Primitives.jsx`, `src/components/feedback/{Modal.jsx,EmptyState.jsx,ErrorState.jsx,LoadingState.jsx}`, `src/layouts/ResidentLayout.jsx`, `src/routes/home/ResidentHomePage.jsx`, `src/services/advisories/advisoryRepository.js`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/styles/global.css`, `src/test/{residentHome.test.jsx,router.test.jsx}`, `firebase/firestore.indexes.json`, `legacy-index.html`, `images/tabang-logo.png`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `npm run test:unit`, `npm run test:rules`, and `npm run build` were not run; the sandbox limitation recorded under Phase 3 still applies. No test result is claimed.
+- Decisions/deviations: Started Phase 4 before Phase 3 was verified, at the user's explicit direction. Deleted the fabricated notification panel rather than migrating it. Added a composite `publicFeed` index for the `published` plus `createdAt` query. Removed the development-only badges from the shared feedback components now that they render on a real page.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None. The new index is only in source control and has not been deployed.
+- Blockers: Phases 3 and 4 are both unverified. Manual keyboard, touch, back/forward, and mobile-viewport checks are also outstanding.
+- Commit: `feat(home): migrate the resident shell and dashboard`
+- Next exact action: Run the four verification commands on Windows plus the manual navigation checks, record the results in the Phase Status table, then wait for an instruction before starting Phase 5.
 
 ### Handoff entry template
 

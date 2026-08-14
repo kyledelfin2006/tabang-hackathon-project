@@ -134,24 +134,6 @@ export function LandingRoute() {
   );
 }
 
-export function ResidentHomeRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Resident Home"
-      summary="Resident routes now share one layout, one header pattern, and one bottom navigation."
-      statusLabel="Resident layout"
-      routePath="/app"
-      legacyHref="/Homepage.html"
-      checklist={[
-        "Resident layout renders shared bottom navigation.",
-        "Shell keeps the legacy resident home reachable.",
-        "This route is ready for the real home migration in Phase 4.",
-      ]}
-    />
-  );
-}
-
 export function CommunityRoute() {
   return (
     <RouteShellPage

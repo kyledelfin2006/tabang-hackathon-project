@@ -1,3 +1,5 @@
+import { useEffect, useId, useRef } from "react";
+
 export default function Modal({
   open,
   title,
@@ -5,23 +7,57 @@ export default function Modal({
   confirmLabel = "Close",
   onClose,
 }) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const closeButtonRef = useRef(null);
+  const previousFocusRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    previousFocusRef.current = document.activeElement;
+    closeButtonRef.current?.focus();
+
+    return () => {
+      const previous = previousFocusRef.current;
+
+      if (previous instanceof HTMLElement && previous.isConnected) {
+        previous.focus();
+      }
+    };
+  }, [open]);
+
   if (!open) {
     return null;
   }
 
   return (
-    <div className="modal-shell" role="presentation">
+    <div
+      className="modal-shell"
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          onClose();
+        }
+      }}
+      role="presentation"
+    >
       <div
-        aria-describedby="phase-modal-description"
-        aria-labelledby="phase-modal-title"
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
         aria-modal="true"
         className="modal-shell__dialog"
         role="dialog"
       >
-        <span className="feedback-card__badge">Shared modal</span>
-        <h2 id="phase-modal-title">{title}</h2>
-        <p id="phase-modal-description">{description}</p>
-        <button className="action-button" onClick={onClose} type="button">
+        <h2 id={titleId}>{title}</h2>
+        <p id={descriptionId}>{description}</p>
+        <button
+          className="action-button"
+          onClick={onClose}
+          ref={closeButtonRef}
+          type="button"
+        >
           {confirmLabel}
         </button>
       </div>

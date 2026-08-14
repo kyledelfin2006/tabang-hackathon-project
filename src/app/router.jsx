@@ -12,6 +12,7 @@ import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
 import ResetPasswordPage from "../routes/auth/ResetPasswordPage.jsx";
 import SignupPage from "../routes/auth/SignupPage.jsx";
 import AccountPage from "../routes/account/AccountPage.jsx";
+import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
 import {
   CommunityRoute,
   HelpRequestRoute,
@@ -25,7 +26,6 @@ import {
   ResponderApplicationRoute,
   ResponderDashboardRoute,
   ResponderHotlinesRoute,
-  ResidentHomeRoute,
   RouteErrorPage,
 } from "../routes/pages.jsx";
 
@@ -72,7 +72,7 @@ export const appRoutes = [
     ),
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <ResidentHomeRoute /> },
+      { index: true, element: <ResidentHomePage /> },
       { path: "community", element: <CommunityRoute /> },
       { path: "reports", element: <ReportsRoute /> },
       { path: "reports/new", element: <ReportFloodRoute /> },

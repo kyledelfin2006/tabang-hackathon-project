@@ -7,9 +7,12 @@ export default function BottomNav({ items }) {
         <NavLink
           key={item.to}
           to={item.to}
-          end={item.to === "/app" || item.to === "/responder"}
+          // Parent routes must not stay highlighted on their child routes.
+          end={item.end ?? true}
           className={({ isActive }) =>
-            isActive ? "bottom-nav-shell__item is-active" : "bottom-nav-shell__item"
+            isActive
+              ? "bottom-nav-shell__item is-active"
+              : "bottom-nav-shell__item"
           }
         >
           {item.label}

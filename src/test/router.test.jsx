@@ -32,7 +32,9 @@ describe("application shell routing", () => {
 
   it("renders the resident layout for a signed-in resident", async () => {
     renderRoute("/app", residentSession());
-    expect(await screen.findByText("Resident Home")).toBeInTheDocument();
+    expect(
+      await screen.findByText("What do you need right now?"),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("navigation", { name: "Primary route navigation" }),
     ).toBeInTheDocument();

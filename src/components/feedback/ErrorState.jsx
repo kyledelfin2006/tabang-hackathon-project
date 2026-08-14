@@ -6,7 +6,6 @@ export default function ErrorState({
 }) {
   return (
     <section className="feedback-card feedback-card--error" role="alert">
-      <span className="feedback-card__badge">Recoverable error</span>
       <h2>{title}</h2>
       <p>{message}</p>
       {onAction ? (
