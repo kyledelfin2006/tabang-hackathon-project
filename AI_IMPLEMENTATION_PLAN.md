@@ -1049,9 +1049,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 5 slices 1 and 2 implemented, awaiting one confirming unit-test run**
-- Last completed phase: **Phase 2 - Firebase security design**
-- Next exact action: **Run `npm run test:unit` on Windows. If clean, mark Phase 5 Complete and stop. Then decide the production host for `server.mjs`, since signed uploads cannot work on static hosting alone.**
+- Current phase: **Hard stop after completing Phase 5**
+- Last completed phase: **Phase 5 - Reports and secure uploads**
+- Next exact action: **Wait for an instruction, then begin Phase 6 only. Before Phase 13, decide where `server.mjs` runs in production, since signed uploads cannot work on static hosting alone.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **None**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1067,7 +1067,7 @@ Update only after the corresponding verification has been run.
 | 2. Firebase security design | Complete | `security(rules): add emulator-backed firebase access controls` | `npm run lint` passed; `npm run test:unit` passed 10 tests including Firebase env validation; `npm run build` succeeded; `npm run test:rules` passed 10 emulator-backed Firestore/Storage permission tests against local demo emulators after selecting conflict-free local ports. |
 | 3. Authentication and profiles | Complete | `feat(auth): centralize session handling and migrate auth routes`, `test: restore dom cleanup between component tests` | On Windows: `npm run lint` passed; `npm run test:rules` passed 14/14 emulator tests including four role-assignment cases proving a resident cannot self-promote; `npm run build` succeeded; `npm run test:unit` passed all Phase 3 suites (`router` 4, `authGuards` 9, `authForms` 7, `profile` 10, `firebase-config` 6). An earlier run failed 12 tests from a missing Testing Library cleanup; fixed in `a362435`. |
 | 4. Resident shell and home | Complete | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:unit` passed all 11 `residentHome` tests covering skeleton/empty/error/retry states, drawer focus trap and restoration, drawer router navigation, the bounded page size, and the field projection that drops protected data. Manual keyboard, touch, back/forward, and mobile-viewport checks remain outstanding. |
-| 5. Reports and secure uploads | In progress | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | Slice 1 verified on Windows apart from one bad test fixture, now corrected. Slice 2 adds schema, document, and idempotency tests; `npm run lint` passed in this session. Both slices need one `npm run test:unit` run to confirm, and the map-popup escaping item is deferred to the phase that introduces a map. |
+| 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
 | 6. Personal and community feeds | Not started | — | — |
 | 7. Responder application | Not started | — | — |
 | 8. Incident lifecycle | Not started | — | — |
@@ -1207,6 +1207,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: One `npm run test:unit` run is needed to confirm slice 2. Signed uploads still need a Node runtime in production. Phase 4 manual checks remain outstanding.
 - Commit: `feat(reports): migrate flood and help submissions`
 - Next exact action: Run `npm run test:unit` on Windows. If it is clean, mark Phase 5 Complete and wait for an instruction before starting Phase 6.
+
+### 2026-08-14 — Phase 5 verification
+
+- Completed: Confirmed Phase 5 on the Windows workstation and marked it Complete.
+- Code changed: None beyond the corrected `uploads.test.js` dimension fixture, which had used a 9000x12 image that is simultaneously oversized and undersized.
+- Verification commands and results: `npm run test:unit` passed 77 of 77 tests across 8 files. `npm run lint` passed, `npm run test:rules` passed 14 of 14, and `npm run build` succeeded earlier in the same working tree.
+- Decisions/deviations: None.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None.
+- Blockers: Signed uploads still need a Node runtime in production. Browser tests and the Phase 4 manual keyboard, touch, back/forward, and mobile checks remain outstanding.
+- Commit: `docs: record phase 5 verification`
+- Next exact action: Wait for an instruction, then begin Phase 6 only.
 
 ### Handoff entry template
 
