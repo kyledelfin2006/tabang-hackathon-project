@@ -6,6 +6,9 @@ service firebase.storage {
       return request.auth != null;
     }
 
+    // Storage Rules cannot read Firestore, so elevated roles must arrive as a
+    // custom claim here even though Firestore resolves roles from
+    // roleAssignments/{uid}. Owner-scoped access below does not depend on roles.
     function hasRole(role) {
       return isSignedIn() && request.auth.token.role == role;
     }

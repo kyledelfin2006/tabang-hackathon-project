@@ -3,25 +3,30 @@ import PublicLayout from "../layouts/PublicLayout.jsx";
 import ResidentLayout from "../layouts/ResidentLayout.jsx";
 import ResponderLayout from "../layouts/ResponderLayout.jsx";
 import {
-  AccountRoute,
+  RequireAnonymous,
+  RequireAuth,
+  RequireResponder,
+} from "../components/routing/RouteGuards.jsx";
+import LoginPage from "../routes/auth/LoginPage.jsx";
+import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
+import ResetPasswordPage from "../routes/auth/ResetPasswordPage.jsx";
+import SignupPage from "../routes/auth/SignupPage.jsx";
+import AccountPage from "../routes/account/AccountPage.jsx";
+import {
   CommunityRoute,
   HelpRequestRoute,
   HotlinesRoute,
   IncidentDetailRoute,
   IncidentsRoute,
   LandingRoute,
-  LoginRoute,
   NotFoundRoute,
-  PrivacyRoute,
   ReportFloodRoute,
   ReportsRoute,
-  ResponderAccountRoute,
   ResponderApplicationRoute,
   ResponderDashboardRoute,
   ResponderHotlinesRoute,
   ResidentHomeRoute,
   RouteErrorPage,
-  SignupRoute,
 } from "../routes/pages.jsx";
 
 export const appRoutes = [
@@ -31,14 +36,40 @@ export const appRoutes = [
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <LandingRoute /> },
-      { path: "login", element: <LoginRoute /> },
-      { path: "signup", element: <SignupRoute /> },
-      { path: "privacy", element: <PrivacyRoute /> },
+      {
+        path: "login",
+        element: (
+          <RequireAnonymous>
+            <LoginPage />
+          </RequireAnonymous>
+        ),
+      },
+      {
+        path: "signup",
+        element: (
+          <RequireAnonymous>
+            <SignupPage />
+          </RequireAnonymous>
+        ),
+      },
+      {
+        path: "reset-password",
+        element: (
+          <RequireAnonymous>
+            <ResetPasswordPage />
+          </RequireAnonymous>
+        ),
+      },
+      { path: "privacy", element: <PrivacyPage /> },
     ],
   },
   {
     path: "/app",
-    element: <ResidentLayout />,
+    element: (
+      <RequireAuth>
+        <ResidentLayout />
+      </RequireAuth>
+    ),
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <ResidentHomeRoute /> },
@@ -47,20 +78,24 @@ export const appRoutes = [
       { path: "reports/new", element: <ReportFloodRoute /> },
       { path: "help/new", element: <HelpRequestRoute /> },
       { path: "hotlines", element: <HotlinesRoute /> },
-      { path: "account", element: <AccountRoute /> },
+      { path: "account", element: <AccountPage /> },
       { path: "responder-application", element: <ResponderApplicationRoute /> },
     ],
   },
   {
     path: "/responder",
-    element: <ResponderLayout />,
+    element: (
+      <RequireResponder>
+        <ResponderLayout />
+      </RequireResponder>
+    ),
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <ResponderDashboardRoute /> },
       { path: "incidents", element: <IncidentsRoute /> },
       { path: "incidents/:id", element: <IncidentDetailRoute /> },
       { path: "hotlines", element: <ResponderHotlinesRoute /> },
-      { path: "account", element: <ResponderAccountRoute /> },
+      { path: "account", element: <AccountPage area="Responder route" /> },
     ],
   },
   {

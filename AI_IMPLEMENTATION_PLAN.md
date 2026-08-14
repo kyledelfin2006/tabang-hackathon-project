@@ -476,16 +476,27 @@ Centralize session handling and migrate public authentication flows.
 
 ### Tasks
 
-- [ ] Implement a single authentication provider and session-loading state.
-- [ ] Implement public-only, authenticated, and responder route guards.
-- [ ] Migrate landing, resident login, resident signup, password reset, privacy policy, and account sign-out.
-- [ ] Redirect authenticated users based on trusted role state.
-- [ ] Prevent a normal resident from entering responder routes.
-- [ ] Remove localStorage-based authentication/profile fallbacks.
-- [ ] Normalize profile field names and validation.
-- [ ] Avoid leaking whether arbitrary email addresses are registered.
-- [ ] Add accessible form labels, inline errors, live regions, and password controls.
-- [ ] Add unit and browser tests for redirects and authentication states using the emulator.
+- [x] Implement a single authentication provider and session-loading state.
+- [x] Implement public-only, authenticated, and responder route guards.
+- [x] Migrate landing, resident login, resident signup, password reset, privacy policy, and account sign-out.
+- [x] Redirect authenticated users based on trusted role state.
+- [x] Prevent a normal resident from entering responder routes.
+- [x] Remove localStorage-based authentication/profile fallbacks.
+- [x] Normalize profile field names and validation.
+- [x] Avoid leaking whether arbitrary email addresses are registered.
+- [x] Add accessible form labels, inline errors, live regions, and password controls.
+- [ ] Add unit and browser tests for redirects and authentication states using the emulator. *(Tests are written; execution is blocked - see the verification note below.)*
+
+### Phase 3 verification note
+
+`npm run lint` passed. `npm run test:unit`, `npm run build`, and `npm run test:rules` could NOT be executed in the session sandbox: the `@rolldown/binding-linux-x64-gnu` native module aborts with SIGBUS there, which stops every Vite-based command, and it still aborts when copied to local disk, so the cause is the sandbox rather than the repository. Run these on the Windows workstation before marking Phase 3 complete:
+
+```text
+npm run lint
+npm run test:unit
+npm run test:rules
+npm run build
+```
 
 ### Acceptance checks
 
@@ -1014,12 +1025,12 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Hard stop after completing Phase 2**
+- Current phase: **Phase 3 implemented, awaiting verification on the Windows workstation**
 - Last completed phase: **Phase 2 - Firebase security design**
-- Next exact action: **Wait for user review of the role and privacy model, then begin Phase 3 by wiring the shared Firebase runtime into authentication and route guards**
-- Working tree expectation after this plan is committed: **Clean**
+- Next exact action: **Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows. If they pass, mark Phase 3 Complete in the Phase Status table and stop. If any fail, fix within Phase 3 before starting Phase 4.**
+- Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **None**
-- Known blockers requiring user input: **Review and approve the Phase 2 role/privacy model before Phase 3; the long-term Cloudinary-versus-Firebase-Storage upload path can still be finalized in Phase 5; production hosting and migration require later approval**
+- Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
 
 ## 12. Phase Status
 
@@ -1030,7 +1041,7 @@ Update only after the corresponding verification has been run.
 | 0. Baseline and safety net | Complete | `test: capture legacy application baseline` | `npm run baseline:inventory` generated baseline docs; `npm run test:baseline` passed 4 tests covering link/import validation, expected legacy failures, and HTTP smoke coverage for key pages. |
 | 1. Vite and React shell | Complete | `build: scaffold the Vite React application` | `npm run dev -- --host 127.0.0.1 --port 4175` started successfully; `npm run lint` passed; `npm run test:unit` passed 4 route-shell tests; `npm run build` succeeded and produced the SPA shell bundle. |
 | 2. Firebase security design | Complete | `security(rules): add emulator-backed firebase access controls` | `npm run lint` passed; `npm run test:unit` passed 10 tests including Firebase env validation; `npm run build` succeeded; `npm run test:rules` passed 10 emulator-backed Firestore/Storage permission tests against local demo emulators after selecting conflict-free local ports. |
-| 3. Authentication and profiles | Not started | — | — |
+| 3. Authentication and profiles | In progress | `feat(auth): centralize session handling and migrate auth routes` | `npm run lint` passed. `npm run test:unit`, `npm run test:rules`, and `npm run build` are unrun: the Vite/Vitest toolchain aborts with SIGBUS in the assistant sandbox. Verification is pending on the Windows workstation. |
 | 4. Resident shell and home | Not started | — | — |
 | 5. Reports and secure uploads | Not started | — | — |
 | 6. Personal and community feeds | Not started | — | — |
@@ -1060,6 +1071,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Use trusted Auth custom claims plus reviewer-controlled applications for responder access | Client-managed responder documents are not a trustworthy authorization boundary | Phase 3 and later must route approval through a trusted backend path before granting responder access |
 | 2026-08-14 | Split sanitized community data into `publicFeed` instead of exposing raw report collections | Public feeds should never reveal precise locations, contact numbers, or private descriptions | Later feed migration work must publish or derive sanitized records separately from protected reports |
 | 2026-08-14 | Reserve local emulator ports `18085` and `19195` for this repository | Default Firebase emulator ports were already occupied on this machine during verification | The checked-in local emulator defaults avoid the observed collisions in this workspace |
+| 2026-08-14 | Reverse the Phase 2 claims decision: resolve Firestore roles from `roleAssignments/{uid}` | The user chose Firestore-document roles over custom claims to avoid requiring a paid Cloud Functions backend now | Rules read the assignment document; no client can write any assignment, so a resident still cannot self-promote. Custom claims are still honoured first, so a later move to a trusted backend needs no rules rewrite |
+| 2026-08-14 | Keep custom claims as the only role source in Storage Rules | Storage Rules cannot read Firestore, so a document-based role is invisible there | Owner-scoped Storage paths work unchanged, but reviewer and responder access to other users' uploads needs claims or a redesign before Phase 5 ships uploads |
+| 2026-08-14 | Inject the auth gateway into `AuthProvider` instead of importing Firebase in components | Unit tests must never reach a real Firebase project, and Section 5.3 forbids components calling Firestore directly | Tests pass a fake gateway; only `firebaseAuthGateway.js` imports the Firebase SDK |
+| 2026-08-14 | Use `fireEvent` rather than adding `@testing-library/user-event` | Adding the dependency would have changed `package.json` and the lockfile for a small test-ergonomics gain, and `npm install` is very slow over the mounted workspace | Form tests stay dependency-free; `package.json` and `package-lock.json` are unchanged in this phase |
 
 ## 14. Handoff Log
 
@@ -1108,6 +1123,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Mandatory user review checkpoint for the Phase 2 role and privacy model before Phase 3.
 - Commit: `security(rules): add emulator-backed firebase access controls`
 - Next exact action: Wait for user review/approval of the Phase 2 role and privacy model, then start Phase 3 only.
+
+### 2026-08-14 — Phase 3: authentication and profile migration
+
+- Completed: Added a single injected-gateway auth provider with an explicit session-loading state, public-only/authenticated/responder route guards, migrated login, signup, password reset, privacy policy, landing copy, and account sign-out, normalized profile fields, enumeration-safe error messaging, and moved the Firestore role source to reviewer-only `roleAssignments/{uid}`.
+- Files/components changed: `firebase/firestore.rules`, `firebase/storage.rules`, `src/services/auth/*`, `src/app/providers/{AuthContext.js,AuthProvider.jsx,AppProviders.jsx,useAuth.js}`, `src/components/routing/RouteGuards.jsx`, `src/components/forms/FormField.jsx`, `src/routes/auth/*`, `src/routes/account/AccountPage.jsx`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/styles/global.css`, `src/test/*`, `tests/rules/firestore.rules.test.mjs`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `npm run test:unit`, `npm run test:rules`, and `npm run build` were attempted and did not run: every Vite-based command aborts with SIGBUS in the assistant sandbox because the `@rolldown` native binding cannot load there, including after copying it to local disk. No test result is claimed for this phase.
+- Decisions/deviations: Reversed the Phase 2 custom-claims decision at the user's direction; roles now come from `roleAssignments/{uid}`, which only a reviewer or admin can write and no client can self-assign, with claims still taking precedence when present. Storage Rules keep claim-based roles because Storage cannot read Firestore. Avoided adding a test dependency so `package.json` and the lockfile stayed untouched.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy HTML, CSS, JS, and IDE files were deliberately left uncommitted and unmodified.
+- Production changes: None.
+- Blockers: Phase 3 acceptance checks are unverified. Run `npm run lint`, `npm run test:unit`, `npm run test:rules`, and `npm run build` on Windows before starting Phase 4, and fix any failure inside Phase 3.
+- Commit: `feat(auth): centralize session handling and migrate auth routes`
+- Next exact action: Run the four verification commands on Windows, record the results in the Phase Status table, then wait for an instruction before starting Phase 4.
 
 ### Handoff entry template
 

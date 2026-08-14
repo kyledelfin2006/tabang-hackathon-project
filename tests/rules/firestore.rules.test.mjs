@@ -201,6 +201,120 @@ describe("Firestore rules", () => {
     );
   });
 
+  it("grants responder access from a reviewer-written role assignment", async () => {
+    await seedDocument(["roleAssignments", "responder-2"], {
+      userId: "responder-2",
+      role: "responder",
+      assignedBy: "reviewer-1",
+      assignedAt: sampleTimestamp,
+    });
+    await seedDocument(["reports", "report-1"], buildReport("resident-1"));
+
+    // No custom claim: the role must come from the assignment document.
+    const responderDb = testEnvironment
+      .authenticatedContext("responder-2")
+      .firestore();
+    const plainResidentDb = testEnvironment
+      .authenticatedContext("resident-2")
+      .firestore();
+
+    await assertSucceeds(getDoc(doc(responderDb, "reports", "report-1")));
+    await assertFails(getDoc(doc(plainResidentDb, "reports", "report-1")));
+  });
+
+  it("stops a resident from writing any role assignment", async () => {
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(residentDb, "roleAssignments", "resident-1"), {
+        userId: "resident-1",
+        role: "responder",
+      }),
+    );
+
+    await assertFails(
+      setDoc(doc(residentDb, "roleAssignments", "resident-3"), {
+        userId: "resident-3",
+        role: "responder",
+      }),
+    );
+  });
+
+  it("stops a responder from promoting anyone, including themselves", async () => {
+    await seedDocument(["roleAssignments", "responder-2"], {
+      userId: "responder-2",
+      role: "responder",
+    });
+
+    const responderDb = testEnvironment
+      .authenticatedContext("responder-2")
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(responderDb, "roleAssignments", "responder-2"), {
+        userId: "responder-2",
+        role: "admin",
+      }),
+    );
+
+    await assertFails(
+      setDoc(doc(responderDb, "roleAssignments", "resident-9"), {
+        userId: "resident-9",
+        role: "responder",
+      }),
+    );
+  });
+
+  it("lets a reviewer assign a role and lets the account read its own", async () => {
+    await seedDocument(["roleAssignments", "reviewer-2"], {
+      userId: "reviewer-2",
+      role: "reviewer",
+    });
+
+    const reviewerDb = testEnvironment
+      .authenticatedContext("reviewer-2")
+      .firestore();
+
+    await assertSucceeds(
+      setDoc(doc(reviewerDb, "roleAssignments", "resident-1"), {
+        userId: "resident-1",
+        role: "responder",
+        assignedBy: "reviewer-2",
+        assignedAt: sampleTimestamp,
+      }),
+    );
+
+    // A mismatched userId or an unknown role is rejected.
+    await assertFails(
+      setDoc(doc(reviewerDb, "roleAssignments", "resident-4"), {
+        userId: "resident-5",
+        role: "responder",
+      }),
+    );
+    await assertFails(
+      setDoc(doc(reviewerDb, "roleAssignments", "resident-4"), {
+        userId: "resident-4",
+        role: "superuser",
+      }),
+    );
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+    const otherResidentDb = testEnvironment
+      .authenticatedContext("resident-7")
+      .firestore();
+
+    await assertSucceeds(
+      getDoc(doc(residentDb, "roleAssignments", "resident-1")),
+    );
+    await assertFails(
+      getDoc(doc(otherResidentDb, "roleAssignments", "resident-1")),
+    );
+  });
+
   it("exposes only sanitized public feed content to public users", async () => {
     await seedDocument(["publicFeed", "item-1"], {
       summary: "Floodwater rising in a public zone.",

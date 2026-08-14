@@ -97,33 +97,30 @@ export function LandingRoute() {
   return (
     <div className="landing-grid">
       <section className="landing-panel">
-        <span className="section-tag">Public routes</span>
-        <h2>One shell, many migration checkpoints</h2>
+        <span className="section-tag">Tabang</span>
+        <h2>Report flooding and request help in Aklan</h2>
         <p>
-          Phase 1 replaces the main entry with a Vite + React shell, keeps the old prototype reachable,
-          and establishes the layouts, routing, and feedback system the later phases will build on.
+          Sign in to report flooding, request assistance, and see the hotlines
+          serving your barangay. Responder access is reviewed separately.
         </p>
         <div className="button-row">
           <Link className="action-button" to="/login">
-            Open login route
+            Sign in
           </Link>
-          <Link className="action-button action-button--secondary" to="/app">
-            Open resident shell
+          <Link className="action-button action-button--secondary" to="/signup">
+            Create an account
           </Link>
         </div>
       </section>
 
       <section className="surface-card">
-        <h3>Migration map</h3>
+        <h3>More</h3>
         <ul className="link-list">
           <li>
-            <Link to="/signup">Resident signup placeholder</Link>
+            <Link to="/reset-password">Reset your password</Link>
           </li>
           <li>
-            <Link to="/privacy">Privacy placeholder</Link>
-          </li>
-          <li>
-            <Link to="/responder">Responder placeholder</Link>
+            <Link to="/privacy">Privacy policy and terms</Link>
           </li>
           <li>
             <a href="/legacy-index.html">Legacy landing prototype</a>
@@ -134,59 +131,6 @@ export function LandingRoute() {
         </ul>
       </section>
     </div>
-  );
-}
-
-export function LoginRoute() {
-  return (
-    <RouteShellPage
-      area="Public route"
-      title="Resident Login"
-      summary="This placeholder stands in for the future centralized authentication flow."
-      statusLabel="Public layout"
-      routePath="/login"
-      legacyHref="/Login.html"
-      checklist={[
-        "Public layout is active.",
-        "Shared toast and modal components are wired.",
-        "Legacy resident login remains available while migration continues.",
-      ]}
-    />
-  );
-}
-
-export function SignupRoute() {
-  return (
-    <RouteShellPage
-      area="Public route"
-      title="Resident Signup"
-      summary="The eventual signup form will plug into the same shell instead of a dedicated HTML document."
-      statusLabel="Public layout"
-      routePath="/signup"
-      legacyHref="/signup.html"
-      checklist={[
-        "Shared typography, spacing, and surfaces are active.",
-        "The route is ready for a centralized auth provider in Phase 3.",
-        "Legacy signup is still reachable for comparison.",
-      ]}
-    />
-  );
-}
-
-export function PrivacyRoute() {
-  return (
-    <RouteShellPage
-      area="Public route"
-      title="Privacy Policy"
-      summary="Policy content will move here once the public route migration begins."
-      statusLabel="Public layout"
-      routePath="/privacy"
-      legacyHref="/Privacypolicy.html"
-      checklist={[
-        "Public route shell is in place.",
-        "Not-found and error states now share one visual language.",
-      ]}
-    />
   );
 }
 
@@ -293,23 +237,6 @@ export function HotlinesRoute() {
   );
 }
 
-export function AccountRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Resident Account"
-      summary="Account pages now have a consistent home in the shell before profile migration work begins."
-      statusLabel="Resident layout"
-      routePath="/app/account"
-      legacyHref="/AccountInfo.html"
-      checklist={[
-        "Resident account route is anchored in the shared shell.",
-        "The shell is ready for centralized session state in Phase 3.",
-      ]}
-    />
-  );
-}
-
 export function ResponderApplicationRoute() {
   return (
     <RouteShellPage
@@ -390,23 +317,6 @@ export function ResponderHotlinesRoute() {
       checklist={[
         "Responder hotline route now lives in the shared shell.",
         "Later hotline consolidation can reuse the same route model.",
-      ]}
-    />
-  );
-}
-
-export function ResponderAccountRoute() {
-  return (
-    <RouteShellPage
-      area="Responder route"
-      title="Responder Account"
-      summary="Responder account information now has a dedicated shell route before the data migration begins."
-      statusLabel="Responder layout"
-      routePath="/responder/account"
-      legacyHref="/AccountInformation.html"
-      checklist={[
-        "Responder account route is separated from resident routes.",
-        "Legacy responder account view remains reachable in parallel.",
       ]}
     />
   );

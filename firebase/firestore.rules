@@ -6,8 +6,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Roles are stored in roleAssignments/{uid}, which no client can write.
+    // A custom claim is still honoured when a trusted backend sets one, so a
+    // later migration to claims does not require a rules rewrite.
+    function assignedRole() {
+      return exists(/databases/$(database)/documents/roleAssignments/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/roleAssignments/$(request.auth.uid)).data.role
+        : 'resident';
+    }
+
     function hasRole(role) {
-      return isSignedIn() && request.auth.token.role == role;
+      return isSignedIn()
+        && (request.auth.token.role == role || assignedRole() == role);
     }
 
     function isAdmin() {
@@ -42,6 +52,14 @@ service cloud.firestore {
         && request.resource.data.role == resource.data.role
         && !changedKeys().hasAny(['role']);
       allow delete: if false;
+    }
+
+    match /roleAssignments/{userId} {
+      allow read: if isOwner(userId) || isReviewer();
+      allow create, update: if isReviewer()
+        && request.resource.data.userId == userId
+        && request.resource.data.role in ['resident', 'responder', 'reviewer', 'admin'];
+      allow delete: if isAdmin();
     }
 
     match /responders/{userId} {
