@@ -1,0 +1,61 @@
+name: check
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+# No deployment happens here. Releasing rules or hosting stays a deliberate
+# human action, because both change what real residents and responders see.
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Scan for committed secrets
+        run: npm run scan:secrets
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Retired URL redirects
+        run: npm run test:redirects
+
+      - name: Build
+        run: npm run build
+
+  rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      # The emulator needs a JVM. This job is separate so a JVM problem cannot
+      # mask a failure in the fast checks above.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - run: npm ci
+
+      - name: Security rules tests
+        run: npm run test:rules

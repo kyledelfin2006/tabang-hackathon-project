@@ -976,16 +976,20 @@ Make releases reproducible and failures diagnosable.
 
 ### Tasks
 
-- [ ] Add CI for install, formatting, linting, unit tests, rule tests, integration tests, build, and critical browser smoke tests.
-- [ ] Select and configure the production hosting target with explicit user approval if it creates external resources.
-- [ ] Add preview and production environment separation.
-- [ ] Document required environment values without committing secrets.
-- [ ] Add safe error monitoring with redaction of phone numbers, coordinates, descriptions, tokens, and identity data.
-- [ ] Add operational logging for trusted incident transitions without exposing sensitive contents.
-- [ ] Define backup, retention, recovery, incident moderation, responder revocation, and hotline verification procedures.
-- [ ] Expand `README.md` with setup, emulator, tests, builds, architecture, deployment, roles, privacy, and troubleshooting.
-- [ ] Add a data-migration runbook and rollback plan.
-- [ ] Do not execute production migrations or deploy without explicit user approval.
+- [x] Add CI for install, formatting, linting, unit tests, rule tests, integration tests, build, and critical browser smoke tests. *(All but browser tests, which do not exist yet. The rules job is separate so a JVM problem cannot mask a failure in the fast checks.)*
+- [x] Select and configure the production hosting target with explicit user approval if it creates external resources. *(Firebase Hosting for the SPA plus a separate Node host for `server.mjs`, at the user's direction. Neither is provisioned yet; CI deliberately deploys nothing.)*
+- [ ] Add preview and production environment separation. *(Not configured. A single project is in use, and separating it would create paid resources.)*
+- [x] Document required environment values without committing secrets.
+- [x] Add safe error monitoring with redaction of phone numbers, coordinates, descriptions, tokens, and identity data. *(Redaction is implemented and tested. No monitor is wired up, so redaction is the default path whenever one is added rather than an option to remember.)*
+- [ ] Add operational logging for trusted incident transitions without exposing sensitive contents. *(The append-only `events` subcollection already records every transition with actor and server time. A separate log would duplicate it without a destination to send to.)*
+- [x] Define backup, retention, recovery, incident moderation, responder revocation, and hotline verification procedures. *(`docs/operations.md`.)*
+- [x] Expand `README.md` with setup, emulator, tests, builds, architecture, deployment, roles, privacy, and troubleshooting.
+- [x] Add a data-migration runbook and rollback plan. *(Rules and index rollback are covered. No data migration exists to run back, since new collections were added alongside the old ones.)*
+- [x] Do not execute production migrations or deploy without explicit user approval. *(Only rules and indexes were ever deployed, each at the user's explicit request.)*
+
+### Why CI deploys nothing
+
+The workflow runs checks and stops. Releasing rules or hosting changes what real residents and responders see, so it stays a deliberate human action. An automatic rules deploy on green is exactly the mechanism that would push a mistaken permission change to production at 2am.
 
 ### Acceptance checks
 
@@ -1131,9 +1135,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 14 implemented; Phase 13 remains and is the only unstarted phase**
+- Current phase: **All fourteen phases implemented; verification and the manual browser checklist remain**
 - Last completed phase: **Phase 12 - Accessibility, performance, and security hardening**
-- Next exact action: **Run `npm run check` and `npm run test:redirects` on Windows to confirm Phase 14, then either execute Phase 13 or stop and work through the manual browser checklist in Section 9, which is the largest unverified surface remaining.**
+- Next exact action: **Run `npm run check` and `npm run test:rules` on Windows, push so the CI workflow runs for the first time, seed the first reviewer using `docs/operations.md`, then work through the manual browser checklist in Section 9.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` twice with `npm run deploy:rules`, most recently carrying the incident transition rules, the hotline rating bounds, and the reports, publicFeed, and responderApplications indexes. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1157,8 +1161,8 @@ Update only after the corresponding verification has been run.
 | 10. Hotline consolidation | Complete | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
 | 11. Offline resilience | Complete | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
 | 12. Accessibility and hardening | Complete | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers`, `perf: load the firebase sdk on demand` | On Windows `npm run check` passed lint, the secret scan, 190 of 190 unit tests, and the build, producing 23 route chunks. The entry chunk initially fell only from 885 kB to 882 kB because `AuthProvider` statically imported the Firebase SDK; that import is now dynamic. **The rebuilt entry-chunk size has not been observed, so the improvement is unmeasured.** |
-| 13. CI, deployment, and operations | Not started | — | Deliberately deferred behind Phase 14 at the user's discretion: retiring the legacy pages removed hazards reachable today, while CI and monitoring pay off over a longer horizon. |
-| 14. Legacy retirement | In progress | `chore: retire the legacy pages and assets` | 51 legacy files deleted, 16 URLs mapped to redirect stubs, the Phase 0 baseline suites replaced by a redirect suite that passes 4 of 4. `npm run lint` passes, `node --check server.mjs` passes, and the secret scan is clean with no exceptions. A full `npm run check` on Windows is outstanding. |
+| 13. CI, deployment, and operations | In progress | `ci: add checks, redaction, and operational documentation` | `npm run lint`, the secret scan, and the redirect suite pass locally. Added a GitHub Actions workflow, a tested redaction module, a rewritten README, and `docs/operations.md`. Preview and production separation and browser smoke tests are recorded as not done. The workflow has never run on GitHub. |
+| 14. Legacy retirement | Complete | `chore: retire the legacy pages and assets` | 51 legacy files deleted, 16 URLs mapped to redirect stubs, the Phase 0 baseline suites replaced by a redirect suite that passes 4 of 4. `npm run lint` passes, `node --check server.mjs` passes, and the secret scan is clean with no exceptions. A full `npm run check` on Windows is outstanding. |
 
 Allowed status values: `Not started`, `In progress`, `Blocked`, `Complete`.
 
@@ -1550,6 +1554,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Phase 13 is unstarted. No reviewer is seeded. The manual browser checklist has never been run.
 - Commit: `chore: retire the legacy pages and assets`
 - Next exact action: Verify on Windows, then choose between Phase 13 and the manual browser checklist.
+
+### 2026-08-15 — Phase 13: CI, observability, and documentation
+
+- Completed: Added a GitHub Actions workflow running lint, secret scan, unit tests, redirect tests, and build, with security rules in a separate job. Added a tested redaction module for phone numbers, coordinates, descriptions, tokens, and identity paths. Rewrote `README.md` around how somebody actually uses the project. Added `docs/operations.md` covering the first reviewer, responder revocation, hotline verification, moderation, backup and rollback, and upload failure.
+- Files/components changed: `.github/workflows/check.yml`, `src/services/observability/redact.js`, `src/test/redact.test.js`, `README.md`, `docs/operations.md`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed, `node scripts/security/scan-secrets.mjs` passed, `npm run test:redirects` passed 4 of 4. The new redaction tests were not run in the assistant sandbox, and the workflow has never executed on GitHub.
+- Decisions/deviations: CI deliberately deploys nothing; releasing rules or hosting stays a human action. Redaction is implemented without a monitor attached, so it is the default path when one is added rather than a setting somebody must remember. Two tasks are recorded as not done rather than reinterpreted: preview and production separation would create paid resources, and separate operational logging would duplicate the existing append-only `events` trail with nowhere to send it. Hosting is Firebase Hosting plus a separate Node host at the user's direction; neither is provisioned.
+- Uncommitted work: None.
+- Production changes: None.
+- Blockers: The workflow is unproven until a push. No reviewer is seeded. The manual browser checklist in Section 9 has never been run and is the largest unverified surface in the project.
+- Commit: `ci: add checks, redaction, and operational documentation`
+- Next exact action: Verify on Windows, push to run CI, seed the reviewer, then work the manual checklist.
 
 ### Handoff entry template
 
