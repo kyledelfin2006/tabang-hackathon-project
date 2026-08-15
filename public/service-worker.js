@@ -6,7 +6,14 @@
  * later picks up the device, so protected data must never enter it. Requests
  * to Firebase and to the upload endpoints are passed straight through.
  */
-const CACHE_NAME = "tabang-shell-v1";
+/*
+ * Bump this on every release that changes the shell.
+ *
+ * The activate handler deletes every cache whose name is not this one, so a
+ * new name is what actually evicts the previous build. Leaving it at v1 while
+ * shipping new CSS is how a visitor keeps seeing the old design.
+ */
+const CACHE_NAME = "tabang-shell-v2";
 
 const SHELL_ASSETS = ["/", "/index.html", "/manifest.webmanifest"];
 
