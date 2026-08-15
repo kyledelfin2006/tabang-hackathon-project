@@ -1,3 +1,19 @@
+// NOT DEPLOYED.
+//
+// Nothing in Tabang writes to Firebase Storage. Uploads go to Cloudinary,
+// chosen so the project could stay on the free plan. Firebase Storage is not
+// enabled on the project, and listing it in firebase.json made every deploy
+// fail on a service the app does not use.
+//
+// This file and its emulator tests are kept because the decision could be
+// reversed: if Storage is ever enabled, these are the rules to deploy, and
+// they are already tested. Re-add the "storage" block to firebase.json at
+// that point.
+//
+// Note the gap if that happens: these rules read roles from a custom claim,
+// because Storage Rules cannot read Firestore. Nothing currently sets that
+// claim, so every role check here would deny until a trusted process does.
+
 rules_version = '2';
 
 service firebase.storage {

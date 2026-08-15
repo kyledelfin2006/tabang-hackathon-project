@@ -82,6 +82,16 @@ npm run check
 npx firebase deploy --only hosting
 ```
 
+### If a deploy fails on Firebase Storage
+
+`Error: Firebase Storage has not been set up on project 'asu-tabang'`
+
+Storage is not enabled and is not meant to be. Uploads go to Cloudinary so the
+project can stay on the free plan. `firebase.json` no longer lists a storage
+deploy target, which is what caused this. If it reappears, check that nobody
+has re-added the `"storage"` block at the top level; the `"storage"` entry
+under `"emulators"` is a different thing and should stay.
+
 `server.mjs` runs separately on a Node host with these values set:
 `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`,
 `FIREBASE_WEB_API_KEY`, `FIREBASE_PROJECT_ID`.
