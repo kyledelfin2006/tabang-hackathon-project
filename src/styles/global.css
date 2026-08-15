@@ -9,18 +9,6 @@
  * whatever device is to hand and often in bad conditions, so the layout stays
  * fluid and the frame stays gone. Everything inside it is faithful.
  */
-/*
- * Inter is imported in main.jsx from @fontsource/inter, not from Google.
- *
- * The old stylesheet pulled the fonts from fonts.googleapis.com, which the
- * Content-Security-Policy blocks (`style-src 'self'; font-src 'self'`). So on
- * the deployed site the webfonts silently never loaded and every page fell
- * back to the system sans — a large part of why it looked generic. Bundling
- * the font keeps the CSP tight, removes a third-party request on every visit,
- * and means the typeface still renders when the network is bad, which for
- * this app is the normal case rather than the exception.
- */
-
 *,
 *::before,
 *::after {

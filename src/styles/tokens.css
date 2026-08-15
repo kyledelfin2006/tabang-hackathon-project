@@ -10,8 +10,24 @@
  * needs the contrast more than the app needs white lettering.
  */
 :root {
-  --font-display: "Inter", "Segoe UI", sans-serif;
-  --font-body: "Inter", "Segoe UI", sans-serif;
+/*
+ * Inter if the device has it, then the closest native equivalent on each
+ * platform: Segoe UI Variable/Segoe UI on Windows, San Francisco on Apple,
+ * Roboto on Android. All are humanist sans faces very close to Inter, so the
+ * design holds up without a webfont.
+ *
+ * No webfont is loaded on purpose. The Content-Security-Policy is
+ * `style-src 'self'; font-src 'self'`, so a Google Fonts link is blocked
+ * outright — that is why the old Sora/Space Grotesk import silently did
+ * nothing on the deployed site. Bundling Inter is the proper fix and needs
+ * `npm install @fontsource/inter` to succeed first; see docs/operations.md.
+ */
+  --font-display:
+    "Inter", "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  --font-body:
+    "Inter", "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
 
   /* Shell */
   --color-shell: #0a1f4e;

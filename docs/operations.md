@@ -82,6 +82,18 @@ npm run check
 npx firebase deploy --only hosting
 ```
 
+### The app uses no webfont
+
+The Content-Security-Policy is `style-src 'self'; font-src 'self'`, so a
+Google Fonts link is blocked. That is not a bug to work around by loosening the
+policy: a font is not worth a third-party request on every visit, and a webfont
+that fails on a weak connection is worse than none during a flood.
+
+The design therefore uses Inter if the device already has it and a close native
+face otherwise. To ship Inter properly, run `npm install @fontsource/inter` and
+import the weights in `src/main.jsx`. Vite emits the files to `/assets`, which
+is same-origin, so the policy stays as it is.
+
 ### If a deploy fails on Firebase Storage
 
 `Error: Firebase Storage has not been set up on project 'asu-tabang'`
