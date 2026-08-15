@@ -1567,6 +1567,16 @@ Append one concise entry after every coding session. Include facts and commands 
 - Commit: `ci: add checks, redaction, and operational documentation`
 - Next exact action: Verify on Windows, push to run CI, seed the reviewer, then work the manual checklist.
 
+### 2026-08-15 — Post-plan: restore the original visual identity
+
+- Completed: Restored the navy gradient shell, translucent cards, orange call to action, and Inter typography recovered from the legacy stylesheets deleted in Phase 14. Self-hosted Inter via `@fontsource/inter`. Added `scripts/a11y/check-contrast.mjs` and wired it into `npm run check`.
+- Files/components changed: `src/styles/tokens.css`, `src/styles/global.css`, `src/main.jsx`, `package.json`, `scripts/a11y/check-contrast.mjs`.
+- Verification: `npm run lint` passed, the secret scan passed, and the contrast script reports all 17 measured pairs at or above 4.5:1. Not yet seen in a browser.
+- Decisions/deviations: The fixed 390x844 `.phone` frame was deliberately not restored; it is a mockup device shell that overflows a real phone. Three colour values were changed rather than copied: white button text on `#f5900a` measured 2.37:1 and is now near-black at 7.19:1; secondary text alphas were raised from 70%/45% to 82%/72%; and saturated accents gained lightened companions for use as text. The hues are unchanged.
+- Discovered: the Content-Security-Policy (`style-src 'self'; font-src 'self'`) blocked the Google Fonts import, so no webfont ever loaded on the deployed site. Bundling the font fixes this and keeps the policy tight.
+- Blockers: `npm install` must be run to fetch `@fontsource/inter` before the build will succeed.
+- Commit: `style: restore the original navy and orange visual identity`
+
 ### Handoff entry template
 
 ```markdown

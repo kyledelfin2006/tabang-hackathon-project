@@ -16,14 +16,16 @@
     "start": "node server.mjs",
     "scan:secrets": "node scripts/security/scan-secrets.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
-    "check": "npm run lint && npm run scan:secrets && npm run test:unit && npm run test:redirects && npm run build",
-    "test:redirects": "node --test tests/redirects/legacy-redirects.test.mjs"
+    "check": "npm run lint && npm run scan:secrets && npm run check:contrast && npm run test:unit && npm run test:redirects && npm run build",
+    "test:redirects": "node --test tests/redirects/legacy-redirects.test.mjs",
+    "check:contrast": "node ./scripts/a11y/check-contrast.mjs"
   },
   "dependencies": {
     "firebase": "^12.17.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.2"
+    "react-router-dom": "^7.18.2",
+    "@fontsource/inter": "^5.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

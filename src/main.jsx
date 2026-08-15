@@ -1,6 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./app/App.jsx";
+// Self-hosted so the Content-Security-Policy can stay at `font-src 'self'`,
+// and so the typeface still renders on a bad connection.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/inter/800.css";
 import "./styles/tokens.css";
 import "./styles/global.css";
 
