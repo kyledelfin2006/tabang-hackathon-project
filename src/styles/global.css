@@ -834,3 +834,24 @@ select.form-field__input {
   font-size: 0.8125rem;
   margin: 0;
 }
+
+/* Phase 7 — responder application */
+.consent-row {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--space-3);
+}
+
+.consent-row input {
+  margin-top: 0.25rem;
+  min-height: 20px;
+  min-width: 20px;
+}
+
+/* Phase 8 — incident queue */
+.filter-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  margin-bottom: var(--space-4);
+}

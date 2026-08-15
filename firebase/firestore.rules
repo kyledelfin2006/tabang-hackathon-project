@@ -40,6 +40,29 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).changedKeys();
     }
 
+    // The same transition table the client enforces. Duplicated deliberately:
+    // service logic is a convenience, this is the boundary.
+    function allowedNextStatuses(fromStatus) {
+      return fromStatus == 'new' ? ['acknowledged']
+        : fromStatus == 'acknowledged' ? ['dispatched', 'resolved']
+        : fromStatus == 'dispatched' ? ['on_scene', 'resolved']
+        : fromStatus == 'on_scene' ? ['resolved']
+        : [];
+    }
+
+    function isValidTransition() {
+      return request.resource.data.incidentStatus == resource.data.incidentStatus
+        || request.resource.data.incidentStatus in allowedNextStatuses(resource.data.incidentStatus);
+    }
+
+    // A responder may only take an unclaimed incident, or act on one already
+    // assigned to them, so a claim cannot silently replace another responder.
+    function assignmentIsHonoured() {
+      return resource.data.assignedResponderIds.size() == 0
+        || request.auth.uid in resource.data.assignedResponderIds
+        || request.resource.data.assignedResponderIds == resource.data.assignedResponderIds;
+    }
+
     function reportOwner(reportId) {
       return get(/databases/$(database)/documents/reports/$(reportId)).data.reporterId;
     }
@@ -83,6 +106,12 @@ service cloud.firestore {
           isReviewer()
           && request.resource.data.applicantId == resource.data.applicantId
           && request.resource.data.status in ['pending', 'approved', 'rejected']
+          // A decision must name the account that made it, so approvals are
+          // attributable and a reviewer cannot record someone else as the
+          // decision maker.
+          && request.resource.data.reviewedBy == request.auth.uid
+          // A reviewer must never be able to approve their own application.
+          && request.auth.uid != resource.data.applicantId
         );
       allow delete: if false;
     }
@@ -114,6 +143,8 @@ service cloud.firestore {
           && request.resource.data.reporterId == resource.data.reporterId
           && request.resource.data.kind == resource.data.kind
           && request.resource.data.createdAt == resource.data.createdAt
+          && isValidTransition()
+          && assignmentIsHonoured()
           && changedKeys().hasOnly([
             'incidentStatus',
             'verificationStatus',
@@ -141,7 +172,10 @@ service cloud.firestore {
         allow read: if isOwner(reportOwner(reportId)) || isTrustedResponder();
         allow create: if isTrustedResponder()
           && request.resource.data.actorId == request.auth.uid
-          && request.resource.data.actorRole in ['responder', 'reviewer', 'admin'];
+          && request.resource.data.actorRole in ['responder', 'reviewer', 'admin']
+          // Server time only: a device with a wrong clock must not be able to
+          // reorder an audit trail.
+          && request.resource.data.createdAt == request.time;
         allow update, delete: if false;
       }
     }

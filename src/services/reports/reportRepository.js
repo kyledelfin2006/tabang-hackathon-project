@@ -22,6 +22,32 @@ export const REPORT_PAGE_SIZE = 10;
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * Describes the personal report query without touching Firestore.
+ *
+ * Keeping this pure means the parts that actually matter for correctness - the
+ * owner filter, the deterministic ordering, and the page cap - can be asserted
+ * directly, instead of needing a live Firestore instance to build a query
+ * object.
+ */
+export function buildMyReportsQuerySpec({
+  reporterId,
+  cursor = null,
+  pageSize = REPORT_PAGE_SIZE,
+} = {}) {
+  return Object.freeze({
+    reporterId,
+    // createdAt alone is not unique: two reports filed in the same second
+    // would have an unstable order, letting a page boundary duplicate or skip.
+    orderBy: Object.freeze([
+      Object.freeze(["createdAt", "desc"]),
+      Object.freeze(["__name__", "desc"]),
+    ]),
+    limit: Math.min(Math.max(1, pageSize), REPORT_PAGE_SIZE),
+    cursor,
+  });
+}
+
+/**
  * The resident's own view of one of their reports.
  *
  * Built from an owner-scoped query, so it may include the protected fields the
@@ -95,6 +121,14 @@ export function createReportRepository({
   transactionRunner = runTransaction,
   collectionRef = collection,
   runQuery = getDocs,
+  queryBuilder = (database, spec) =>
+    query(
+      collectionRef(database, REPORTS_COLLECTION),
+      where("reporterId", "==", spec.reporterId),
+      ...spec.orderBy.map(([field, direction]) => orderBy(field, direction)),
+      ...(spec.cursor ? [startAfter(spec.cursor)] : []),
+      limit(spec.limit),
+    ),
 } = {}) {
   return {
     /**
@@ -133,27 +167,17 @@ export function createReportRepository({
      * is by createdAt then document id, which is deterministic even when two
      * reports share a timestamp, so pages cannot duplicate or skip records.
      */
-    async listMyReports({ reporterId, cursor = null, pageSize = REPORT_PAGE_SIZE } = {}) {
+    async listMyReports(options = {}) {
       const database = db ?? getFirebaseDb();
-      const boundedSize = Math.min(Math.max(1, pageSize), REPORT_PAGE_SIZE);
-      const constraints = [
-        where("reporterId", "==", reporterId),
-        orderBy("createdAt", "desc"),
-        orderBy("__name__", "desc"),
-        ...(cursor ? [startAfter(cursor)] : []),
-        limit(boundedSize),
-      ];
-
-      const snapshot = await runQuery(
-        query(collectionRef(database, REPORTS_COLLECTION), ...constraints),
-      );
+      const spec = buildMyReportsQuerySpec(options);
+      const snapshot = await runQuery(queryBuilder(database, spec));
 
       return {
         reports: snapshot.docs.map((document) =>
           toPersonalReport(document.id, document.data()),
         ),
         cursor: snapshot.docs[snapshot.docs.length - 1] ?? null,
-        hasMore: snapshot.docs.length === boundedSize,
+        hasMore: snapshot.docs.length === spec.limit,
       };
     },
 

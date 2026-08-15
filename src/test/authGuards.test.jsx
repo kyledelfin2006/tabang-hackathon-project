@@ -54,7 +54,12 @@ describe("route guards", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/responder/incidents");
     });
-    expect(await screen.findByText("Incident Queue")).toBeInTheDocument();
+    // Assert on the heading rather than loose text: the queue renders its own
+    // error state here because no Firestore is configured in unit tests, and
+    // reaching the route at all is what this guard test is about.
+    expect(
+      await screen.findByRole("heading", { name: "Incident queue" }),
+    ).toBeInTheDocument();
   });
 
   it("redirects a signed-in resident away from the login route", async () => {

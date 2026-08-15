@@ -6,6 +6,7 @@ import {
   RequireAnonymous,
   RequireAuth,
   RequireResponder,
+  RequireReviewer,
 } from "../components/routing/RouteGuards.jsx";
 import LoginPage from "../routes/auth/LoginPage.jsx";
 import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
@@ -16,13 +17,14 @@ import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
 import ReportFormPage from "../routes/reports/ReportFormPage.jsx";
 import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
 import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
+import ResponderApplicationPage from "../routes/responder/ResponderApplicationPage.jsx";
+import ReviewQueuePage from "../routes/responder/ReviewQueuePage.jsx";
+import IncidentQueuePage from "../routes/responder/IncidentQueuePage.jsx";
+import IncidentDetailPage from "../routes/responder/IncidentDetailPage.jsx";
 import {
   HotlinesRoute,
-  IncidentDetailRoute,
-  IncidentsRoute,
   LandingRoute,
   NotFoundRoute,
-  ResponderApplicationRoute,
   ResponderDashboardRoute,
   ResponderHotlinesRoute,
   RouteErrorPage,
@@ -78,7 +80,7 @@ export const appRoutes = [
       { path: "help/new", element: <ReportFormPage kind="help" /> },
       { path: "hotlines", element: <HotlinesRoute /> },
       { path: "account", element: <AccountPage /> },
-      { path: "responder-application", element: <ResponderApplicationRoute /> },
+      { path: "responder-application", element: <ResponderApplicationPage /> },
     ],
   },
   {
@@ -91,8 +93,16 @@ export const appRoutes = [
     errorElement: <RouteErrorPage />,
     children: [
       { index: true, element: <ResponderDashboardRoute /> },
-      { path: "incidents", element: <IncidentsRoute /> },
-      { path: "incidents/:id", element: <IncidentDetailRoute /> },
+      { path: "incidents", element: <IncidentQueuePage /> },
+      { path: "incidents/:id", element: <IncidentDetailPage /> },
+      {
+        path: "applications",
+        element: (
+          <RequireReviewer>
+            <ReviewQueuePage />
+          </RequireReviewer>
+        ),
+      },
       { path: "hotlines", element: <ResponderHotlinesRoute /> },
       { path: "account", element: <AccountPage area="Responder route" /> },
     ],

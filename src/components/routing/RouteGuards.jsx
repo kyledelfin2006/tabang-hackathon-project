@@ -105,3 +105,32 @@ export function RequireAnonymous({ children }) {
 
   return children;
 }
+
+/**
+ * Route guard for reviewer-only screens.
+ *
+ * Reviewers see identity documents, so this is stricter than the responder
+ * guard. The rules and the evidence endpoints enforce the same boundary
+ * independently; this only avoids showing a route that would fail anyway.
+ */
+export function RequireReviewer({ children }) {
+  const { status, role, isReviewer, initializationError } = useAuth();
+
+  if (status === SESSION_STATUS.loading) {
+    return <SessionPending />;
+  }
+
+  if (status === SESSION_STATUS.unavailable) {
+    return <SessionUnavailable detail={initializationError} />;
+  }
+
+  if (status === SESSION_STATUS.anonymous) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!isReviewer) {
+    return <Navigate to={homeRouteForRole(role)} replace />;
+  }
+
+  return children;
+}

@@ -4,6 +4,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
@@ -166,7 +167,7 @@ describe("Firestore rules", () => {
         fromStatus: "new",
         toStatus: "acknowledged",
         note: "Responder acknowledged the incident.",
-        createdAt: sampleTimestamp,
+        createdAt: serverTimestamp(),
       }),
     );
 
@@ -204,6 +205,186 @@ describe("Firestore rules", () => {
     await assertFails(
       updateDoc(doc(residentDb, "responderApplications", "resident-1"), {
         status: "approved",
+      }),
+    );
+  });
+
+  it("rejects an invalid incident transition", async () => {
+    await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
+    await seedDocument(["roleAssignments", "responder-5"], {
+      userId: "responder-5",
+      role: "responder",
+    });
+
+    const responderDb = testEnvironment
+      .authenticatedContext("responder-5")
+      .firestore();
+
+    // new may only become acknowledged; jumping straight to resolved is refused.
+    await assertFails(
+      updateDoc(doc(responderDb, "reports", "report-1"), {
+        incidentStatus: "resolved",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+
+    await assertSucceeds(
+      updateDoc(doc(responderDb, "reports", "report-1"), {
+        incidentStatus: "acknowledged",
+        assignedResponderIds: ["responder-5"],
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("refuses to reopen a resolved incident", async () => {
+    await seedDocument(["reports", "report-1"], {
+      ...buildManagedReport("resident-1"),
+      incidentStatus: "resolved",
+    });
+    await seedDocument(["roleAssignments", "responder-5"], {
+      userId: "responder-5",
+      role: "responder",
+    });
+
+    const responderDb = testEnvironment
+      .authenticatedContext("responder-5")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(responderDb, "reports", "report-1"), {
+        incidentStatus: "dispatched",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("stops a second responder overwriting an existing assignment", async () => {
+    await seedDocument(["reports", "report-1"], {
+      ...buildManagedReport("resident-1"),
+      incidentStatus: "acknowledged",
+      assignedResponderIds: ["responder-5"],
+    });
+    await seedDocument(["roleAssignments", "responder-6"], {
+      userId: "responder-6",
+      role: "responder",
+    });
+
+    const otherResponderDb = testEnvironment
+      .authenticatedContext("responder-6")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(otherResponderDb, "reports", "report-1"), {
+        assignedResponderIds: ["responder-6"],
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("rejects an audit event attributed to another responder", async () => {
+    await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
+    await seedDocument(["roleAssignments", "responder-5"], {
+      userId: "responder-5",
+      role: "responder",
+    });
+
+    const responderDb = testEnvironment
+      .authenticatedContext("responder-5")
+      .firestore();
+
+    await assertFails(
+      setDoc(doc(responderDb, "reports", "report-1", "events", "forged"), {
+        actorId: "responder-6",
+        actorRole: "responder",
+        type: "status-change",
+        fromStatus: "new",
+        toStatus: "acknowledged",
+        createdAt: serverTimestamp(),
+      }),
+    );
+  });
+
+  it("rejects an audit event with a client-chosen timestamp", async () => {
+    await seedDocument(["reports", "report-1"], buildManagedReport("resident-1"));
+    await seedDocument(["roleAssignments", "responder-5"], {
+      userId: "responder-5",
+      role: "responder",
+    });
+
+    const responderDb = testEnvironment
+      .authenticatedContext("responder-5")
+      .firestore();
+
+    // A backdated event could reorder the response timeline.
+    await assertFails(
+      setDoc(doc(responderDb, "reports", "report-1", "events", "backdated"), {
+        actorId: "responder-5",
+        actorRole: "responder",
+        type: "status-change",
+        fromStatus: "new",
+        toStatus: "acknowledged",
+        createdAt: Timestamp.fromDate(new Date("2020-01-01T00:00:00Z")),
+      }),
+    );
+  });
+
+  it("stops a reviewer approving their own application", async () => {
+    await seedDocument(["roleAssignments", "reviewer-3"], {
+      userId: "reviewer-3",
+      role: "reviewer",
+    });
+    await seedDocument(["responderApplications", "reviewer-3"], {
+      applicantId: "reviewer-3",
+      organization: "Aklan MDRRMO",
+      status: "pending",
+      submittedAt: sampleTimestamp,
+    });
+
+    const reviewerDb = testEnvironment
+      .authenticatedContext("reviewer-3")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(reviewerDb, "responderApplications", "reviewer-3"), {
+        status: "approved",
+        reviewedBy: "reviewer-3",
+        reviewedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("requires a decision to name the reviewer who made it", async () => {
+    await seedDocument(["roleAssignments", "reviewer-4"], {
+      userId: "reviewer-4",
+      role: "reviewer",
+    });
+    await seedDocument(["responderApplications", "resident-9"], {
+      applicantId: "resident-9",
+      organization: "Aklan MDRRMO",
+      status: "pending",
+      submittedAt: sampleTimestamp,
+    });
+
+    const reviewerDb = testEnvironment
+      .authenticatedContext("reviewer-4")
+      .firestore();
+
+    // Attributing the decision to somebody else is rejected.
+    await assertFails(
+      updateDoc(doc(reviewerDb, "responderApplications", "resident-9"), {
+        status: "approved",
+        reviewedBy: "reviewer-1",
+        reviewedAt: sampleTimestamp,
+      }),
+    );
+
+    await assertSucceeds(
+      updateDoc(doc(reviewerDb, "responderApplications", "resident-9"), {
+        status: "approved",
+        reviewedBy: "reviewer-4",
+        reviewedAt: sampleTimestamp,
+        reviewNotes: "Badge confirmed with the office.",
       }),
     );
   });
