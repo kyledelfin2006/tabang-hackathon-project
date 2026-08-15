@@ -11,9 +11,7 @@ export default function PublicLayout() {
       <AppHeader
         eyebrow="Phase 1 shell"
         title="Tabang"
-        subtitle="A shared application shell for the migration to route-based pages."
-        actionLabel="Legacy prototype"
-        actionHref="/legacy-index.html"
+        subtitle="Report flooding, request help, and reach emergency hotlines in Aklan."
       />
       <main className="shell__content" id="main">
         <Suspense

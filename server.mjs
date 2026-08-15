@@ -75,18 +75,18 @@ const MAX_SIGNATURE_BODY_BYTES = 8 * 1024;
  * Browser security headers.
  *
  * The CSP is deliberately explicit about who may be contacted: Firebase for
- * auth and data, Cloudinary for uploads and signed delivery, Google Fonts for
- * the legacy pages. Anything else is refused, which limits where a script
- * injected through a report description could send data.
+ * auth and data, Cloudinary for uploads and signed delivery. Anything else is
+ * refused, which limits where a script injected through a report description
+ * could send data.
  *
- * 'unsafe-inline' remains for styles because the legacy pages still carry
- * inline style attributes. It is removed once Phase 14 retires them.
+ * Phase 14 retired the legacy pages, so 'unsafe-inline' for styles and the
+ * CDN font origins are gone: nothing left in the application needs them.
  */
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
-  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "style-src 'self'",
+  "font-src 'self'",
   "img-src 'self' data: blob: https://res.cloudinary.com",
   "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.cloudinary.com https://identitytoolkit.googleapis.com",
   "form-action 'self'",

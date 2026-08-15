@@ -37,9 +37,7 @@ export default function ResponderLayout() {
       <AppHeader
         eyebrow="Responder shell"
         title="Responder Workspace"
-        subtitle="Protected layout placeholders for operational routes and shared responder chrome."
-        actionLabel="Legacy dashboard"
-        actionHref="/responderhomepage.html"
+        subtitle="Incident queue, response history, and the hotline directory."
       />
       <main className="shell__content shell__content--with-nav" id="main">
         <Suspense

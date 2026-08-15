@@ -30,12 +30,6 @@ export function LandingRoute() {
           <li>
             <Link to="/privacy">Privacy policy and terms</Link>
           </li>
-          <li>
-            <a href="/legacy-index.html">Legacy landing prototype</a>
-          </li>
-          <li>
-            <a href="/Homepage.html">Legacy resident home</a>
-          </li>
         </ul>
       </section>
     </div>
@@ -68,18 +62,15 @@ export function NotFoundRoute() {
       <main className="shell__content">
         <section className="surface-card surface-card--wide">
           <span className="section-tag">Not found</span>
-          <h2>That route is outside the current migration scope.</h2>
+          <h2>That page does not exist</h2>
           <p>
-            The Phase 1 shell now has a proper not-found page. Clean routes should be rewritten to the
-            app shell in Vite or production hosting, while missing file assets should return a real 404.
+            That address does not match any page. If you followed an old link,
+            the pages that moved are listed in the project documentation.
           </p>
           <div className="button-row">
             <Link className="action-button" to="/">
-              Back to shell home
+              Back to the home page
             </Link>
-            <a className="action-button action-button--secondary" href="/legacy-index.html">
-              Open legacy landing
-            </a>
           </div>
         </section>
       </main>

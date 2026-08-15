@@ -64,23 +64,13 @@ function* walk(directory) {
 }
 
 /*
- * Known, reviewed exceptions.
+ * No reviewed exceptions remain.
  *
- * A Firebase web API key is a public project identifier, not a credential:
- * it appears in every client bundle by design, and access is controlled by
- * the security rules rather than by keeping it hidden. The legacy config is
- * still flagged worth recording because hardcoding it there means the legacy
- * pages cannot be pointed at an emulator or a second project, which the
- * migrated app can do through environment variables.
- *
- * Phase 14 retires these files; this entry goes with them.
+ * The only entry was the legacy Firebase web config, retired with the pages
+ * in Phase 14. The application now reads its configuration from environment
+ * variables, so nothing hardcodes a project identifier.
  */
-const REVIEWED_EXCEPTIONS = new Map([
-  [
-    "javascript/firebase.js",
-    "Firebase web API key: a public project identifier, not a secret. Retired with the legacy pages in Phase 14.",
-  ],
-]);
+const REVIEWED_EXCEPTIONS = new Map();
 
 const findings = [];
 const skipped = [];

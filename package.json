@@ -14,13 +14,10 @@
     "test:unit": "node ./node_modules/vitest/vitest.mjs run src/test",
     "test:rules": "node ./node_modules/firebase-tools/lib/bin/firebase.js emulators:exec --project demo-tabang --only firestore,storage \"node --test --test-concurrency=1 tests/rules/firestore.rules.test.mjs tests/rules/storage.rules.test.mjs\"",
     "start": "node server.mjs",
-    "baseline:inventory": "node scripts/legacy-baseline/build-inventory.mjs",
-    "test:links": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs",
-    "test:smoke": "node --test tests/legacy/http-smoke.test.mjs",
-    "test:baseline": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs tests/legacy/http-smoke.test.mjs",
     "scan:secrets": "node scripts/security/scan-secrets.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
-    "check": "npm run lint && npm run scan:secrets && npm run test:unit && npm run build"
+    "check": "npm run lint && npm run scan:secrets && npm run test:unit && npm run test:redirects && npm run build",
+    "test:redirects": "node --test tests/redirects/legacy-redirects.test.mjs"
   },
   "dependencies": {
     "firebase": "^12.17.1",

@@ -1022,15 +1022,29 @@ Remove duplicated legacy code only after functional replacement and explicit mig
 
 ### Tasks
 
-- [ ] Map every legacy URL to a new route or intentional redirect.
-- [ ] Verify no external or README links depend on removed files.
-- [ ] Move or remove legacy HTML, CSS, and JavaScript in reviewable groups.
-- [ ] Remove the obsolete static server if the selected hosting solution replaces it.
-- [ ] Remove duplicated Firebase initialization and old Cloudinary upload logic.
-- [ ] Run the full suite after each removal group.
-- [ ] Perform an emulator migration rehearsal.
-- [ ] Execute production migration only with explicit user approval, backups, validation queries, and rollback readiness.
-- [ ] Record the final architecture and known limitations.
+- [x] Map every legacy URL to a new route or intentional redirect. *(`docs/legacy-url-map.md`, enforced by `npm run test:redirects`.)*
+- [x] Verify no external or README links depend on removed files.
+- [x] Move or remove legacy HTML, CSS, and JavaScript in reviewable groups.
+- [ ] Remove the obsolete static server if the selected hosting solution replaces it. *(`server.mjs` is not obsolete: it holds the Cloudinary signing endpoints and the only secret in the system. It goes only if signing moves elsewhere.)*
+- [x] Remove duplicated Firebase initialization and old Cloudinary upload logic.
+- [x] Run the full suite after each removal group. *(Lint and the redirect suite were run after each group; a full `npm run check` is still needed on Windows.)*
+- [ ] Perform an emulator migration rehearsal. *(No schema migration was performed: the new collections were added alongside the old ones and no production data was rewritten, so there is nothing to rehearse.)*
+- [ ] Execute production migration only with explicit user approval, backups, validation queries, and rollback readiness. *(No production migration was executed.)*
+- [x] Record the final architecture and known limitations. *(`docs/final-architecture.md`.)*
+
+### What was retired
+
+Sixteen legacy pages became redirect stubs, and `JS/`, `javascript/`, and `css/` were deleted entirely — 51 files. The Phase 0 baseline suites went with them: they existed to protect pages that no longer exist, and were replaced by `tests/redirects/legacy-redirects.test.mjs`, which asserts every retired URL still lands on its replacement.
+
+Three files were kept deliberately: `index.html`, `404.html`, and the search-console verification token, which would silently break domain verification if removed.
+
+`Hotline.html` and `responderhotline.html` are stubs that do **not** auto-redirect. They keep the three numbers on screen because the hotline directory is still unseeded, and bouncing somebody away from the only numbers they can reach would be worse than a stale page. The redirect test encodes that exception rather than treating it as a failure.
+
+### Deferred items that came due
+
+- The CSP no longer needs `'unsafe-inline'` for styles or the CDN font origins; both are removed from `server.mjs` and the hosting config.
+- The secret scanner's reviewed exception is gone with `javascript/firebase.js`. No hardcoded project identifier remains.
+- Dead CSS and legacy CDN imports were deleted with the pages that used them.
 
 ### Acceptance checks
 
@@ -1117,9 +1131,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phases 0 to 12 complete; Phases 13 and 14 remain**
+- Current phase: **Phase 14 implemented; Phase 13 remains and is the only unstarted phase**
 - Last completed phase: **Phase 12 - Accessibility, performance, and security hardening**
-- Next exact action: **Begin Phase 14 (legacy retirement) ahead of Phase 13, at the user's discretion, since retiring the legacy pages removes hazards still reachable in production while CI and monitoring pay off over a longer horizon than this project currently has.**
+- Next exact action: **Run `npm run check` and `npm run test:redirects` on Windows to confirm Phase 14, then either execute Phase 13 or stop and work through the manual browser checklist in Section 9, which is the largest unverified surface remaining.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` twice with `npm run deploy:rules`, most recently carrying the incident transition rules, the hotline rating bounds, and the reports, publicFeed, and responderApplications indexes. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1143,8 +1157,8 @@ Update only after the corresponding verification has been run.
 | 10. Hotline consolidation | Complete | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
 | 11. Offline resilience | Complete | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
 | 12. Accessibility and hardening | Complete | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers`, `perf: load the firebase sdk on demand` | On Windows `npm run check` passed lint, the secret scan, 190 of 190 unit tests, and the build, producing 23 route chunks. The entry chunk initially fell only from 885 kB to 882 kB because `AuthProvider` statically imported the Firebase SDK; that import is now dynamic. **The rebuilt entry-chunk size has not been observed, so the improvement is unmeasured.** |
-| 13. CI, deployment, and operations | Not started | — | — |
-| 14. Legacy retirement | Not started | — | — |
+| 13. CI, deployment, and operations | Not started | — | Deliberately deferred behind Phase 14 at the user's discretion: retiring the legacy pages removed hazards reachable today, while CI and monitoring pay off over a longer horizon. |
+| 14. Legacy retirement | In progress | `chore: retire the legacy pages and assets` | 51 legacy files deleted, 16 URLs mapped to redirect stubs, the Phase 0 baseline suites replaced by a redirect suite that passes 4 of 4. `npm run lint` passes, `node --check server.mjs` passes, and the secret scan is clean with no exceptions. A full `npm run check` on Windows is outstanding. |
 
 Allowed status values: `Not started`, `In progress`, `Blocked`, `Complete`.
 
@@ -1524,6 +1538,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: No reviewer is seeded, so the responder application and review flows cannot be exercised end to end. The Phase 7 privacy review is unsigned. The entire manual browser checklist in Section 9 is untouched.
 - Commit: `docs: record phases 9 to 12 as complete`
 - Next exact action: Begin Phase 14 only.
+
+### 2026-08-15 — Phase 14: legacy retirement
+
+- Completed: Mapped every legacy URL to its replacement, converted sixteen pages to redirect stubs, deleted `JS/`, `javascript/`, and `css/` entirely, removed the legacy links from the application shells, replaced the Phase 0 baseline suites with a redirect suite, tightened the CSP now that inline styles and CDN fonts are unnecessary, removed the secret scanner's only exception, and recorded the final architecture and known limitations.
+- Files/components changed: `docs/legacy-url-map.md`, `docs/final-architecture.md`, sixteen legacy HTML stubs, deleted `JS/`, `javascript/`, `css/`, `docs/legacy-baseline/`, `tests/legacy/`, `scripts/legacy-baseline/`, added `tests/redirects/legacy-redirects.test.mjs`, `src/layouts/{PublicLayout,ResponderLayout}.jsx`, `src/routes/pages.jsx`, `server.mjs`, `firebase.json`, `scripts/security/scan-secrets.mjs`, `package.json`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `node --check server.mjs` passed. `node scripts/security/scan-secrets.mjs` passed with no exceptions remaining. `npm run test:redirects` passed 4 of 4 after two corrections to the test itself. `npm run check` on Windows is outstanding.
+- Decisions/deviations: The redirect suite initially failed on the two hotline pages because it assumed every stub auto-redirects. Those two deliberately do not: the directory is unseeded, so they keep the numbers on screen. The test now encodes that exception. `git rm` required `-f` because the deleted files carried the pre-existing line-ending-only modifications; nothing else was lost, and the files were being retired regardless. `server.mjs` was kept: it is not obsolete while it holds the signing endpoints. No migration rehearsal was needed because no production data was ever rewritten.
+- Uncommitted work: None. The line-ending-only modifications are resolved, since the files carrying them are gone.
+- Production changes: None in this step.
+- Blockers: Phase 13 is unstarted. No reviewer is seeded. The manual browser checklist has never been run.
+- Commit: `chore: retire the legacy pages and assets`
+- Next exact action: Verify on Windows, then choose between Phase 13 and the manual browser checklist.
 
 ### Handoff entry template
 
