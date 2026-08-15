@@ -730,19 +730,28 @@ Create a coordinated, auditable response workflow.
 
 ### Tasks
 
-- [ ] Migrate the responder layout and dashboard behind trusted role checks.
-- [ ] Implement an indexed incident queue with filters for kind, priority, status, municipality, assignment, and age.
-- [ ] Add protected incident detail routes.
-- [ ] Implement statuses: new, acknowledged, dispatched, on_scene, resolved, and cancelled.
-- [ ] Define allowed transitions and enforce them in both service logic and security rules/trusted functions.
-- [ ] Add responder assignment and prevent conflicting claims with transactions.
-- [ ] Record append-only events for acknowledgment, assignment, status changes, notes, and resolution.
-- [ ] Show acknowledgment and elapsed-response time.
-- [ ] Add resolution notes and resident-visible status summaries.
-- [ ] Define escalation behavior when acknowledgment targets are missed.
-- [ ] Avoid exposing identity evidence or unrelated profile fields to responders.
-- [ ] Sanitize all map popups and incident content.
-- [ ] Add concurrency, permission, and transition tests.
+- [x] Migrate the responder layout and dashboard behind trusted role checks. *(Layout and guards done in Phases 3 and 7; the dashboard content is slice 2.)*
+- [ ] Implement an indexed incident queue with filters for kind, priority, status, municipality, assignment, and age. *(Query spec and indexes done; the UI is slice 2.)*
+- [ ] Add protected incident detail routes. *(Slice 2.)*
+- [x] Implement statuses: new, acknowledged, dispatched, on_scene, resolved, and cancelled.
+- [x] Define allowed transitions and enforce them in both service logic and security rules/trusted functions.
+- [x] Add responder assignment and prevent conflicting claims with transactions.
+- [x] Record append-only events for acknowledgment, assignment, status changes, notes, and resolution.
+- [x] Show acknowledgment and elapsed-response time. *(Computed in the projection; rendered in slice 2.)*
+- [ ] Add resolution notes and resident-visible status summaries. *(Notes are stored on transition; the resident summary is slice 2.)*
+- [x] Define escalation behavior when acknowledgment targets are missed.
+- [x] Avoid exposing identity evidence or unrelated profile fields to responders.
+- [ ] Sanitize all map popups and incident content. *(Still no map; carried forward with the Phase 5 item.)*
+- [x] Add concurrency, permission, and transition tests.
+
+### Phase 8 slice plan
+
+- **Slice 1 (done):** the lifecycle core - transition table enforced in both service logic and rules, transactional first-claim-wins assignment, append-only audit events with server time and verified actor identity.
+- **Slice 2 (next):** the incident queue UI with filters, the protected detail route, elapsed-time and overdue rendering, resolution notes, and the resident-visible status summary.
+
+### Escalation decision
+
+An unacknowledged incident older than 15 minutes is flagged as overdue and sorts first, because the queue is ordered oldest-first. There is no background job: escalation depends on somebody looking at the queue. This was chosen deliberately over automated escalation, which would need scheduled backend work the project does not currently have. If nobody opens the queue, nothing escalates - a real limitation worth stating to responders during handover.
 
 ### Acceptance checks
 
@@ -1066,9 +1075,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Hard stop after completing Phase 7, awaiting the privacy review sign-off**
+- Current phase: **Phase 8 slice 1 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 7 - Responder application and approval workflow**
-- Next exact action: **Re-run `npm run test:unit` to confirm the pagination fix, seed the first reviewer by creating `roleAssignments/{uid}` in the console, sign off the privacy review, then begin Phase 8 only.**
+- Next exact action: **Run `npm run test:unit` and `npm run test:rules`, then `npm run deploy:rules` for the two new incident indexes and the transition rules. Then complete Phase 8 slice 2 (queue UI, detail route, resident-visible status).**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1087,7 +1096,7 @@ Update only after the corresponding verification has been run.
 | 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
 | 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
-| 8. Incident lifecycle | Not started | — | — |
+| 8. Incident lifecycle | In progress | `feat(incidents): implement auditable status transitions` | Slice 1 of 2. `npm run lint` passed. 24 new unit tests cover the transition table, terminal states, overdue flagging, the responder projection, the queue spec, claim races, and stale-screen transitions. 5 new emulator tests cover invalid transitions, reopening a resolved incident, assignment overwrites, forged actors, and backdated audit events. Unit and rules runs pending. |
 | 9. Dashboard integrity | Not started | — | — |
 | 10. Hotline consolidation | Not started | — | — |
 | 11. Offline resilience | Not started | — | — |
@@ -1145,6 +1154,11 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Require `reviewedBy` to equal the acting account, and forbid reviewing your own application | Without these, a reviewer could approve themselves or record someone else as the decision maker, which destroys the audit trail exactly where it matters | Two emulator tests cover both; a reviewer needing responder access must be approved by a different reviewer |
 | 2026-08-14 | Hide the reviewer navigation item from non-reviewer responders | The guard would only redirect them, so showing the link advertises a screen they cannot use | Nav items are derived from the session role rather than hard-coded |
 | 2026-08-15 | Extract `buildMyReportsQuerySpec` as a pure function and inject the Firestore query builder | Injecting only `collection` and `getDocs` was not a real seam: `where()` still needed a live Firestore instance to parse, so the pagination tests failed against a fake `db` | The owner filter, the tie-breaking order, and the page cap are asserted directly, and the Firestore-specific construction stays in one injectable place |
+| 2026-08-15 | First claim wins; a second responder is rejected rather than merged | User decision. A silent overwrite is how two teams each conclude the other one went | Claiming is transactional and the rules refuse an assignment change by anyone not already assigned |
+| 2026-08-15 | Duplicate the transition table in the security rules | Service logic can be bypassed by writing to Firestore directly, so it is a convenience rather than a boundary | The table exists twice and must be changed in both places; the emulator tests cover the rules copy |
+| 2026-08-15 | Treat resolved and cancelled as terminal, with no reopening | A resident has already been told the incident was handled, so a silent reopen would make the status they were shown untrue | A mistaken resolution needs a new report rather than an edit |
+| 2026-08-15 | Require `createdAt == request.time` on audit events | A device with a wrong clock, or a responder choosing a timestamp, could otherwise reorder the response timeline | Audit events must use `serverTimestamp()`; one existing test that wrote a fixed timestamp was updated |
+| 2026-08-15 | Flag overdue incidents visually with no automated escalation | User decision. Automation needs scheduled backend work the project does not have | Nothing escalates unless somebody opens the queue, which must be stated during handover |
 
 ## 14. Handoff Log
 
@@ -1301,6 +1315,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: The pagination fix needs one confirming `npm run test:unit` run. The first reviewer must be seeded by hand. Browser tests remain outstanding project-wide. The privacy review checkpoint is still open.
 - Commit: `test(reports): assert pagination through a pure query spec`
 - Next exact action: Confirm the unit run, sign off the privacy review, then begin Phase 8 only.
+
+### 2026-08-15 — Phase 8 slice 1: incident lifecycle core
+
+- Completed: Added the incident transition table with terminal resolved and cancelled states, enforced it in both service logic and security rules, made responder assignment transactional so the first claim wins and a second responder is rejected, made audit events append-only with server time and a verified actor, added a bounded oldest-first queue spec with its indexes, and added overdue flagging against a 15 minute acknowledgement target.
+- Files/components changed: `src/services/incidents/incidentLifecycle.js`, `src/services/incidents/incidentRepository.js`, `src/test/incidents.test.js`, `firebase/firestore.rules`, `firebase/firestore.indexes.json`, `tests/rules/firestore.rules.test.mjs`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `npm run test:unit` and `npm run test:rules` were not run in the assistant sandbox and are unverified.
+- Decisions/deviations: First-claim-wins assignment and visual-only escalation, both at the user's direction. The transition table is deliberately duplicated between the service layer and the rules, since only the rules are a real boundary. Requiring `createdAt == request.time` on events broke one existing test that wrote a fixed timestamp; that test now uses `serverTimestamp()`, which is the correct behaviour.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session. Two new `reports` composite indexes and the transition rules must be deployed with `npm run deploy:rules` before the queue works against production.
+- Blockers: Unit and rules runs outstanding. The Phase 7 privacy review is still unsigned. Map sanitization is still deferred across Phases 5 and 8 because no map is rendered yet.
+- Commit: `feat(incidents): implement auditable status transitions`
+- Next exact action: Verify, deploy the new indexes, then build Phase 8 slice 2.
 
 ### Handoff entry template
 
