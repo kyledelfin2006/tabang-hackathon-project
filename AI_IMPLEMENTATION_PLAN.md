@@ -1075,9 +1075,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 8 implemented; Phase 7 privacy review still awaiting sign-off**
-- Last completed phase: **Phase 7 - Responder application and approval workflow**
-- Next exact action: **Run `npm run test:unit` to confirm slice 2, then begin Phase 9 only. The Phase 7 privacy review and the first reviewer seed are still outstanding.**
+- Current phase: **Hard stop after completing Phase 8; Phase 7 privacy review still awaiting sign-off**
+- Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
+- Next exact action: **Deploy the incident indexes with `npm run deploy:rules`, seed the first reviewer, sign off the Phase 7 privacy review, then begin Phase 9 only.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1096,7 +1096,7 @@ Update only after the corresponding verification has been run.
 | 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
 | 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
-| 8. Incident lifecycle | In progress | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue` | Slice 1 verified on Windows: `npm run test:unit` and `npm run test:rules` both passed. Slice 2 adds 10 route tests covering overdue surfacing, filter plumbing, lost claim races, transition availability by lifecycle state, and the audit timeline; `npm run lint` passed. Slice 2 unit run pending. |
+| 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
 | 9. Dashboard integrity | Not started | — | — |
 | 10. Hotline consolidation | Not started | — | — |
 | 11. Offline resilience | Not started | — | — |
@@ -1342,6 +1342,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Slice 2 unit run outstanding. The Phase 7 privacy review is unsigned and the first reviewer is unseeded. Map sanitization is still deferred across Phases 5 and 8.
 - Commit: `feat(incidents): add the responder incident queue`
 - Next exact action: Confirm the unit run, then begin Phase 9 only.
+
+### 2026-08-15 — Phase 8 verification
+
+- Completed: Verified Phase 8 on the Windows workstation and corrected one stale test assertion.
+- Files/components changed: `src/test/authGuards.test.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run test:unit` passed 143 of 144. The single failure was `allows a responder into responder routes`, which still looked for the Phase 1 placeholder heading `Incident Queue`; the migrated page renders `Incident queue`. The guard behaved correctly, so only the assertion was wrong. It now matches on heading role rather than loose text. `npm run test:rules` passed all 25. `npm run lint` passed.
+- Decisions/deviations: This is the third stale-placeholder assertion found after a route migration. Asserting on heading role rather than raw text makes the remaining guard tests less brittle to copy changes.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session.
+- Blockers: The Phase 8 incident indexes are not deployed. The Phase 7 privacy review is unsigned and no reviewer is seeded, so the application and review flows cannot be exercised end to end. Map sanitization remains deferred into Phase 9.
+- Commit: `test(incidents): assert the responder route by heading`
+- Next exact action: Deploy indexes, seed the reviewer, sign off the privacy review, then begin Phase 9 only.
 
 ### Handoff entry template
 
