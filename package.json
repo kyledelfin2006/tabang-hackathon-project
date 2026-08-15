@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ./node_modules/vite/bin/vite.js",
-    "build": "node ./node_modules/vite/bin/vite.js build",
+    "build": "npm run check:env && node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
     "deploy:rules": "node ./node_modules/firebase-tools/lib/bin/firebase.js deploy --only firestore",
     "firebase:emulators": "node ./node_modules/firebase-tools/lib/bin/firebase.js emulators:start --project demo-tabang --only auth,firestore,storage",
@@ -18,7 +18,8 @@
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "check": "npm run lint && npm run scan:secrets && npm run check:contrast && npm run test:unit && npm run test:redirects && npm run build",
     "test:redirects": "node --test tests/redirects/legacy-redirects.test.mjs",
-    "check:contrast": "node ./scripts/a11y/check-contrast.mjs"
+    "check:contrast": "node ./scripts/a11y/check-contrast.mjs",
+    "check:env": "node ./scripts/build/check-env.mjs"
   },
   "dependencies": {
     "firebase": "^12.17.1",

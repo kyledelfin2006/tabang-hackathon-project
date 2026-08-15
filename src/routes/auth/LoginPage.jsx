@@ -5,12 +5,16 @@ import {
   FormStatus,
   PasswordField,
 } from "../../components/forms/FormField.jsx";
+import ErrorState from "../../components/feedback/ErrorState.jsx";
 import { useAuth } from "../../app/providers/useAuth.js";
-import { describeAuthError } from "../../services/auth/authErrors.js";
+import {
+  describeAuthError,
+  describeAuthErrorForDiagnostics,
+} from "../../services/auth/authErrors.js";
 import { validateLoginInput } from "../../services/auth/profile.js";
 
 export default function LoginPage() {
-  const { signIn } = useAuth();
+  const { signIn, initializationError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: "", password: "" });
@@ -42,10 +46,32 @@ export default function LoginPage() {
       // requested route (or the role home) happens through the guards.
       navigate(location.state?.from ?? "/app", { replace: true });
     } catch (error) {
+      // The code goes to the console so a failure is diagnosable without
+      // asking the person to guess. It carries no personal data.
+      console.error(describeAuthErrorForDiagnostics(error));
       setFormError(describeAuthError(error));
     } finally {
       setSubmitting(false);
     }
+  }
+
+  /*
+   * A form that cannot possibly work should not be offered.
+   *
+   * When Firebase has no configuration every submission fails identically,
+   * and the person is left retyping a password that was never wrong. Saying
+   * so up front is more honest than letting them find out one attempt at a
+   * time.
+   */
+  if (initializationError) {
+    return (
+      <section className="auth-panel">
+        <ErrorState
+          title="Sign-in is unavailable"
+          message="This site is not configured to sign in right now. This is a fault on our side, not a problem with your details or your connection. In an emergency, call the hotline numbers directly rather than waiting for this."
+        />
+      </section>
+    );
   }
 
   return (

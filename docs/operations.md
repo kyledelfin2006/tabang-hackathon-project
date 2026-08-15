@@ -82,6 +82,22 @@ npm run check
 npx firebase deploy --only hosting
 ```
 
+### Sign-in fails for everyone
+
+Almost always a build made without `.env`. Vite inlines `VITE_*` values at
+build time, so a build without them produces an app with no Firebase
+configuration: every sign-in and registration fails identically, and the error
+looks like a network fault.
+
+1. Copy `.env.example` to `.env`.
+2. Fill in the six `VITE_FIREBASE_*` values from the Firebase console under
+   Project settings, General, Your apps. These are web configuration, not
+   secrets, but `.env` stays out of git regardless.
+3. Rebuild and redeploy. `npm run build` now refuses to run without them.
+
+Confirm in the browser console. `Tabang: Firebase failed to initialise` names
+the missing keys.
+
 ### The app uses no webfont
 
 The Content-Security-Policy is `style-src 'self'; font-src 'self'`, so a
