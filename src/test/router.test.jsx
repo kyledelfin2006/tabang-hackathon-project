@@ -54,10 +54,15 @@ describe("application shell routing", () => {
 
   it("renders the not-found route", async () => {
     renderRoute("/missing-route");
+    // Same reason as above: match the heading, not the body copy. The old
+    // assertion was on Phase 1 wording that spoke about migration scope, which
+    // stopped being true once the migration finished.
     expect(
-      await screen.findByText(
-        "That route is outside the current migration scope.",
-      ),
+      await screen.findByRole("heading", { name: "That page does not exist" }),
+    ).toBeInTheDocument();
+    // The route must not fall through to a shell that implies a session.
+    expect(
+      screen.getByRole("link", { name: "Back to the home page" }),
     ).toBeInTheDocument();
   });
 });
