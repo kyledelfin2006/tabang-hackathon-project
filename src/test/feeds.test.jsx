@@ -6,6 +6,7 @@ import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
 import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
 import {
   REPORT_PAGE_SIZE,
+  buildMyReportsQuerySpec,
   createReportRepository,
   toPersonalReport,
 } from "../services/reports/reportRepository.js";
@@ -66,26 +67,56 @@ describe("personal report projection", () => {
 
 describe("owner-scoped pagination", () => {
   function repositoryOver(documents) {
-    const captured = { constraints: [] };
+    const specs = [];
 
     return {
-      captured,
+      specs,
       repository: createReportRepository({
         db: {},
-        collectionRef: () => ({ name: "reports" }),
-        runQuery: async (builtQuery) => {
-          captured.constraints.push(builtQuery);
+        // Bypasses Firestore query construction; the spec below is what the
+        // real builder consumes, so this asserts the same contract.
+        queryBuilder: (_db, spec) => {
+          specs.push(spec);
 
-          return {
-            docs: documents.map((document) => ({
-              id: document.id,
-              data: () => document,
-            })),
-          };
+          return spec;
         },
+        runQuery: async () => ({
+          docs: documents.map((document) => ({
+            id: document.id,
+            data: () => document,
+          })),
+        }),
       }),
     };
   }
+
+  it("filters by owner and orders deterministically", () => {
+    const spec = buildMyReportsQuerySpec({ reporterId: "resident-1" });
+
+    expect(spec.reporterId).toBe("resident-1");
+    // A tie on createdAt must still have a stable order.
+    expect(spec.orderBy).toEqual([
+      ["createdAt", "desc"],
+      ["__name__", "desc"],
+    ]);
+  });
+
+  it("caps the page size however large a caller asks for", () => {
+    expect(buildMyReportsQuerySpec({ reporterId: "r", pageSize: 500 }).limit).toBe(
+      REPORT_PAGE_SIZE,
+    );
+    expect(buildMyReportsQuerySpec({ reporterId: "r", pageSize: 0 }).limit).toBe(1);
+    expect(buildMyReportsQuerySpec({ reporterId: "r" }).limit).toBe(
+      REPORT_PAGE_SIZE,
+    );
+  });
+
+  it("passes a cursor through only when one is supplied", () => {
+    expect(buildMyReportsQuerySpec({ reporterId: "r" }).cursor).toBeNull();
+    expect(
+      buildMyReportsQuerySpec({ reporterId: "r", cursor: "doc-9" }).cursor,
+    ).toBe("doc-9");
+  });
 
   it("returns a cursor and a hasMore flag from a full page", async () => {
     const documents = Array.from({ length: REPORT_PAGE_SIZE }, (_, index) => ({
@@ -94,12 +125,13 @@ describe("owner-scoped pagination", () => {
       incidentStatus: "new",
       verificationStatus: "pending",
     }));
-    const { repository } = repositoryOver(documents);
+    const { repository, specs } = repositoryOver(documents);
     const page = await repository.listMyReports({ reporterId: "resident-1" });
 
     expect(page.reports).toHaveLength(REPORT_PAGE_SIZE);
     expect(page.hasMore).toBe(true);
     expect(page.cursor).not.toBeNull();
+    expect(specs[0].reporterId).toBe("resident-1");
   });
 
   it("reports no further pages when the page is short", async () => {
@@ -109,15 +141,15 @@ describe("owner-scoped pagination", () => {
     const page = await repository.listMyReports({ reporterId: "resident-1" });
 
     expect(page.hasMore).toBe(false);
+    expect(page.cursor).not.toBeNull();
   });
 
-  it("never requests more than one page worth of documents", async () => {
-    const { repository } = repositoryOver([]);
+  it("never asks Firestore for more than one page worth of documents", async () => {
+    const { repository, specs } = repositoryOver([]);
 
     await repository.listMyReports({ reporterId: "resident-1", pageSize: 500 });
 
-    // The cap is enforced inside the repository, not by the caller.
-    expect(REPORT_PAGE_SIZE).toBe(10);
+    expect(specs[0].limit).toBe(REPORT_PAGE_SIZE);
   });
 });
 

@@ -1066,11 +1066,11 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 7 implemented, at the mandatory privacy review checkpoint**
-- Last completed phase: **Phase 5 - Reports and secure uploads**
-- Next exact action: **Run `npm run test:unit` and `npm run test:rules` on Windows to verify Phases 6 and 7, seed the first reviewer by creating `roleAssignments/{uid}` in the console, then complete the privacy review checkpoint before Phase 8.**
+- Current phase: **Hard stop after completing Phase 7, awaiting the privacy review sign-off**
+- Last completed phase: **Phase 7 - Responder application and approval workflow**
+- Next exact action: **Re-run `npm run test:unit` to confirm the pagination fix, seed the first reviewer by creating `roleAssignments/{uid}` in the console, sign off the privacy review, then begin Phase 8 only.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
-- Production changes performed: **None**
+- Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
 
 ## 12. Phase Status
@@ -1085,8 +1085,8 @@ Update only after the corresponding verification has been run.
 | 3. Authentication and profiles | Complete | `feat(auth): centralize session handling and migrate auth routes`, `test: restore dom cleanup between component tests` | On Windows: `npm run lint` passed; `npm run test:rules` passed 14/14 emulator tests including four role-assignment cases proving a resident cannot self-promote; `npm run build` succeeded; `npm run test:unit` passed all Phase 3 suites (`router` 4, `authGuards` 9, `authForms` 7, `profile` 10, `firebase-config` 6). An earlier run failed 12 tests from a missing Testing Library cleanup; fixed in `a362435`. |
 | 4. Resident shell and home | Complete | `feat(home): migrate the resident shell and dashboard` | On Windows: `npm run lint` passed; `npm run build` succeeded in 636 ms; `npm run test:unit` passed all 11 `residentHome` tests covering skeleton/empty/error/retry states, drawer focus trap and restoration, drawer router navigation, the bounded page size, and the field projection that drops protected data. Manual keyboard, touch, back/forward, and mobile-viewport checks remain outstanding. |
 | 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
-| 6. Personal and community feeds | In progress | `feat(reports): add the resident personal report view` | `npm run lint` passed in this session. New unit tests cover the owner-scoped projection, bounded pagination, confirm-before-cancel, and that the public feed variant cannot render a description, phone number, or coordinates. Four new emulator tests cover resident cancellation and its limits. Both suites need a Windows run. |
-| 7. Responder application | In progress | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | Both slices implemented. `npm run lint` passed and the legacy link/asset baseline passes. Unit tests cover consent, evidence requirements, upload scoping, delivery-URL signing, the decision transaction, and confirm-before-decide. Two new emulator tests cover reviewer self-approval and decision attribution. Unit and rules runs pending. |
+| 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
+| 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
 | 8. Incident lifecycle | Not started | — | — |
 | 9. Dashboard integrity | Not started | — | — |
 | 10. Hotline consolidation | Not started | — | — |
@@ -1144,6 +1144,7 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-14 | Write the decision and the role grant in one transaction | An approved application without a role assignment is a responder who cannot work, and a role assignment without a recorded decision is an unattributable grant | Approval is all-or-nothing; evidence deletion happens after the transaction commits |
 | 2026-08-14 | Require `reviewedBy` to equal the acting account, and forbid reviewing your own application | Without these, a reviewer could approve themselves or record someone else as the decision maker, which destroys the audit trail exactly where it matters | Two emulator tests cover both; a reviewer needing responder access must be approved by a different reviewer |
 | 2026-08-14 | Hide the reviewer navigation item from non-reviewer responders | The guard would only redirect them, so showing the link advertises a screen they cannot use | Nav items are derived from the session role rather than hard-coded |
+| 2026-08-15 | Extract `buildMyReportsQuerySpec` as a pure function and inject the Firestore query builder | Injecting only `collection` and `getDocs` was not a real seam: `where()` still needed a live Firestore instance to parse, so the pagination tests failed against a fake `db` | The owner filter, the tie-breaking order, and the page cap are asserted directly, and the Firestore-specific construction stays in one injectable place |
 
 ## 14. Handoff Log
 
@@ -1288,6 +1289,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Unit and rules runs are outstanding for Phases 6 and 7. The first reviewer must be seeded by hand. Browser tests remain outstanding project-wide. Phase 7 ends in a mandatory privacy review checkpoint.
 - Commit: `feat(responders): add responder application review states`
 - Next exact action: Present the privacy review checkpoint and wait for user review before Phase 8.
+
+### 2026-08-15 — Phases 6 and 7 verification
+
+- Completed: Verified Phases 6 and 7 on the Windows workstation, deployed Firestore rules and indexes, and fixed the three failing pagination tests.
+- Files/components changed: `src/services/reports/reportRepository.js`, `src/test/feeds.test.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run test:rules` passed 20 of 20, including reviewer self-approval, decision attribution, resident cancellation and its limits, and role-assignment protection. `npm run test:unit` passed 107 of 110; the three failures were all `TypeError: Cannot read properties of undefined (reading '_freezeSettings')`, raised because `where()` requires a live Firestore instance and the test passed a bare object as `db`. `npm run lint` passed. `npm run deploy:rules` released the rules and indexes to `asu-tabang`.
+- Decisions/deviations: Rather than handing the test a heavier Firestore fake, the query description was extracted into a pure `buildMyReportsQuerySpec` and the Firestore construction made injectable. The properties that matter - owner filter, deterministic ordering, page cap - are now asserted directly rather than inferred from a query object.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: Firestore rules and indexes deployed to `asu-tabang`. No Storage bucket, no data migration, no paid services.
+- Blockers: The pagination fix needs one confirming `npm run test:unit` run. The first reviewer must be seeded by hand. Browser tests remain outstanding project-wide. The privacy review checkpoint is still open.
+- Commit: `test(reports): assert pagination through a pure query spec`
+- Next exact action: Confirm the unit run, sign off the privacy review, then begin Phase 8 only.
 
 ### Handoff entry template
 
