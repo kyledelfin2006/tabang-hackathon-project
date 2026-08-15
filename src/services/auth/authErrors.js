@@ -54,6 +54,7 @@ export function describeAuthError(error) {
     case "auth/unauthorized-domain":
     case "auth/invalid-api-key":
     case "auth/api-key-not-valid":
+    case "app/auth-unavailable":
       return SETUP_FAILURE_MESSAGE;
 
     // A Firestore rejection during registration, after the account itself was

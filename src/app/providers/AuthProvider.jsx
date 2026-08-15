@@ -55,7 +55,12 @@ export default function AuthProvider({ children, gateway }) {
         }
 
         // Missing configuration must fail loudly rather than silently
-        // rendering protected content.
+        // rendering protected content. The message names the missing
+        // VITE_FIREBASE_* keys, so it goes to the console verbatim: without it
+        // the only visible symptom is every sign-in failing for no stated
+        // reason.
+        console.error("Tabang: Firebase failed to initialise.", error);
+
         setLoadedGateway({
           gateway: null,
           error: error instanceof Error ? error.message : String(error),
@@ -87,7 +92,21 @@ export default function AuthProvider({ children, gateway }) {
 
   const requireGateway = useCallback(() => {
     if (!setup?.gateway) {
-      throw new Error("Authentication is unavailable in this environment.");
+      /*
+       * Carries a code so the error mapper can name this properly.
+       *
+       * Without one it fell through to the generic message, which told the
+       * person to try again in a moment — advice that can never work, because
+       * the app has no Firebase configuration and every retry fails
+       * identically. The cause is almost always a build made without the
+       * VITE_FIREBASE_* values present.
+       */
+      const error = new Error(
+        "Authentication is unavailable: the app has no Firebase configuration.",
+      );
+
+      error.code = "app/auth-unavailable";
+      throw error;
     }
 
     return setup.gateway;
