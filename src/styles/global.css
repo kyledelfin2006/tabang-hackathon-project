@@ -870,3 +870,55 @@ select.form-field__input {
   font-size: 0.8125rem;
   margin: var(--space-2) 0 0;
 }
+
+/* Phase 12 — accessibility */
+.skip-link {
+  background: var(--color-primary);
+  border-radius: 0 0 var(--radius-input) 0;
+  color: #fff;
+  left: 0;
+  padding: var(--space-3) var(--space-4);
+  position: absolute;
+  top: 0;
+  transform: translateY(-120%);
+  z-index: 60;
+}
+
+.skip-link:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+  transform: translateY(0);
+}
+
+/*
+ * A visible focus ring on every interactive element. The default outline is
+ * removed in several places above, so this is the fallback that keeps keyboard
+ * users able to see where they are.
+ */
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+
+/* Touch targets stay reachable with imprecise taps on a wet phone screen. */
+.action-button,
+.bottom-nav-shell__item,
+.drawer-link {
+  min-height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

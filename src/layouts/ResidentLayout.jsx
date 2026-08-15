@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
+import SkipLink from "../components/navigation/SkipLink.jsx";
 import BottomNav from "../components/navigation/BottomNav.jsx";
 import NavDrawer from "../components/navigation/NavDrawer.jsx";
 import { useAuth } from "../app/providers/useAuth.js";
@@ -39,6 +40,7 @@ export default function ResidentLayout() {
 
   return (
     <div className="shell shell--resident">
+      <SkipLink />
       <AppHeader
         eyebrow="Tabang"
         title={`Kumusta, ${displayName}`}

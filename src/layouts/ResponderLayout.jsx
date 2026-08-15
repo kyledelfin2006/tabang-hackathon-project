@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
+import SkipLink from "../components/navigation/SkipLink.jsx";
 import BottomNav from "../components/navigation/BottomNav.jsx";
 import { useAuth } from "../app/providers/useAuth.js";
 
@@ -31,6 +32,7 @@ export default function ResponderLayout() {
 
   return (
     <div className="shell shell--responder">
+      <SkipLink />
       <AppHeader
         eyebrow="Responder shell"
         title="Responder Workspace"
@@ -38,7 +40,7 @@ export default function ResponderLayout() {
         actionLabel="Legacy dashboard"
         actionHref="/responderhomepage.html"
       />
-      <main className="shell__content shell__content--with-nav">
+      <main className="shell__content shell__content--with-nav" id="main">
         <Outlet />
       </main>
       <BottomNav items={items} />
