@@ -15,7 +15,7 @@ cp .env.example .env      # fill in the VITE_FIREBASE_* values
 npm run dev
 ```
 
-`npm run dev` serves the app. Without Firebase values the app loads but shows
+`npm run dev` servesnp the app. Without Firebase values the app loads but shows
 that sign-in is unavailable rather than failing silently.
 
 ## Commands
