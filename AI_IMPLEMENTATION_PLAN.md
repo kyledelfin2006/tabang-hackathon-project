@@ -931,7 +931,7 @@ Bring the full migrated experience to a consistent quality baseline.
 - [x] Verify color contrast and do not use color as the only status signal. *(Every badge carries a text label; contrast still needs a tool run against the deployed build.)*
 - [x] Add reduced-motion behavior.
 - [x] Test screen-reader announcements for submission and incident-status changes. *(Live regions are asserted in the auth, report, and queue tests; announcement behaviour in a real screen reader is outstanding with the browser tests.)*
-- [x] Lazy-load maps and heavy routes. *(All eleven guarded routes are split; there is still no map.)*
+- [x] Lazy-load maps and heavy routes. *(All eleven guarded routes are split and the Firebase SDK is dynamically imported; there is still no map.)*
 - [x] Optimize images and add appropriate responsive sizing. *(The 830 KB Base64 landing logo became a 14 KB file in Phase 4; no other large images remain in the migrated app.)*
 - [ ] Remove dead CSS, duplicate assets, legacy CDN imports, and unused dependencies. *(Legacy CSS and CDN imports belong to pages Phase 14 retires; removing them now would break pages still in use.)*
 - [x] Add Content Security Policy and other production headers through the deployment platform.
@@ -1119,7 +1119,7 @@ Update this section after coding in every session.
 
 - Current phase: **Phase 12 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
-- Next exact action: **Run `npm run check` (lint, secret scan, unit tests, build) and confirm the build reports several chunks rather than one 885 kB bundle, then begin Phase 13 only.**
+- Next exact action: **Run `npm run check` again and confirm the entry chunk is now a fraction of 882 kB with a separate Firebase chunk, then begin Phase 13 only.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1142,7 +1142,7 @@ Update only after the corresponding verification has been run.
 | 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
 | 10. Hotline consolidation | In progress | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
 | 11. Offline resilience | In progress | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
-| 12. Accessibility and hardening | In progress | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers` | Both slices implemented. Slice 1 verified on Windows. Slice 2 splits all eleven guarded routes, adds a CSP and four other headers on both serving paths, and adds `scan:secrets` and `audit:deps`. `npm run lint` passed and the secret scan runs clean with one reviewed exception. A `npm run build` is needed to confirm the bundle actually splits. |
+| 12. Accessibility and hardening | In progress | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers`, `perf: load the firebase sdk on demand` | On Windows `npm run check` passed lint, the secret scan, 190 of 190 unit tests, and the build. The build produced 23 chunks but the entry chunk only fell from 885 kB to 882 kB, because `AuthProvider` statically imported the Firebase SDK and is mounted on every route. That import is now dynamic; a rebuild is needed to confirm the entry chunk drops. |
 | 13. CI, deployment, and operations | Not started | — | — |
 | 14. Legacy retirement | Not started | — | — |
 
@@ -1223,6 +1223,7 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Name every permitted origin in `connect-src` rather than allowing `https:` | An explicit list limits where data could be sent if a script were injected through report text, which is the realistic injection path here | Adding a third-party service now requires a deliberate CSP edit |
 | 2026-08-15 | Record the legacy Firebase web API key as a reviewed exception rather than removing or ignoring it | A web API key is a public project identifier, not a credential, so treating it as a leak would train the team to ignore the scanner | The exception carries its reasoning and expires with the legacy pages in Phase 14 |
 | 2026-08-15 | Leave legacy CSS and CDN imports in place | They belong to pages still serving residents; removing them now would break working pages to satisfy a cleanup task | Deferred to Phase 14, which retires the pages themselves |
+| 2026-08-15 | Import the Firebase SDK dynamically inside `AuthProvider` | Route splitting moved the entry chunk from 885 kB to 882 kB, because the provider is mounted on every route and statically imported the SDK. The weight was never the routes | Anyone opening the landing page or a hotline number no longer downloads the whole SDK first; the provider already had a loading state, so the asynchronous gateway fits it |
 
 ## 14. Handoff Log
 
@@ -1499,6 +1500,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: The build must be run to confirm the bundle splits. Deployment, seeding, the Phase 7 privacy review, and browser tests remain outstanding.
 - Commit: `perf: split routes and add browser security headers`
 - Next exact action: Run `npm run check`, confirm multiple chunks in the build output, then begin Phase 13 only.
+
+### 2026-08-15 — Phase 12 verification and the real bundle fix
+
+- Completed: Verified Phase 12 on Windows, then found and fixed the actual cause of the large bundle.
+- Files/components changed: `src/app/providers/AuthProvider.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run check` passed end to end: lint clean, secret scan clean with one reviewed exception, 190 of 190 unit tests, and a successful build. The build emitted 23 chunks, confirming route splitting worked, but the entry chunk fell only from 885 kB to 882 kB. Tracing the imports showed `AuthProvider` statically importing `firebaseAuthGateway`, which pulls `firebase/app`, `auth`, `firestore`, and `storage`. Because the provider is mounted for every route, splitting the routes could never move it. `npm run lint` passes after the change; a rebuild is still needed to measure the result.
+- Decisions/deviations: The gateway is now imported dynamically. `setup` is memoised so the session observer does not resubscribe each render, and every read of it tolerates the brief null while the chunk loads. Tests inject a gateway and never take this path, so the suite is unaffected.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None.
+- Blockers: The rebuild must confirm the entry chunk actually drops. Deployment, seeding, the Phase 7 privacy review, and browser tests remain outstanding.
+- Commit: `perf: load the firebase sdk on demand`
+- Next exact action: Rerun `npm run check`, confirm the entry chunk size, then begin Phase 13 only.
 
 ### Handoff entry template
 
