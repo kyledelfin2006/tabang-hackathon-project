@@ -4,7 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import AppProviders from "../app/providers/AppProviders.jsx";
 import { createTestRouter } from "../app/router.jsx";
 import { createFakeAuthGateway } from "./fakeAuthGateway.js";
-import { GENERIC_CREDENTIAL_MESSAGE } from "../services/auth/authErrors.js";
+import {
+  GENERIC_CREDENTIAL_MESSAGE,
+  describeAuthError,
+} from "../services/auth/authErrors.js";
 
 function renderRoute(path, actions = {}) {
   const gateway = createFakeAuthGateway({ session: null, actions });
@@ -147,5 +150,48 @@ describe("authentication forms", () => {
     expect(await screen.findByRole("status")).toHaveTextContent(
       "If that email address has an account",
     );
+  });
+});
+
+/*
+ * These guard the wording, not the plumbing. The fallback message previously
+ * told everyone to check their connection, so a misconfigured sign-in provider
+ * looked exactly like bad wifi and sent people to run speed tests.
+ */
+describe("auth error messages", () => {
+  it("does not blame the network for an unrecognised failure", () => {
+    const message = describeAuthError({ code: "auth/something-new" });
+
+    expect(message).not.toMatch(/connection|internet|offline|wifi/i);
+    expect(message).toMatch(/on our side/i);
+  });
+
+  it("still blames the network when the network is genuinely at fault", () => {
+    expect(describeAuthError({ code: "auth/network-request-failed" })).toMatch(
+      /connection/i,
+    );
+  });
+
+  it("names a setup fault as ours rather than asking the user to retry", () => {
+    for (const code of [
+      "auth/operation-not-allowed",
+      "auth/configuration-not-found",
+      "auth/unauthorized-domain",
+    ]) {
+      const message = describeAuthError({ code });
+
+      expect(message).toMatch(/not configured|on our side/i);
+      expect(message).not.toMatch(/connection/i);
+    }
+  });
+
+  it("keeps every credential failure indistinguishable", () => {
+    const messages = [
+      "auth/user-not-found",
+      "auth/wrong-password",
+      "auth/invalid-credential",
+    ].map((code) => describeAuthError({ code }));
+
+    expect(new Set(messages).size).toBe(1);
   });
 });

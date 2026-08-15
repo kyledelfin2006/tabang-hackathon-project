@@ -6,7 +6,10 @@ import {
   PasswordField,
 } from "../../components/forms/FormField.jsx";
 import { useAuth } from "../../app/providers/useAuth.js";
-import { describeAuthError } from "../../services/auth/authErrors.js";
+import {
+  describeAuthError,
+  describeAuthErrorForDiagnostics,
+} from "../../services/auth/authErrors.js";
 import {
   MIN_PASSWORD_LENGTH,
   validateSignupInput,
@@ -59,6 +62,9 @@ export default function SignupPage() {
       });
       navigate("/app", { replace: true });
     } catch (error) {
+      // The code goes to the console so a failure is diagnosable without
+      // asking the person to guess. It carries no personal data.
+      console.error(describeAuthErrorForDiagnostics(error));
       setFormError(describeAuthError(error));
     } finally {
       setSubmitting(false);
