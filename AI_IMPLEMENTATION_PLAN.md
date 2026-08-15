@@ -783,14 +783,24 @@ Remove misleading operational information.
 
 ### Tasks
 
-- [ ] Remove or explicitly gate all hardcoded disaster KPIs and sample incidents.
-- [ ] Calculate supported metrics from verified, bounded data sources.
-- [ ] Show source, coverage area, last-updated timestamp, and freshness/staleness.
-- [ ] Distinguish unverified reports from verified incidents.
-- [ ] Add an obvious demo-mode banner if sample data is intentionally enabled locally.
-- [ ] Ensure production mode cannot silently fall back to demo incidents.
-- [ ] Verify map legends match actual statuses.
-- [ ] Add graceful behavior when metrics cannot be loaded.
+- [x] Remove or explicitly gate all hardcoded disaster KPIs and sample incidents.
+- [x] Calculate supported metrics from verified, bounded data sources.
+- [x] Show source, coverage area, last-updated timestamp, and freshness/staleness.
+- [x] Distinguish unverified reports from verified incidents.
+- [x] Add an obvious demo-mode banner if sample data is intentionally enabled locally. *(No demo mode exists. Sample data was removed rather than gated, so there is no mode to banner.)*
+- [x] Ensure production mode cannot silently fall back to demo incidents.
+- [ ] Verify map legends match actual statuses. *(No map is rendered. Carried forward with the map sanitization items from Phases 5 and 8.)*
+- [x] Add graceful behavior when metrics cannot be loaded.
+
+### What the legacy dashboard claimed
+
+`Dashboard.html` displayed 128,750 people affected, 27,450 evacuated, and similar totals under a **Live** badge. Nothing in the system could count any of them; they were static HTML. Presenting invented figures as live operational data during a flood is the most dangerous defect found in this migration, so the page was retired rather than restyled.
+
+### Approach taken
+
+Rather than filtering fabricated metrics out at render time, `METRIC_DEFINITIONS` lists the only metrics the app is willing to display, and a metric may appear there only if it can be counted from records the deployment holds. A figure like "people affected" is absent by construction. A test asserts those keys stay absent.
+
+There is deliberately no demo mode and no cached fallback: when the data source fails, the dashboard shows nothing and says so. A dashboard that invents figures on failure is worse than one that admits it has none.
 
 ### Acceptance checks
 
@@ -1075,9 +1085,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Hard stop after completing Phase 8; Phase 7 privacy review still awaiting sign-off**
+- Current phase: **Phase 9 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
-- Next exact action: **Deploy the incident indexes with `npm run deploy:rules`, seed the first reviewer, sign off the Phase 7 privacy review, then begin Phase 9 only.**
+- Next exact action: **Run `npm run test:unit` to confirm Phase 9, deploy the incident indexes, seed the first reviewer, sign off the Phase 7 privacy review, then begin Phase 10 only.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1097,7 +1107,7 @@ Update only after the corresponding verification has been run.
 | 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
 | 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
-| 9. Dashboard integrity | Not started | — | — |
+| 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics` | `npm run lint` passed. 16 new tests cover the metric allow-list, open-incident counting, verified versus unverified separation, truncation honesty, staleness, and that a failed load shows no figures at all. Unit run pending. |
 | 10. Hotline consolidation | Not started | — | — |
 | 11. Offline resilience | Not started | — | — |
 | 12. Accessibility and hardening | Not started | — | — |
@@ -1162,6 +1172,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Derive the detail page's action buttons from `allowedNextStatuses` | Hard-coding buttons per screen would let the UI offer a step the rules reject, which reads as a broken app rather than a refused action | The screen can only ever offer transitions the lifecycle permits |
 | 2026-08-15 | Ship only status and kind filters | Priority, municipality, and assignment filters each need another composite index, and there is no real data yet to show they help | The remaining filters are recorded as deferred rather than silently dropped |
 | 2026-08-15 | Treat a lost claim race as an ordinary message, not an error state | Two responders reaching for the same incident is expected during a flood; showing a failure would suggest the app broke | The queue refreshes and states who holds it, so the responder can move to the next incident |
+| 2026-08-15 | Define metrics as an allow-list rather than filtering fabricated ones out | Filtering at render time leaves the invented figures in the codebase, one careless change away from returning | `METRIC_DEFINITIONS` is the only source of displayable metrics, and a test asserts population and evacuation keys stay absent |
+| 2026-08-15 | Show nothing when metrics fail to load, with no cached or sample fallback | A dashboard that invents figures when its source fails is more dangerous than one that admits it has none, especially mid-flood | Responders see an explicit unavailable state and can still use the incident queue |
+| 2026-08-15 | State when counts were taken and whether they are totals | The queue is page-capped, so counts can silently understate a large incident load | The dashboard reports the count time and says explicitly when the page limit was reached |
+| 2026-08-15 | Retire `Dashboard.html` to a redirect stub | It presented 128,750 affected and 27,450 evacuated as live data with no source, which Section 2.2 forbids | The URL still resolves, the fabricated figures are gone, and the comment records what was there |
 
 ## 14. Handoff Log
 
@@ -1354,6 +1368,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: The Phase 8 incident indexes are not deployed. The Phase 7 privacy review is unsigned and no reviewer is seeded, so the application and review flows cannot be exercised end to end. Map sanitization remains deferred into Phase 9.
 - Commit: `test(incidents): assert the responder route by heading`
 - Next exact action: Deploy indexes, seed the reviewer, sign off the privacy review, then begin Phase 9 only.
+
+### 2026-08-15 — Phase 9: dashboard integrity
+
+- Completed: Retired the fabricated KPI dashboard, replaced it with an operational summary counted from records the deployment holds, added source, count time, coverage, and staleness to every figure, separated verified from unverified incidents, and made a failed load show nothing rather than fall back to cached or sample numbers.
+- Files/components changed: `src/services/metrics/dashboardMetrics.js`, `src/routes/responder/ResponderDashboardPage.jsx`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/styles/global.css`, `src/test/dashboard.test.jsx`, `Dashboard.html`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. The new tests were not run in the assistant sandbox.
+- Decisions/deviations: Built the metric list as an allow-list rather than filtering invented figures out, so a fabricated metric cannot reappear through a careless edit. No demo mode was added: the sample data was removed rather than gated, so there is no mode needing a banner. The map legend task stays deferred with the other map items, since no map exists yet.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session.
+- Blockers: Unit run outstanding. The incident indexes from Phase 8 are still undeployed, the first reviewer is unseeded, and the Phase 7 privacy review is unsigned.
+- Commit: `fix(dashboard): replace hardcoded live disaster metrics`
+- Next exact action: Confirm the unit run, then begin Phase 10 only.
 
 ### Handoff entry template
 

@@ -151,23 +151,6 @@ export function HotlinesRoute() {
   );
 }
 
-export function ResponderDashboardRoute() {
-  return (
-    <RouteShellPage
-      area="Responder route"
-      title="Responder Dashboard"
-      summary="Responder routes now share one operational layout instead of separate HTML entry screens."
-      statusLabel="Responder layout"
-      routePath="/responder"
-      legacyHref="/responderhomepage.html"
-      checklist={[
-        "Responder layout renders shared bottom navigation.",
-        "A dedicated responder route tree now exists in the shell.",
-      ]}
-    />
-  );
-}
-
 export function ResponderHotlinesRoute() {
   return (
     <RouteShellPage

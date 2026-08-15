@@ -21,11 +21,11 @@ import ResponderApplicationPage from "../routes/responder/ResponderApplicationPa
 import ReviewQueuePage from "../routes/responder/ReviewQueuePage.jsx";
 import IncidentQueuePage from "../routes/responder/IncidentQueuePage.jsx";
 import IncidentDetailPage from "../routes/responder/IncidentDetailPage.jsx";
+import ResponderDashboardPage from "../routes/responder/ResponderDashboardPage.jsx";
 import {
   HotlinesRoute,
   LandingRoute,
   NotFoundRoute,
-  ResponderDashboardRoute,
   ResponderHotlinesRoute,
   RouteErrorPage,
 } from "../routes/pages.jsx";
@@ -92,7 +92,7 @@ export const appRoutes = [
     ),
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <ResponderDashboardRoute /> },
+      { index: true, element: <ResponderDashboardPage /> },
       { path: "incidents", element: <IncidentQueuePage /> },
       { path: "incidents/:id", element: <IncidentDetailPage /> },
       {
