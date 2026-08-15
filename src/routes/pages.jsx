@@ -1,97 +1,5 @@
-import { useMemo, useState } from "react";
 import { Link, useRouteError } from "react-router-dom";
-import EmptyState from "../components/feedback/EmptyState.jsx";
 import ErrorState from "../components/feedback/ErrorState.jsx";
-import LoadingState from "../components/feedback/LoadingState.jsx";
-import Modal from "../components/feedback/Modal.jsx";
-import { useToast } from "../components/feedback/useToast.js";
-
-function RouteShellPage({
-  area,
-  title,
-  summary,
-  statusLabel,
-  routePath,
-  legacyHref,
-  checklist,
-}) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const { pushToast } = useToast();
-  const routeChecklist = useMemo(() => checklist ?? [], [checklist]);
-
-  return (
-    <>
-      <section className="page-hero">
-        <div>
-          <span className="section-tag">{area}</span>
-          <h2>{title}</h2>
-          <p>{summary}</p>
-        </div>
-        <div className="hero-pill">{statusLabel}</div>
-      </section>
-
-      <section className="card-grid">
-        <article className="surface-card">
-          <h3>Route placeholder</h3>
-          <p>This route is now owned by the new React shell while the working legacy page remains reachable.</p>
-          <div className="detail-list">
-            <span>
-              <strong>New route</strong>
-              {routePath}
-            </span>
-            <span>
-              <strong>Legacy page</strong>
-              <a href={legacyHref}>{legacyHref}</a>
-            </span>
-          </div>
-          <div className="button-row">
-            <button className="action-button" onClick={() => pushToast(`${title} toast preview`)} type="button">
-              Show toast
-            </button>
-            <button
-              className="action-button action-button--secondary"
-              onClick={() => setModalOpen(true)}
-              type="button"
-            >
-              Open modal
-            </button>
-          </div>
-        </article>
-
-        <LoadingState
-          title="Reusable loading pattern"
-          message="The migration now has one loading component instead of repeating bespoke spinners per page."
-        />
-        <EmptyState
-          title="Reusable empty pattern"
-          message="Future data-backed routes can reuse this placeholder when no reports, hotlines, or incidents are available."
-        />
-        <ErrorState
-          title="Reusable error pattern"
-          message="Each route now has a shared recoverable error treatment instead of page-specific ad hoc alerts."
-          actionLabel="Acknowledge"
-          onAction={() => pushToast(`${title} error state acknowledged`)}
-        />
-      </section>
-
-      <section className="surface-card">
-        <h3>Phase 1 completion notes</h3>
-        <ul className="checklist">
-          {routeChecklist.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </section>
-
-      <Modal
-        open={modalOpen}
-        title={`${title} modal preview`}
-        description="This shared modal proves the shell has a common dialog treatment before feature migrations begin."
-        onClose={() => setModalOpen(false)}
-      />
-    </>
-  );
-}
 
 export function LandingRoute() {
   return (
@@ -122,66 +30,9 @@ export function LandingRoute() {
           <li>
             <Link to="/privacy">Privacy policy and terms</Link>
           </li>
-          <li>
-            <a href="/legacy-index.html">Legacy landing prototype</a>
-          </li>
-          <li>
-            <a href="/Homepage.html">Legacy resident home</a>
-          </li>
         </ul>
       </section>
     </div>
-  );
-}
-
-export function HotlinesRoute() {
-  return (
-    <RouteShellPage
-      area="Resident route"
-      title="Hotlines"
-      summary="Resident hotline access now has a stable route in the new shell."
-      statusLabel="Resident layout"
-      routePath="/app/hotlines"
-      legacyHref="/Hotline.html"
-      checklist={[
-        "Hotline route will eventually be shared by resident and responder flows.",
-        "Legacy hotline page remains reachable during migration.",
-      ]}
-    />
-  );
-}
-
-export function ResponderDashboardRoute() {
-  return (
-    <RouteShellPage
-      area="Responder route"
-      title="Responder Dashboard"
-      summary="Responder routes now share one operational layout instead of separate HTML entry screens."
-      statusLabel="Responder layout"
-      routePath="/responder"
-      legacyHref="/responderhomepage.html"
-      checklist={[
-        "Responder layout renders shared bottom navigation.",
-        "A dedicated responder route tree now exists in the shell.",
-      ]}
-    />
-  );
-}
-
-export function ResponderHotlinesRoute() {
-  return (
-    <RouteShellPage
-      area="Responder route"
-      title="Responder Hotlines"
-      summary="Responder hotline analytics now have a stable destination in the new route tree."
-      statusLabel="Responder layout"
-      routePath="/responder/hotlines"
-      legacyHref="/responderhotline.html"
-      checklist={[
-        "Responder hotline route now lives in the shared shell.",
-        "Later hotline consolidation can reuse the same route model.",
-      ]}
-    />
   );
 }
 
@@ -211,18 +62,15 @@ export function NotFoundRoute() {
       <main className="shell__content">
         <section className="surface-card surface-card--wide">
           <span className="section-tag">Not found</span>
-          <h2>That route is outside the current migration scope.</h2>
+          <h2>That page does not exist</h2>
           <p>
-            The Phase 1 shell now has a proper not-found page. Clean routes should be rewritten to the
-            app shell in Vite or production hosting, while missing file assets should return a real 404.
+            That address does not match any page. If you followed an old link,
+            the pages that moved are listed in the project documentation.
           </p>
           <div className="button-row">
             <Link className="action-button" to="/">
-              Back to shell home
+              Back to the home page
             </Link>
-            <a className="action-button action-button--secondary" href="/legacy-index.html">
-              Open legacy landing
-            </a>
           </div>
         </section>
       </main>

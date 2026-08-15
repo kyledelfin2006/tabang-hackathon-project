@@ -1,3 +1,10 @@
+/* eslint-disable react-refresh/only-export-components --
+ * This module is the route table, not a component module. The lazy() bindings
+ * are route definitions that sit alongside the exported route array, so fast
+ * refresh cannot treat the file as a single component and the rule does not
+ * apply usefully here.
+ */
+import { lazy } from "react";
 import { createBrowserRouter, createMemoryRouter } from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout.jsx";
 import ResidentLayout from "../layouts/ResidentLayout.jsx";
@@ -12,23 +19,25 @@ import LoginPage from "../routes/auth/LoginPage.jsx";
 import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
 import ResetPasswordPage from "../routes/auth/ResetPasswordPage.jsx";
 import SignupPage from "../routes/auth/SignupPage.jsx";
-import AccountPage from "../routes/account/AccountPage.jsx";
-import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
-import ReportFormPage from "../routes/reports/ReportFormPage.jsx";
-import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
-import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
-import ResponderApplicationPage from "../routes/responder/ResponderApplicationPage.jsx";
-import ReviewQueuePage from "../routes/responder/ReviewQueuePage.jsx";
-import IncidentQueuePage from "../routes/responder/IncidentQueuePage.jsx";
-import IncidentDetailPage from "../routes/responder/IncidentDetailPage.jsx";
 import {
-  HotlinesRoute,
   LandingRoute,
   NotFoundRoute,
-  ResponderDashboardRoute,
-  ResponderHotlinesRoute,
   RouteErrorPage,
 } from "../routes/pages.jsx";
+
+// Routes behind a guard are split out, so a resident never downloads the
+// responder workspace and a responder never downloads the report forms.
+const ResidentHomePage = lazy(() => import("../routes/home/ResidentHomePage.jsx"));
+const ReportFormPage = lazy(() => import("../routes/reports/ReportFormPage.jsx"));
+const MyReportsPage = lazy(() => import("../routes/reports/MyReportsPage.jsx"));
+const CommunityFeedPage = lazy(() => import("../routes/community/CommunityFeedPage.jsx"));
+const ResponderApplicationPage = lazy(() => import("../routes/responder/ResponderApplicationPage.jsx"));
+const ReviewQueuePage = lazy(() => import("../routes/responder/ReviewQueuePage.jsx"));
+const IncidentQueuePage = lazy(() => import("../routes/responder/IncidentQueuePage.jsx"));
+const IncidentDetailPage = lazy(() => import("../routes/responder/IncidentDetailPage.jsx"));
+const ResponderDashboardPage = lazy(() => import("../routes/responder/ResponderDashboardPage.jsx"));
+const HotlineDirectoryPage = lazy(() => import("../routes/hotlines/HotlineDirectoryPage.jsx"));
+const AccountPage = lazy(() => import("../routes/account/AccountPage.jsx"));
 
 export const appRoutes = [
   {
@@ -78,7 +87,7 @@ export const appRoutes = [
       { path: "reports", element: <MyReportsPage /> },
       { path: "reports/new", element: <ReportFormPage kind="flood" /> },
       { path: "help/new", element: <ReportFormPage kind="help" /> },
-      { path: "hotlines", element: <HotlinesRoute /> },
+      { path: "hotlines", element: <HotlineDirectoryPage /> },
       { path: "account", element: <AccountPage /> },
       { path: "responder-application", element: <ResponderApplicationPage /> },
     ],
@@ -92,7 +101,7 @@ export const appRoutes = [
     ),
     errorElement: <RouteErrorPage />,
     children: [
-      { index: true, element: <ResponderDashboardRoute /> },
+      { index: true, element: <ResponderDashboardPage /> },
       { path: "incidents", element: <IncidentQueuePage /> },
       { path: "incidents/:id", element: <IncidentDetailPage /> },
       {
@@ -103,7 +112,7 @@ export const appRoutes = [
           </RequireReviewer>
         ),
       },
-      { path: "hotlines", element: <ResponderHotlinesRoute /> },
+      { path: "hotlines", element: <HotlineDirectoryPage /> },
       { path: "account", element: <AccountPage area="Responder route" /> },
     ],
   },

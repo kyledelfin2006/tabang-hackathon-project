@@ -42,16 +42,27 @@ describe("application shell routing", () => {
 
   it("renders the responder layout for a responder", async () => {
     renderRoute("/responder", responderSession());
-    expect(await screen.findByText("Responder Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Responder layout")).toBeInTheDocument();
+    // Heading role rather than loose text: page copy has changed with each
+    // migration and broken these guard tests repeatedly.
+    expect(
+      await screen.findByRole("heading", { name: "Operational summary" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Primary route navigation" }),
+    ).toBeInTheDocument();
   });
 
   it("renders the not-found route", async () => {
     renderRoute("/missing-route");
+    // Same reason as above: match the heading, not the body copy. The old
+    // assertion was on Phase 1 wording that spoke about migration scope, which
+    // stopped being true once the migration finished.
     expect(
-      await screen.findByText(
-        "That route is outside the current migration scope.",
-      ),
+      await screen.findByRole("heading", { name: "That page does not exist" }),
+    ).toBeInTheDocument();
+    // The route must not fall through to a shell that implies a session.
+    expect(
+      screen.getByRole("link", { name: "Back to the home page" }),
     ).toBeInTheDocument();
   });
 });

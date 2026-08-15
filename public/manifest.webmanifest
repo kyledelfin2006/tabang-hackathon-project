@@ -1,0 +1,18 @@
+{
+  "name": "Tabang — flood reporting for Aklan",
+  "short_name": "Tabang",
+  "description": "Report flooding, request help, and reach emergency hotlines in Aklan.",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6efe3",
+  "theme_color": "#0d6e6e",
+  "icons": [
+    {
+      "src": "/images/tabang-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

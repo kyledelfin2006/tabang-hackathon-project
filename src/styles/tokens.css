@@ -1,25 +1,91 @@
+/*
+ * The original Tabang palette, recovered from the legacy stylesheets deleted
+ * in Phase 14 (see commit 148ca84~1). Deep navy shell, orange call to action,
+ * Inter throughout.
+ *
+ * One deliberate change: the legacy buttons put white text on #f5900a, which
+ * measures 2.37:1 and fails WCAG AA badly. The orange is unchanged — it is the
+ * brand — but button text is near-black, which measures 7.19:1 on the same
+ * fill. Someone reading a flood warning on a bright phone screen outdoors
+ * needs the contrast more than the app needs white lettering.
+ */
 :root {
-  --font-display: "Sora", "Segoe UI", sans-serif;
-  --font-body: "Space Grotesk", "Segoe UI", sans-serif;
-  --color-ink: #10212f;
-  --color-ink-soft: #476175;
-  --color-shell: #f6efe3;
-  --color-surface: rgba(255, 255, 255, 0.8);
-  --color-surface-strong: #fffaf1;
-  --color-border: rgba(16, 33, 47, 0.12);
-  --color-primary: #0d6e6e;
-  --color-primary-strong: #0a4f52;
-  --color-accent: #e66b2f;
-  --color-accent-soft: #fff0e4;
-  --color-resident: #12638d;
-  --color-responder: #a53b22;
-  --color-success: #1f7a52;
-  --color-warning: #be7c11;
-  --color-danger: #b13b2e;
-  --color-shadow: rgba(16, 33, 47, 0.14);
-  --radius-card: 28px;
-  --radius-pill: 999px;
-  --radius-input: 18px;
+/*
+ * Inter if the device has it, then the closest native equivalent on each
+ * platform: Segoe UI Variable/Segoe UI on Windows, San Francisco on Apple,
+ * Roboto on Android. All are humanist sans faces very close to Inter, so the
+ * design holds up without a webfont.
+ *
+ * No webfont is loaded on purpose. The Content-Security-Policy is
+ * `style-src 'self'; font-src 'self'`, so a Google Fonts link is blocked
+ * outright — that is why the old Sora/Space Grotesk import silently did
+ * nothing on the deployed site. Bundling Inter is the proper fix and needs
+ * `npm install @fontsource/inter` to succeed first; see docs/operations.md.
+ */
+  --font-display:
+    "Inter", "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+  --font-body:
+    "Inter", "Segoe UI Variable Text", "Segoe UI", -apple-system,
+    BlinkMacSystemFont, "Roboto", "Helvetica Neue", sans-serif;
+
+  /* Shell */
+  --color-shell: #0a1f4e;
+  --gradient-shell: linear-gradient(175deg, #1a4599 0%, #0a2470 50%, #071852 100%);
+  --gradient-shell-resident: linear-gradient(175deg, #1a4599 0%, #0a2470 60%, #071852 100%);
+  --gradient-shell-responder: linear-gradient(175deg, #2563a8 0%, #1a4a8a 50%, #0e3070 100%);
+
+  /* Text on the navy shell */
+  --color-ink: #ffffff;
+  /*
+   * The legacy pages used 70% and 45% white for secondary text, which
+   * measures 4.48:1 and 2.79:1 on the translucent cards — under WCAG AA. The
+   * alphas are raised to the lowest values that clear 4.5:1 against the
+   * lightest point of the gradient. The look is the same; the small print is
+   * now actually readable.
+   */
+  --color-ink-soft: rgba(255, 255, 255, 0.82);
+  --color-ink-faint: rgba(255, 255, 255, 0.72);
+  --color-placeholder: rgba(255, 255, 255, 0.83);
+
+  /* Translucent surfaces, as in the legacy hero and menu cards */
+  --color-surface: rgba(255, 255, 255, 0.08);
+  --color-surface-strong: rgba(255, 255, 255, 0.1);
+  --color-surface-raised: rgba(255, 255, 255, 0.15);
+  --color-border: rgba(255, 255, 255, 0.15);
+  --color-border-strong: rgba(255, 255, 255, 0.35);
+
+  /* Brand */
+  --color-primary: #f5900a;
+  --color-primary-strong: #e07d00;
+  --gradient-primary: linear-gradient(135deg, #f5900a, #e07d00);
+  --color-on-primary: #1c1c1e;
+  --color-accent: #f5900a;
+  --color-accent-soft: rgba(245, 144, 10, 0.16);
+  /*
+   * Saturated brand colours are strong enough as fills behind dark text, but
+   * too dark to use AS text on the navy shell. Each has a lightened companion
+   * for that job. Same hue, legible weight.
+   */
+  --color-primary-text: #fac37b;
+
+  /* Roles and states, all checked against the navy shell */
+  --color-resident: #93c5fd;
+  --color-responder: #74b9ff;
+  --color-success: #55efc4;
+  --color-warning: #f5900a;
+  --color-danger: #ff6b6b;
+  --color-danger-strong: #ff4d4d;
+  --color-resident-text: #a9d1fd;
+  --color-responder-text: #a3d1ff;
+  --color-success-text: #55efc4;
+  --color-warning-text: #fac37b;
+  --color-danger-text: #ffbbbb;
+
+  --color-shadow: rgba(0, 0, 0, 0.6);
+  --radius-card: 24px;
+  --radius-pill: 50px;
+  --radius-input: 14px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -27,8 +93,8 @@
   --space-5: 1.5rem;
   --space-6: 2rem;
   --space-7: 3rem;
-  --shadow-soft: 0 22px 50px -24px var(--color-shadow);
-  --shadow-panel: 0 24px 60px -30px rgba(11, 40, 62, 0.45);
-  --focus-ring: 0 0 0 4px rgba(13, 110, 110, 0.22);
+  --shadow-soft: 0 18px 40px -24px rgba(0, 0, 0, 0.7);
+  --shadow-panel: 0 24px 60px -20px rgba(0, 0, 0, 0.6);
+  --focus-ring: 0 0 0 3px rgba(245, 144, 10, 0.85);
   --max-shell-width: 1180px;
 }

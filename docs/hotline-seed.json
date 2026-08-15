@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "Seed data for the hotlines collection, carried over from the legacy",
+    "Hotline.html. Every record is deliberately unverified: nobody has",
+    "confirmed these numbers are current, and the application will show them",
+    "as 'Not yet verified' until a reviewer sets verified, verifiedAt, and",
+    "verifiedBy.",
+    "",
+    "To load: open the Firebase console, create each document under the",
+    "hotlines collection using a reviewer account. Only a reviewer may write",
+    "here, so this cannot be seeded from the app.",
+    "",
+    "Before marking any of these verified, ring the number and confirm the",
+    "organization answers. A wrong emergency number during a flood is worse",
+    "than no number at all."
+  ],
+  "hotlines": [
+    {
+      "id": "aklan-pdrrmo",
+      "organization": "Aklan Provincial DRRM Office",
+      "coverageArea": "Province of Aklan",
+      "phoneNumbers": ["(036) 262-4979"],
+      "verified": false,
+      "verifiedAt": null,
+      "verifiedBy": "",
+      "ratingCount": 0,
+      "ratingTotal": 0
+    },
+    {
+      "id": "kalibo-mdrrmo",
+      "organization": "Kalibo Municipal DRRM Office",
+      "coverageArea": "Kalibo, Aklan",
+      "phoneNumbers": ["(036) 268-5501"],
+      "verified": false,
+      "verifiedAt": null,
+      "verifiedBy": "",
+      "ratingCount": 0,
+      "ratingTotal": 0
+    },
+    {
+      "id": "tabang-mobile",
+      "organization": "Tabang community contact",
+      "coverageArea": "Aklan",
+      "phoneNumbers": ["09517831223"],
+      "verified": false,
+      "verifiedAt": null,
+      "verifiedBy": "",
+      "ratingCount": 0,
+      "ratingTotal": 0
+    }
+  ]
+}

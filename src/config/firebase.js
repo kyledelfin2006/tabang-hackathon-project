@@ -1,7 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
-import { connectStorageEmulator, getStorage } from "firebase/storage";
 import {
   resolveFirebaseEmulatorConfig,
   resolveFirebaseRuntimeConfig,
@@ -26,11 +25,6 @@ function connectConfiguredEmulators(services, envSource) {
     emulatorConfig.firestore.host,
     emulatorConfig.firestore.port,
   );
-  connectStorageEmulator(
-    services.storage,
-    emulatorConfig.storage.host,
-    emulatorConfig.storage.port,
-  );
 
   globalThis[EMULATOR_SENTINEL] = true;
 
@@ -51,7 +45,6 @@ export function initializeTabangFirebase(envSource = import.meta.env) {
     app,
     auth: getAuth(app),
     db: getFirestore(app),
-    storage: getStorage(app),
   });
 
   connectConfiguredEmulators(services, envSource);
@@ -74,10 +67,6 @@ export function getFirebaseAuth() {
 
 export function getFirebaseDb() {
   return getFirebaseServices().db;
-}
-
-export function getFirebaseStorage() {
-  return getFirebaseServices().storage;
 }
 
 export function resetFirebaseServicesForTests() {

@@ -2,150 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Report Flood</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Leaflet CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <link rel="stylesheet" href="css/ReportFlood.css">
-    <style>
-        /* Map picker collapsible styles */
-        .map-picker-wrapper {
-            margin: 16px 0;
-        }
-        .toggle-map-btn {
-            background: #007aff;
-            border: none;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            width: 100%;
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-        .map-container {
-            display: none;
-            margin-top: 12px;
-        }
-        .map-container.visible {
-            display: block;
-        }
-        #locationMap {
-            height: 280px;
-            width: 100%;
-            border-radius: 16px;
-            border: 1px solid #2c2c2e;
-            background: #1c1c1e;
-            margin-bottom: 8px;
-        }
-        .gps-btn {
-            background: #34c759;
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            margin-top: 8px;
-        }
-        .coord-hint {
-            font-size: 11px;
-            color: #888;
-            margin-top: 6px;
-        }
-        .location-status {
-            font-size: 12px;
-            color: #34c759;
-            margin-top: 4px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>This page has moved — Tabang</title>
+    <!--
+      Retired in Phase 14. The replacement route is listed in
+      docs/legacy-url-map.md. This stub stays so an old bookmark, a printed
+      flyer, or a link shared in a barangay group chat still arrives somewhere
+      useful instead of a 404.
+    -->
+    <meta http-equiv="refresh" content="0; url=/app/reports/new">
 </head>
 <body>
-<div class="phone">
-    <div class="status-bar">
-        <span class="status-time">9:41</span>
-        <div class="status-icons">
-            <i class="fas fa-signal"></i><i class="fas fa-wifi"></i><i class="fas fa-battery-full"></i>
-        </div>
-    </div>
-    <div class="back-btn"><i class="fas fa-chevron-left"></i></div>
-    <div class="page-title">Report Flood</div>
-    <div class="flood-img-wrap">
-        <img src="images/ff3ebecf9926983edf270610d42865e6.png" alt="Flood">
-    </div>
-    <div class="tagline">Report near your area</div>
-    <div class="form-area">
-        <!-- Original Location field -->
-        <div class="field-label">Location (text)</div>
-        <div class="input-box">
-            <i class="fas fa-map-marker-alt"></i>
-            <input type="text" id="locationInput" placeholder="Enter Location (e.g., Barangay, City)" required>
-        </div>
-
-        <!-- Collapsible map picker -->
-        <div class="map-picker-wrapper">
-            <button type="button" class="toggle-map-btn" id="toggleMapBtn">
-                <i class="fas fa-map-pin"></i> Pin exact location on map
-            </button>
-            <div class="map-container" id="mapContainer">
-                <div id="locationMap"></div>
-                <button type="button" class="gps-btn" id="gpsBtn"><i class="fas fa-location-dot"></i> Use my current location</button>
-                <div class="coord-hint" id="coordHint">Tap the map or use GPS to set marker. Drag to adjust.</div>
-            </div>
-            <div id="locationStatus" class="location-status" style="display: none;">
-                <i class="fas fa-check-circle"></i> <span id="statusText">Location pinned</span>
-            </div>
-        </div>
-
-        <!-- Original Image Upload area -->
-        <div class="image-upload-area">
-            <div class="field-label">Upload Photos</div>
-            <div class="upload-box" id="uploadBox">
-                <i class="fas fa-camera"></i>
-                <p>Tap to take photo or select from gallery</p>
-            </div>
-            <input type="file" id="fileInput" class="file-input" accept="image/*" multiple>
-            <div class="image-preview" id="imagePreview"></div>
-            <div class="image-count" id="imageCount">0 image(s) selected</div>
-        </div>
-
-        <!-- Original Additional Details -->
-        <div class="details-label">Additional Details</div>
-        <div class="textarea-box">
-            <textarea id="detailsInput" placeholder="Enter details (e.g., extent of flooding)"></textarea>
-        </div>
-    </div>
-    <div class="submit-wrap">
-        <button class="submit-btn" id="submitBtn">Submit Report</button>
-    </div>
-    <div class="bottom-nav">
-        <button class="nav-item" id="navRequest"><i class="fas fa-hand-holding-water"></i><span>Request Help</span></button>
-        <button class="nav-item" id="navHotlines"><i class="fas fa-phone-alt"></i><span>Hotlines</span></button>
-        <button class="nav-item active" id="navReport"><i class="fas fa-exclamation-triangle"></i><span>Report Flood</span></button>
-        <button class="nav-item" id="navMyReports"><i class="fas fa-clipboard-list"></i><span>All Reports</span></button>
-        <button class="nav-item" id="navAccount"><i class="fas fa-user"></i><span>Account Info</span></button>
-    </div>
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <div class="loading" id="loading">Submitting...</div>
-</div>
-<script type="module" src="JS/ReportFlood.js"></script>
+    <main>
+        <h1>This page has moved</h1>
+        <p>Tabang now uses a single application. This page is report flooding.</p>
+        <p><a href="/app/reports/new">Continue to /app/reports/new</a></p>
+    </main>
 </body>
 </html>
