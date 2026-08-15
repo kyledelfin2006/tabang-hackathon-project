@@ -42,8 +42,14 @@ describe("application shell routing", () => {
 
   it("renders the responder layout for a responder", async () => {
     renderRoute("/responder", responderSession());
-    expect(await screen.findByText("Responder Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Responder layout")).toBeInTheDocument();
+    // Heading role rather than loose text: page copy has changed with each
+    // migration and broken these guard tests repeatedly.
+    expect(
+      await screen.findByRole("heading", { name: "Operational summary" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("navigation", { name: "Primary route navigation" }),
+    ).toBeInTheDocument();
   });
 
   it("renders the not-found route", async () => {

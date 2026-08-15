@@ -34,8 +34,12 @@ describe("route guards", () => {
   it("does not render protected content before the session resolves", () => {
     renderRoute("/app");
 
-    // Synchronously, the session is still loading.
-    expect(screen.queryByText("Resident Home")).not.toBeInTheDocument();
+    // Synchronously, the session is still loading. Asserting the real heading
+    // matters: a query for text that no longer exists anywhere would pass
+    // whether or not the guard worked.
+    expect(
+      screen.queryByRole("heading", { name: "What do you need right now?" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByText("Checking your session")).toBeInTheDocument();
   });
 
@@ -45,7 +49,9 @@ describe("route guards", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/app");
     });
-    expect(screen.queryByText("Responder Dashboard")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Operational summary" }),
+    ).not.toBeInTheDocument();
   });
 
   it("allows a responder into responder routes", async () => {
@@ -99,7 +105,9 @@ describe("route guards", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/responder");
     });
-    expect(await screen.findByText("Responder Dashboard")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Operational summary" }),
+    ).toBeInTheDocument();
   });
 
   it("keeps the privacy policy reachable while signed out", async () => {

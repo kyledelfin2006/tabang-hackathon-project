@@ -1107,7 +1107,7 @@ Update only after the corresponding verification has been run.
 | 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
 | 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
-| 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics` | `npm run lint` passed. 16 new tests cover the metric allow-list, open-incident counting, verified versus unverified separation, truncation honesty, staleness, and that a failed load shows no figures at all. Unit run pending. |
+| 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
 | 10. Hotline consolidation | Not started | — | — |
 | 11. Offline resilience | Not started | — | — |
 | 12. Accessibility and hardening | Not started | — | — |
@@ -1176,6 +1176,7 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Show nothing when metrics fail to load, with no cached or sample fallback | A dashboard that invents figures when its source fails is more dangerous than one that admits it has none, especially mid-flood | Responders see an explicit unavailable state and can still use the incident queue |
 | 2026-08-15 | State when counts were taken and whether they are totals | The queue is page-capped, so counts can silently understate a large incident load | The dashboard reports the count time and says explicitly when the page limit was reached |
 | 2026-08-15 | Retire `Dashboard.html` to a redirect stub | It presented 128,750 affected and 27,450 evacuated as live data with no source, which Section 2.2 forbids | The URL still resolves, the fabricated figures are gone, and the comment records what was there |
+| 2026-08-15 | Assert migrated routes by heading role rather than loose text | Placeholder copy changed with every migration and broke a guard test five separate times, and one negative assertion had silently become vacuous because the text it looked for no longer existed anywhere | Guard tests now fail for real regressions rather than for wording changes |
 
 ## 14. Handoff Log
 
@@ -1379,6 +1380,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Production changes: None in this session.
 - Blockers: Unit run outstanding. The incident indexes from Phase 8 are still undeployed, the first reviewer is unseeded, and the Phase 7 privacy review is unsigned.
 - Commit: `fix(dashboard): replace hardcoded live disaster metrics`
+- Next exact action: Confirm the unit run, then begin Phase 10 only.
+
+### 2026-08-15 — Phase 9 verification and test hardening
+
+- Completed: Confirmed the Phase 9 dashboard tests and repaired the remaining stale placeholder assertions across the guard suites.
+- Files/components changed: `src/test/router.test.jsx`, `src/test/authGuards.test.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run test:unit` ran all 14 dashboard tests successfully. Two failures came from guard tests still asserting the Phase 1 placeholder headings `Responder Dashboard` and `Responder layout`, which the migrated dashboard replaced with `Operational summary`. `npm run lint` passed.
+- Decisions/deviations: While fixing these, found that `does not render protected content before the session resolves` queried for `Resident Home`, text that no longer exists anywhere in the application, so the negative assertion passed regardless of whether the guard worked. It now asserts the real resident home heading. All guard assertions now match on heading role.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session.
+- Blockers: One confirming unit run. The Phase 8 incident indexes are undeployed, the first reviewer is unseeded, and the Phase 7 privacy review is unsigned. Map items remain deferred across Phases 5, 8, and 9.
+- Commit: `test(routes): assert migrated pages by heading role`
 - Next exact action: Confirm the unit run, then begin Phase 10 only.
 
 ### Handoff entry template
