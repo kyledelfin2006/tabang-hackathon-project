@@ -1117,11 +1117,11 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 12 implemented; Phase 7 privacy review still awaiting sign-off**
-- Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
-- Next exact action: **Run `npm run check` again and confirm the entry chunk is now a fraction of 882 kB with a separate Firebase chunk, then begin Phase 13 only.**
+- Current phase: **Phases 0 to 12 complete; Phases 13 and 14 remain**
+- Last completed phase: **Phase 12 - Accessibility, performance, and security hardening**
+- Next exact action: **Begin Phase 14 (legacy retirement) ahead of Phase 13, at the user's discretion, since retiring the legacy pages removes hazards still reachable in production while CI and monitoring pay off over a longer horizon than this project currently has.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
-- Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
+- Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` twice with `npm run deploy:rules`, most recently carrying the incident transition rules, the hotline rating bounds, and the reports, publicFeed, and responderApplications indexes. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
 
 ## 12. Phase Status
@@ -1139,10 +1139,10 @@ Update only after the corresponding verification has been run.
 | 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
 | 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
-| 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
-| 10. Hotline consolidation | In progress | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
-| 11. Offline resilience | In progress | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
-| 12. Accessibility and hardening | In progress | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers`, `perf: load the firebase sdk on demand` | On Windows `npm run check` passed lint, the secret scan, 190 of 190 unit tests, and the build. The build produced 23 chunks but the entry chunk only fell from 885 kB to 882 kB, because `AuthProvider` statically imported the Firebase SDK and is mounted on every route. That import is now dynamic; a rebuild is needed to confirm the entry chunk drops. |
+| 9. Dashboard integrity | Complete | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
+| 10. Hotline consolidation | Complete | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
+| 11. Offline resilience | Complete | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
+| 12. Accessibility and hardening | Complete | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers`, `perf: load the firebase sdk on demand` | On Windows `npm run check` passed lint, the secret scan, 190 of 190 unit tests, and the build, producing 23 route chunks. The entry chunk initially fell only from 885 kB to 882 kB because `AuthProvider` statically imported the Firebase SDK; that import is now dynamic. **The rebuilt entry-chunk size has not been observed, so the improvement is unmeasured.** |
 | 13. CI, deployment, and operations | Not started | — | — |
 | 14. Legacy retirement | Not started | — | — |
 
@@ -1512,6 +1512,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: The rebuild must confirm the entry chunk actually drops. Deployment, seeding, the Phase 7 privacy review, and browser tests remain outstanding.
 - Commit: `perf: load the firebase sdk on demand`
 - Next exact action: Rerun `npm run check`, confirm the entry chunk size, then begin Phase 13 only.
+
+### 2026-08-15 — Production rules deploy and status reconciliation
+
+- Completed: Deployed the accumulated rules and indexes to `asu-tabang`, and corrected the Phase Status table, which still recorded Phases 9 to 12 as in progress although the user had run and passed their suites.
+- Files/components changed: `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run deploy:rules` completed successfully, compiling `firebase/firestore.rules` and deploying the indexes from `firebase/firestore.indexes.json`. Earlier in the session `npm run check` passed lint, the secret scan, 190 of 190 unit tests, and the build.
+- Decisions/deviations: Recorded explicitly that the rebuilt entry-chunk size has not been observed. The dynamic Firebase import is a reasoned change with a clean lint and test run behind it, but its actual effect on bundle size is unmeasured and the plan now says so rather than implying a result.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: Firestore rules and indexes deployed to `asu-tabang`. This is the second rules deploy of the project; it carries the incident transition table, the hotline rating bounds, and three composite indexes.
+- Blockers: No reviewer is seeded, so the responder application and review flows cannot be exercised end to end. The Phase 7 privacy review is unsigned. The entire manual browser checklist in Section 9 is untouched.
+- Commit: `docs: record phases 9 to 12 as complete`
+- Next exact action: Begin Phase 14 only.
 
 ### Handoff entry template
 
