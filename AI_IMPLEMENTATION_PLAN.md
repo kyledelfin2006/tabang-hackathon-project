@@ -827,15 +827,25 @@ Unify resident and responder hotline behavior using trusted records.
 
 ### Tasks
 
-- [ ] Create a single hotline repository and shared presentation components.
-- [ ] Store official hotline records centrally with verification and update metadata.
-- [ ] Remove in-memory responder votes and random commenter identities.
-- [ ] Use one review per user per hotline or another documented anti-abuse model.
-- [ ] Use transactions/aggregates that cannot be trivially forged by clients.
-- [ ] Add moderation, deletion ownership, rate limits, and text-length limits.
-- [ ] Keep hotline calling available without requiring an account when appropriate.
-- [ ] Show last verified time and responsible organization.
-- [ ] Escape all review content.
+- [x] Create a single hotline repository and shared presentation components.
+- [x] Store official hotline records centrally with verification and update metadata.
+- [x] Remove in-memory responder votes and random commenter identities.
+- [x] Use one review per user per hotline or another documented anti-abuse model.
+- [x] Use transactions/aggregates that cannot be trivially forged by clients.
+- [x] Add moderation, deletion ownership, rate limits, and text-length limits. *(Ownership, length limits, and reviewer deletion are enforced. No rate limit exists: Firestore rules cannot express one without a counter document, which is recorded as a follow-up.)*
+- [x] Keep hotline calling available without requiring an account when appropriate.
+- [x] Show last verified time and responsible organization.
+- [x] Escape all review content. *(React escapes rendered text by default; no review content reaches HTML, a URL, or an attribute.)*
+
+### What the legacy hotline pages did
+
+`JS/Hotline.js` generated vote counts with `Math.floor(Math.random() * 11) + 11` and held comments in memory, so the ratings displayed beside emergency numbers were invented and disappeared on refresh. The resident and responder pages each hardcoded their own copy of the numbers, so the two audiences could be shown different things to call.
+
+### Hotline data decision
+
+The three numbers from the legacy page are carried over as **unverified** records, at the user's direction. `docs/hotline-seed.json` holds them for a reviewer to load through the console, since only a reviewer may write to `hotlines`. The application shows "Not yet verified" and no verification date until a reviewer confirms them. `toHotline` refuses to treat a record as verified unless it carries a verification timestamp, so a stray `verified: true` cannot assert a check nobody performed.
+
+The legacy pages now list the same three numbers as static, clearly unverified text rather than redirecting away, so nobody loses access to them mid-emergency while the directory is still empty.
 
 ### Acceptance checks
 
@@ -1085,9 +1095,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 9 implemented; Phase 7 privacy review still awaiting sign-off**
+- Current phase: **Phase 10 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
-- Next exact action: **Run `npm run test:unit` to confirm Phase 9, deploy the incident indexes, seed the first reviewer, sign off the Phase 7 privacy review, then begin Phase 10 only.**
+- Next exact action: **Run `npm run test:unit` and `npm run test:rules`, deploy rules and indexes, seed the reviewer and the hotline records, sign off the Phase 7 privacy review, then begin Phase 11 only.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1108,7 +1118,7 @@ Update only after the corresponding verification has been run.
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
 | 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
 | 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
-| 10. Hotline consolidation | Not started | — | — |
+| 10. Hotline consolidation | In progress | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
 | 11. Offline resilience | Not started | — | — |
 | 12. Accessibility and hardening | Not started | — | — |
 | 13. CI, deployment, and operations | Not started | — | — |
@@ -1177,6 +1187,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | State when counts were taken and whether they are totals | The queue is page-capped, so counts can silently understate a large incident load | The dashboard reports the count time and says explicitly when the page limit was reached |
 | 2026-08-15 | Retire `Dashboard.html` to a redirect stub | It presented 128,750 affected and 27,450 evacuated as live data with no source, which Section 2.2 forbids | The URL still resolves, the fabricated figures are gone, and the comment records what was there |
 | 2026-08-15 | Assert migrated routes by heading role rather than loose text | Placeholder copy changed with every migration and broke a guard test five separate times, and one negative assertion had silently become vacuous because the text it looked for no longer existed anywhere | Guard tests now fail for real regressions rather than for wording changes |
+| 2026-08-15 | Carry the legacy hotline numbers over as unverified rather than verified or absent | User decision. A wrong emergency number is a real harm, but so is an empty directory during a flood | Residents see the numbers with an explicit "not yet verified" label until a reviewer confirms them |
+| 2026-08-15 | Require a verification timestamp before showing a hotline as verified | A record carrying `verified: true` with nothing behind it would assert a check nobody performed | `toHotline` ignores the flag unless `verifiedAt` is present, and a test covers it |
+| 2026-08-15 | Recompute the rating aggregate inside the review transaction and bound it in rules | The legacy page invented vote counts client-side; without a bound, any client could still write any total | A rating write may move the count by at most one, cannot touch `verified`, and one account holds at most one review per hotline |
+| 2026-08-15 | Leave the legacy hotline pages listing the numbers instead of redirecting | Redirecting to an empty directory would remove the only numbers a resident could reach until seeding happens | The pages keep the numbers as static, clearly unverified text and link to the app |
 
 ## 14. Handoff Log
 
@@ -1393,6 +1407,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: One confirming unit run. The Phase 8 incident indexes are undeployed, the first reviewer is unseeded, and the Phase 7 privacy review is unsigned. Map items remain deferred across Phases 5, 8, and 9.
 - Commit: `test(routes): assert migrated pages by heading role`
 - Next exact action: Confirm the unit run, then begin Phase 10 only.
+
+### 2026-08-15 — Phase 10: shared hotline directory
+
+- Completed: Replaced the two hardcoded hotline pages with one repository and one shared directory route used by both residents and responders, added verification and freshness metadata, removed the random vote generator and in-memory comments, enforced one review per account per hotline with a transactionally recomputed aggregate, and bounded rating writes in the security rules.
+- Files/components changed: `src/services/hotlines/hotlineRepository.js`, `src/routes/hotlines/HotlineDirectoryPage.jsx`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/test/hotlines.test.jsx`, `tests/rules/firestore.rules.test.mjs`, `firebase/firestore.rules`, `docs/hotline-seed.json`, `Hotline.html`, `responderhotline.html`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. Unit and rules suites were not run in the assistant sandbox.
+- Decisions/deviations: Carried the three legacy numbers over as unverified records at the user's direction, with a seed file for a reviewer to load. Left the legacy pages listing the numbers rather than redirecting, so residents keep access while the directory is unseeded. Removed the now-unused `RouteShellPage` scaffold from `pages.jsx`, which no longer has any placeholder routes. No rate limit was added: Firestore rules cannot express one without a counter document, recorded as a follow-up.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session.
+- Blockers: Unit and rules runs outstanding. Rules and indexes from Phases 8 and 10 are undeployed. The reviewer and the hotline records are unseeded, and the Phase 7 privacy review is unsigned.
+- Commit: `refactor(hotlines): share hotline data and feedback UI`
+- Next exact action: Verify, then begin Phase 11 only.
 
 ### Handoff entry template
 

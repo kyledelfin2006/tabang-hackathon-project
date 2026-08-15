@@ -186,12 +186,34 @@ service cloud.firestore {
     }
 
     match /hotlines/{hotlineId} {
+      // Calling a hotline must not require an account.
       allow read: if true;
-      allow create, update, delete: if isReviewer();
+      allow create, delete: if isReviewer();
+
+      allow update: if isReviewer() || (
+          // A signed-in reviewer of the hotline may move the rating aggregate,
+          // but only the aggregate, and only by one rating at a time. Anything
+          // wider would let a client write whatever score it liked, which is
+          // what the legacy page effectively did with Math.random.
+          isSignedIn()
+          && changedKeys().hasOnly(['ratingCount', 'ratingTotal', 'updatedAt'])
+          && request.resource.data.ratingCount >= resource.data.ratingCount
+          && request.resource.data.ratingCount <= resource.data.ratingCount + 1
+          && request.resource.data.ratingTotal >= 0
+          // Verification state is never touched by a rating.
+          && request.resource.data.verified == resource.data.verified
+        );
 
       match /reviews/{userId} {
         allow read: if true;
-        allow create, update: if isOwner(userId);
+        // The document id is the reviewer's uid, so one account can hold at
+        // most one review per hotline and a second submission replaces it.
+        allow create, update: if isOwner(userId)
+          && request.resource.data.reviewerId == userId
+          && request.resource.data.rating is int
+          && request.resource.data.rating >= 1
+          && request.resource.data.rating <= 5
+          && request.resource.data.comment.size() <= 300;
         allow delete: if isOwner(userId) || isReviewer();
       }
     }

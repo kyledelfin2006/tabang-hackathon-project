@@ -22,11 +22,10 @@ import ReviewQueuePage from "../routes/responder/ReviewQueuePage.jsx";
 import IncidentQueuePage from "../routes/responder/IncidentQueuePage.jsx";
 import IncidentDetailPage from "../routes/responder/IncidentDetailPage.jsx";
 import ResponderDashboardPage from "../routes/responder/ResponderDashboardPage.jsx";
+import HotlineDirectoryPage from "../routes/hotlines/HotlineDirectoryPage.jsx";
 import {
-  HotlinesRoute,
   LandingRoute,
   NotFoundRoute,
-  ResponderHotlinesRoute,
   RouteErrorPage,
 } from "../routes/pages.jsx";
 
@@ -78,7 +77,7 @@ export const appRoutes = [
       { path: "reports", element: <MyReportsPage /> },
       { path: "reports/new", element: <ReportFormPage kind="flood" /> },
       { path: "help/new", element: <ReportFormPage kind="help" /> },
-      { path: "hotlines", element: <HotlinesRoute /> },
+      { path: "hotlines", element: <HotlineDirectoryPage /> },
       { path: "account", element: <AccountPage /> },
       { path: "responder-application", element: <ResponderApplicationPage /> },
     ],
@@ -103,7 +102,7 @@ export const appRoutes = [
           </RequireReviewer>
         ),
       },
-      { path: "hotlines", element: <ResponderHotlinesRoute /> },
+      { path: "hotlines", element: <HotlineDirectoryPage /> },
       { path: "account", element: <AccountPage area="Responder route" /> },
     ],
   },

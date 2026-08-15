@@ -569,6 +569,109 @@ describe("Firestore rules", () => {
     );
   });
 
+  it("lets anyone read hotlines without an account", async () => {
+    await seedDocument(["hotlines", "pdrrmo"], {
+      organization: "Aklan PDRRMO",
+      phoneNumbers: ["(036) 262-4979"],
+      verified: false,
+      ratingCount: 0,
+      ratingTotal: 0,
+    });
+
+    const guestDb = testEnvironment.unauthenticatedContext().firestore();
+
+    await assertSucceeds(getDoc(doc(guestDb, "hotlines", "pdrrmo")));
+  });
+
+  it("stops a resident forging a hotline rating aggregate", async () => {
+    await seedDocument(["hotlines", "pdrrmo"], {
+      organization: "Aklan PDRRMO",
+      verified: false,
+      ratingCount: 2,
+      ratingTotal: 8,
+    });
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    // A wild jump in the count is what the legacy random vote generator did.
+    await assertFails(
+      updateDoc(doc(residentDb, "hotlines", "pdrrmo"), {
+        ratingCount: 500,
+        ratingTotal: 2500,
+        updatedAt: sampleTimestamp,
+      }),
+    );
+
+    await assertSucceeds(
+      updateDoc(doc(residentDb, "hotlines", "pdrrmo"), {
+        ratingCount: 3,
+        ratingTotal: 13,
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("stops a rating write from marking a hotline verified", async () => {
+    await seedDocument(["hotlines", "pdrrmo"], {
+      organization: "Aklan PDRRMO",
+      verified: false,
+      ratingCount: 0,
+      ratingTotal: 0,
+    });
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    await assertFails(
+      updateDoc(doc(residentDb, "hotlines", "pdrrmo"), {
+        ratingCount: 1,
+        ratingTotal: 5,
+        verified: true,
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
+  it("keeps one review per account and stops edits to another's review", async () => {
+    await seedDocument(["hotlines", "pdrrmo"], { organization: "Aklan PDRRMO" });
+
+    const residentDb = testEnvironment
+      .authenticatedContext("resident-1")
+      .firestore();
+
+    await assertSucceeds(
+      setDoc(doc(residentDb, "hotlines", "pdrrmo", "reviews", "resident-1"), {
+        reviewerId: "resident-1",
+        rating: 4,
+        comment: "Answered quickly.",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+
+    // Writing into somebody else's review slot is refused.
+    await assertFails(
+      setDoc(doc(residentDb, "hotlines", "pdrrmo", "reviews", "resident-2"), {
+        reviewerId: "resident-2",
+        rating: 1,
+        comment: "Not mine to write.",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+
+    // So is an out-of-range rating.
+    await assertFails(
+      setDoc(doc(residentDb, "hotlines", "pdrrmo", "reviews", "resident-1"), {
+        reviewerId: "resident-1",
+        rating: 99,
+        comment: "",
+        updatedAt: sampleTimestamp,
+      }),
+    );
+  });
+
   it("exposes only sanitized public feed content to public users", async () => {
     await seedDocument(["publicFeed", "item-1"], {
       summary: "Floodwater rising in a public zone.",
