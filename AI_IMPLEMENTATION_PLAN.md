@@ -892,7 +892,7 @@ Accepted at the user's direction because losing a report typed during a blackout
 
 ### Delivery wording
 
-`SUBMISSION_STATE_COPY` is the single source of user-facing submission wording, and a test asserts that the locally-saved and failed states never contain "sent", "delivered", or "received", and do say "nobody has seen it". Telling somebody their flood report was delivered when it is sitting in local storage is the worst lie this application could tell.
+`SUBMISSION_STATE_COPY` is the single source of user-facing submission wording. A test asserts the locally-saved and failed states carry no affirmative claim of delivery and do say "nobody has seen it". The check looks for the claim rather than the words: "Not sent yet" is the phrasing we want and contains "sent", so a preceding negation excludes the match. A second test exercises the pattern against known-affirmative strings, because a regex that matched nothing would pass the first test no matter how the copy changed. Telling somebody their flood report was delivered when it is sitting in local storage is the worst lie this application could tell.
 
 ### Notifications
 
@@ -1133,7 +1133,7 @@ Update only after the corresponding verification has been run.
 | 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
 | 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
 | 10. Hotline consolidation | In progress | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
-| 11. Offline resilience | In progress | `feat(pwa): add safe offline application support` | `npm run lint` passed. 11 new tests cover the delivery wording guarantees, per-report-id queue deduplication, removal on success, sign-out clearing, unreadable storage, and the emergency fallback. Unit run pending; offline reload needs a browser. |
+| 11. Offline resilience | In progress | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
 | 12. Accessibility and hardening | Not started | — | — |
 | 13. CI, deployment, and operations | Not started | — | — |
 | 14. Legacy retirement | Not started | — | — |
@@ -1209,6 +1209,7 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Make the submission wording a tested guarantee rather than a convention | "Sent" applied to a locally queued emergency report is the worst inaccuracy this application could produce | A test asserts the saved and failed copy never says sent, delivered, or received, and always says nobody has seen it |
 | 2026-08-15 | Cache only the shell, never Firestore responses | A cache outlives the session and is readable by whoever next holds the device, and incident details carry coordinates and contact numbers | The service worker skips `/api/` and cross-origin requests entirely, so protected data cannot enter the cache |
 | 2026-08-15 | Do not implement notifications | There is no backend to send from and no defined product need, so a permission prompt would imply an alerting promise the system cannot keep | Recorded as evaluated and declined rather than left as an open task |
+| 2026-08-15 | Test for an affirmative delivery claim rather than for banned words | Banning "sent" outright rejected "Not sent yet", which is the exact wording the rule exists to encourage; a word ban punishes honest negations and would have pushed the copy toward vaguer phrasing | The check excludes negated matches and is itself covered by a test, so it cannot silently degrade into matching nothing |
 
 ## 14. Handoff Log
 
@@ -1449,6 +1450,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Unit and rules runs outstanding for Phases 10 and 11. Rules and indexes undeployed, reviewer and hotlines unseeded, Phase 7 privacy review unsigned, browser tests outstanding project-wide.
 - Commit: `feat(pwa): add safe offline application support`
 - Next exact action: Verify, then begin Phase 12 only.
+
+### 2026-08-15 — Phase 11 wording test correction
+
+- Completed: Fixed the delivery-wording test after it rejected the application's own honest phrasing.
+- Files/components changed: `src/test/offline.test.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. The regex was exercised directly against five known strings in Node before committing: the two real copy strings, two affirmative claims, and one negation, all classified correctly. The full unit suite has not yet been re-run.
+- Decisions/deviations: The original test banned the words "sent", "delivered", and "received". That rejected "Not sent yet — nobody has seen it", which is precisely the phrasing the rule exists to produce. A word ban would have pushed the copy toward vaguer language to satisfy the test, which is the opposite of the intent. The check now detects an affirmative claim by excluding negated matches, and a second test asserts the pattern still recognises real claims so it cannot degrade into matching nothing.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None.
+- Blockers: Phases 10 and 11 still need one clean unit run and a rules run. Deployment, seeding, the Phase 7 privacy review, and browser tests all remain outstanding.
+- Commit: `test(offline): check for delivery claims, not banned words`
+- Next exact action: Run `npm run test:unit` and `npm run test:rules`, then begin Phase 12 only.
 
 ### Handoff entry template
 

@@ -17,18 +17,33 @@ function memoryStorage() {
   };
 }
 
+/**
+ * Matches an affirmative claim of delivery.
+ *
+ * Banning the words outright was wrong: "Not sent yet" is exactly the honest
+ * phrasing we want, and it contains "sent". What must never appear is the
+ * claim itself, so a preceding negation excludes the match.
+ */
+const CLAIMS_DELIVERY = /(?<!\bnot\s)(?<!\bnever\s)(?<!\bnot yet\s)\b(sent|delivered|received)\b/i;
+
 describe("submission wording", () => {
   it("never claims a locally saved report was delivered", () => {
     const saved = SUBMISSION_STATE_COPY[SUBMISSION_STATE.savedLocally];
     const failed = SUBMISSION_STATE_COPY[SUBMISSION_STATE.failed];
 
     for (const copy of [saved, failed]) {
-      expect(copy).not.toMatch(/\bsent\b/i);
-      expect(copy).not.toMatch(/\bdelivered\b/i);
-      expect(copy).not.toMatch(/\breceived\b/i);
-      // It must say plainly that nobody has seen it.
+      expect(copy).not.toMatch(CLAIMS_DELIVERY);
+      // And it must say plainly that nobody has seen it.
       expect(copy).toMatch(/nobody has seen it/i);
     }
+  });
+
+  it("recognises an affirmative claim when one is present", () => {
+    // Guards the guard: a regex that matched nothing would pass the test above
+    // no matter how the copy changed.
+    expect("Sent. Responders can see this report.").toMatch(CLAIMS_DELIVERY);
+    expect("Your report was delivered.").toMatch(CLAIMS_DELIVERY);
+    expect("Not sent yet.").not.toMatch(CLAIMS_DELIVERY);
   });
 
   it("uses sent only once the server accepted the report", () => {
