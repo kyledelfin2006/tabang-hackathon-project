@@ -137,7 +137,10 @@ export default function AuthProvider({ children, gateway }) {
       role: authenticated ? role : ROLES.resident,
       isResponder: authenticated && isResponderRole(role),
       isReviewer: authenticated && isReviewerRole(role),
-      initializationError: setup.error,
+      // Optional: `setup` is null on the first render in production, before
+      // the dynamic Firebase import resolves. Tests inject a gateway, so
+      // `setup` is always truthy there and never exercised this path.
+      initializationError: setup?.error ?? null,
       signIn,
       register,
       sendPasswordReset,
