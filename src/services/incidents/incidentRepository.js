@@ -1,6 +1,7 @@
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   limit,
   orderBy,
@@ -69,6 +70,18 @@ export function createIncidentRepository({
       ...spec.orderBy.map(([field, direction]) => orderBy(field, direction)),
       limit(spec.limit),
     ),
+  readDocument = getDoc,
+  eventsQueryBuilder = (database, incidentId) =>
+    query(
+      collectionRef(
+        database,
+        REPORTS_COLLECTION,
+        incidentId,
+        EVENTS_SUBCOLLECTION,
+      ),
+      orderBy("createdAt", "asc"),
+      limit(100),
+    ),
   now = () => Date.now(),
 } = {}) {
   return {
@@ -81,6 +94,48 @@ export function createIncidentRepository({
       return snapshot.docs.map((document) =>
         toIncident(document.id, document.data(), clock),
       );
+    },
+
+    async getIncident(incidentId) {
+      const database = db ?? getFirebaseDb();
+      const snapshot = await readDocument(
+        documentRef(database, REPORTS_COLLECTION, incidentId),
+      );
+
+      return snapshot.exists()
+        ? toIncident(snapshot.id, snapshot.data(), now())
+        : null;
+    },
+
+    /**
+     * Reads the audit trail oldest first.
+     *
+     * Events are append-only and carry server time, so this is the record of
+     * what actually happened rather than a reconstruction.
+     */
+    async listEvents(incidentId) {
+      const database = db ?? getFirebaseDb();
+      const snapshot = await runQuery(
+        eventsQueryBuilder(database, incidentId),
+      );
+
+      return snapshot.docs.map((document) => {
+        const raw = document.data();
+
+        return Object.freeze({
+          id: document.id,
+          type: raw.type ?? "status-change",
+          fromStatus: raw.fromStatus ?? null,
+          toStatus: raw.toStatus ?? null,
+          actorId: raw.actorId ?? "",
+          actorRole: raw.actorRole ?? "",
+          note: raw.note ?? "",
+          createdAtMillis:
+            typeof raw.createdAt?.toMillis === "function"
+              ? raw.createdAt.toMillis()
+              : null,
+        });
+      });
     },
 
     /**

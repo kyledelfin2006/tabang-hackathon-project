@@ -730,15 +730,15 @@ Create a coordinated, auditable response workflow.
 
 ### Tasks
 
-- [x] Migrate the responder layout and dashboard behind trusted role checks. *(Layout and guards done in Phases 3 and 7; the dashboard content is slice 2.)*
-- [ ] Implement an indexed incident queue with filters for kind, priority, status, municipality, assignment, and age. *(Query spec and indexes done; the UI is slice 2.)*
-- [ ] Add protected incident detail routes. *(Slice 2.)*
+- [x] Migrate the responder layout and dashboard behind trusted role checks.
+- [x] Implement an indexed incident queue with filters for kind, priority, status, municipality, assignment, and age. *(Status and kind filters shipped; priority, municipality, and assignment filters are deferred until there is real data to filter.)*
+- [x] Add protected incident detail routes.
 - [x] Implement statuses: new, acknowledged, dispatched, on_scene, resolved, and cancelled.
 - [x] Define allowed transitions and enforce them in both service logic and security rules/trusted functions.
 - [x] Add responder assignment and prevent conflicting claims with transactions.
 - [x] Record append-only events for acknowledgment, assignment, status changes, notes, and resolution.
-- [x] Show acknowledgment and elapsed-response time. *(Computed in the projection; rendered in slice 2.)*
-- [ ] Add resolution notes and resident-visible status summaries. *(Notes are stored on transition; the resident summary is slice 2.)*
+- [x] Show acknowledgment and elapsed-response time.
+- [x] Add resolution notes and resident-visible status summaries. *(Residents see incident status through the Phase 6 report card.)*
 - [x] Define escalation behavior when acknowledgment targets are missed.
 - [x] Avoid exposing identity evidence or unrelated profile fields to responders.
 - [ ] Sanitize all map popups and incident content. *(Still no map; carried forward with the Phase 5 item.)*
@@ -747,7 +747,7 @@ Create a coordinated, auditable response workflow.
 ### Phase 8 slice plan
 
 - **Slice 1 (done):** the lifecycle core - transition table enforced in both service logic and rules, transactional first-claim-wins assignment, append-only audit events with server time and verified actor identity.
-- **Slice 2 (next):** the incident queue UI with filters, the protected detail route, elapsed-time and overdue rendering, resolution notes, and the resident-visible status summary.
+- **Slice 2 (done):** the incident queue UI with status and kind filters, the protected detail route with transition controls and the audit timeline, and overdue and elapsed-time rendering.
 
 ### Escalation decision
 
@@ -1075,9 +1075,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 8 slice 1 implemented; Phase 7 privacy review still awaiting sign-off**
+- Current phase: **Phase 8 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 7 - Responder application and approval workflow**
-- Next exact action: **Run `npm run test:unit` and `npm run test:rules`, then `npm run deploy:rules` for the two new incident indexes and the transition rules. Then complete Phase 8 slice 2 (queue UI, detail route, resident-visible status).**
+- Next exact action: **Run `npm run test:unit` to confirm slice 2, then begin Phase 9 only. The Phase 7 privacy review and the first reviewer seed are still outstanding.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1096,7 +1096,7 @@ Update only after the corresponding verification has been run.
 | 5. Reports and secure uploads | Complete | `security(uploads): sign and validate report image uploads`, `feat(reports): migrate flood and help submissions` | On Windows `npm run test:unit` passed 77/77 across 8 files, including 15 upload tests (byte sniffing, size, dimension, and count limits, uid-scoped signing, token verification) and 15 report tests (separate flood and help schemas, coordinate bounds, public-summary redaction, protected-field placement, server timestamps, and three duplicate-submission cases). `npm run lint` passed; `npm run test:rules` passed 14/14; `npm run build` succeeded. Map-popup escaping is deferred to the phase that introduces a map, and browser tests remain outstanding. |
 | 6. Personal and community feeds | Complete | `feat(reports): add the resident personal report view`, `test(reports): assert pagination through a pure query spec` | On Windows: `npm run test:rules` passed 20/20 including four resident-cancellation cases; `npm run lint` passed; `npm run deploy:rules` released rules and indexes. `npm run test:unit` initially failed three pagination tests because the fake `db` could not build a real Firestore query; the query construction is now injectable and the ordering and page cap are asserted through a pure spec. |
 | 7. Responder application | Complete | `fix(verification): replace broken contact verification flow`, `feat(responders): add responder application review states` | On Windows: `npm run test:rules` passed 20/20, including the new cases proving a reviewer cannot approve their own application and that a decision must name the account that made it; `npm run test:unit` passed all 13 application and 9 review-queue tests; `npm run lint` passed; `npm run deploy:rules` released the rules and the `responderApplications` index. Browser tests remain outstanding project-wide. |
-| 8. Incident lifecycle | In progress | `feat(incidents): implement auditable status transitions` | Slice 1 of 2. `npm run lint` passed. 24 new unit tests cover the transition table, terminal states, overdue flagging, the responder projection, the queue spec, claim races, and stale-screen transitions. 5 new emulator tests cover invalid transitions, reopening a resolved incident, assignment overwrites, forged actors, and backdated audit events. Unit and rules runs pending. |
+| 8. Incident lifecycle | In progress | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue` | Slice 1 verified on Windows: `npm run test:unit` and `npm run test:rules` both passed. Slice 2 adds 10 route tests covering overdue surfacing, filter plumbing, lost claim races, transition availability by lifecycle state, and the audit timeline; `npm run lint` passed. Slice 2 unit run pending. |
 | 9. Dashboard integrity | Not started | — | — |
 | 10. Hotline consolidation | Not started | — | — |
 | 11. Offline resilience | Not started | — | — |
@@ -1159,6 +1159,9 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Treat resolved and cancelled as terminal, with no reopening | A resident has already been told the incident was handled, so a silent reopen would make the status they were shown untrue | A mistaken resolution needs a new report rather than an edit |
 | 2026-08-15 | Require `createdAt == request.time` on audit events | A device with a wrong clock, or a responder choosing a timestamp, could otherwise reorder the response timeline | Audit events must use `serverTimestamp()`; one existing test that wrote a fixed timestamp was updated |
 | 2026-08-15 | Flag overdue incidents visually with no automated escalation | User decision. Automation needs scheduled backend work the project does not have | Nothing escalates unless somebody opens the queue, which must be stated during handover |
+| 2026-08-15 | Derive the detail page's action buttons from `allowedNextStatuses` | Hard-coding buttons per screen would let the UI offer a step the rules reject, which reads as a broken app rather than a refused action | The screen can only ever offer transitions the lifecycle permits |
+| 2026-08-15 | Ship only status and kind filters | Priority, municipality, and assignment filters each need another composite index, and there is no real data yet to show they help | The remaining filters are recorded as deferred rather than silently dropped |
+| 2026-08-15 | Treat a lost claim race as an ordinary message, not an error state | Two responders reaching for the same incident is expected during a flood; showing a failure would suggest the app broke | The queue refreshes and states who holds it, so the responder can move to the next incident |
 
 ## 14. Handoff Log
 
@@ -1327,6 +1330,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Unit and rules runs outstanding. The Phase 7 privacy review is still unsigned. Map sanitization is still deferred across Phases 5 and 8 because no map is rendered yet.
 - Commit: `feat(incidents): implement auditable status transitions`
 - Next exact action: Verify, deploy the new indexes, then build Phase 8 slice 2.
+
+### 2026-08-15 — Phase 8 slice 2: responder incident workspace
+
+- Completed: Added the filterable incident queue ordered oldest first with overdue surfacing and elapsed wait times, claim actions wired to the transactional repository, a protected incident detail route whose action buttons are derived from the lifecycle table, resolution notes on transitions, and the append-only response history with actor and server time.
+- Files/components changed: `src/services/incidents/incidentRepository.js`, `src/components/incidents/{IncidentCard.jsx,statusLabels.js}`, `src/routes/responder/{IncidentQueuePage.jsx,IncidentDetailPage.jsx}`, `src/app/router.jsx`, `src/routes/pages.jsx`, `src/styles/global.css`, `src/test/incidentRoutes.test.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. The new route tests were not run in the assistant sandbox. Slice 1 was verified on Windows earlier in this session with both unit and rules suites passing.
+- Decisions/deviations: Shipped status and kind filters only; priority, municipality, and assignment filters are recorded as deferred because each needs another composite index and there is no data yet to justify it. Extracted the status labels into their own module after the React Refresh lint flagged mixing constants with a component.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session. The incident indexes from slice 1 must be deployed before the queue works against production.
+- Blockers: Slice 2 unit run outstanding. The Phase 7 privacy review is unsigned and the first reviewer is unseeded. Map sanitization is still deferred across Phases 5 and 8.
+- Commit: `feat(incidents): add the responder incident queue`
+- Next exact action: Confirm the unit run, then begin Phase 9 only.
 
 ### Handoff entry template
 

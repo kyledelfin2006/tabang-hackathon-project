@@ -847,3 +847,11 @@ select.form-field__input {
   min-height: 20px;
   min-width: 20px;
 }
+
+/* Phase 8 — incident queue */
+.filter-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  margin-bottom: var(--space-4);
+}

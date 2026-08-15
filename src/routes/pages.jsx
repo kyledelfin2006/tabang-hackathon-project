@@ -168,40 +168,6 @@ export function ResponderDashboardRoute() {
   );
 }
 
-export function IncidentsRoute() {
-  return (
-    <RouteShellPage
-      area="Responder route"
-      title="Incident Queue"
-      summary="This placeholder reserves the route that will later host the indexed incident queue."
-      statusLabel="Responder layout"
-      routePath="/responder/incidents"
-      legacyHref="/AllReports.html"
-      checklist={[
-        "Responder queue route is established.",
-        "Future incident tools can migrate here incrementally.",
-      ]}
-    />
-  );
-}
-
-export function IncidentDetailRoute() {
-  return (
-    <RouteShellPage
-      area="Responder route"
-      title="Incident Detail"
-      summary="A protected detail route now exists for future responder workflows and audits."
-      statusLabel="Responder layout"
-      routePath="/responder/incidents/:id"
-      legacyHref="/AllReports.html"
-      checklist={[
-        "Parameterized responder route works inside the shell.",
-        "This route will host event history in later phases.",
-      ]}
-    />
-  );
-}
-
 export function ResponderHotlinesRoute() {
   return (
     <RouteShellPage
