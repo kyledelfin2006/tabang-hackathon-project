@@ -5,6 +5,8 @@ import {
   FormField,
   FormStatus,
 } from "../../components/forms/FormField.jsx";
+import ConnectivityBanner from "../../components/feedback/ConnectivityBanner.jsx";
+import EmergencyFallback from "../../components/feedback/EmergencyFallback.jsx";
 import ImageAttachments from "../../components/forms/ImageAttachments.jsx";
 import LocationPicker from "../../components/forms/LocationPicker.jsx";
 import { createReportRepository } from "../../services/reports/reportRepository.js";
@@ -14,6 +16,11 @@ import {
   validateReport,
 } from "../../services/reports/reportSchemas.js";
 import { createCloudinaryUploader } from "../../services/uploads/cloudinaryUploader.js";
+import {
+  SUBMISSION_STATE,
+  SUBMISSION_STATE_COPY,
+  createSubmissionQueue,
+} from "../../services/offline/submissionQueue.js";
 
 const SEVERITY_LABELS = {
   ankle: "Ankle deep",
@@ -46,6 +53,8 @@ export default function ReportFormPage({
   kind = "flood",
   reportRepository,
   uploader,
+  submissionQueue,
+  hotlines = [],
 }) {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -69,6 +78,12 @@ export default function ReportFormPage({
   const [formError, setFormError] = useState(null);
   const [progress, setProgress] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionState, setSubmissionState] = useState(null);
+
+  const queue = useMemo(
+    () => submissionQueue ?? createSubmissionQueue(),
+    [submissionQueue],
+  );
 
   // One id per form session. Retrying reuses it, so a duplicate click or a
   // resend after a timeout cannot file the same emergency twice.
@@ -98,7 +113,12 @@ export default function ReportFormPage({
     }
 
     setSubmitting(true);
+    setSubmissionState(SUBMISSION_STATE.sending);
     abortRef.current = new AbortController();
+
+    // Held locally first, so a failure mid-send leaves something to retry
+    // rather than losing what the resident typed.
+    queue.enqueue({ reportId: reportIdRef.current, kind, values });
 
     try {
       const uploaded = [];
@@ -126,9 +146,14 @@ export default function ReportFormPage({
         images: uploaded,
       });
 
+      // Only now may this be called sent: the server accepted it.
+      queue.remove(reportIdRef.current);
+      setSubmissionState(SUBMISSION_STATE.submitted);
       navigate("/app/reports", { replace: true });
     } catch (error) {
-      // The form keeps everything the resident typed so they can retry.
+      // The form keeps everything the resident typed so they can retry, and
+      // the entry stays queued. The wording never claims delivery.
+      setSubmissionState(SUBMISSION_STATE.failed);
       setFormError(
         error?.message ??
           "The report could not be sent. Your details are still here — try again.",
@@ -154,8 +179,20 @@ export default function ReportFormPage({
           : "Tell responders what you need and how many people are with you."}
       </p>
 
+      <ConnectivityBanner />
+
       <form className="auth-form" noValidate onSubmit={handleSubmit}>
         <FormStatus message={formError} />
+
+        {submissionState ? (
+          <p aria-live="polite" className="form-field__hint">
+            {SUBMISSION_STATE_COPY[submissionState]}
+          </p>
+        ) : null}
+
+        {submissionState === SUBMISSION_STATE.failed ? (
+          <EmergencyFallback hotlines={hotlines} />
+        ) : null}
 
         {isFlood ? (
           <div className="form-field">

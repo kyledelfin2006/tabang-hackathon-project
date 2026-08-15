@@ -5,6 +5,7 @@ import {
   isResponderRole,
   isReviewerRole,
 } from "../../services/auth/roles.js";
+import { createSubmissionQueue } from "../../services/offline/submissionQueue.js";
 import { AuthContext, SESSION_STATUS } from "./AuthContext.js";
 
 const ANONYMOUS_SESSION = Object.freeze({
@@ -71,10 +72,13 @@ export default function AuthProvider({ children, gateway }) {
     (email) => requireGateway().sendPasswordReset(email),
     [requireGateway],
   );
-  const signOutOfSession = useCallback(
-    () => requireGateway().signOut(),
-    [requireGateway],
-  );
+  const signOutOfSession = useCallback(async () => {
+    await requireGateway().signOut();
+    // A queued report holds precise coordinates and a contact number. Phones
+    // get shared and handed around during an evacuation, so signing out must
+    // not leave one behind.
+    createSubmissionQueue().clear();
+  }, [requireGateway]);
   const updateOwnProfile = useCallback(
     (uid, input) => requireGateway().updateOwnProfile(uid, input),
     [requireGateway],

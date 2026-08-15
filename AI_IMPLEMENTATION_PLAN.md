@@ -873,16 +873,30 @@ Make critical flows resilient to poor connectivity without falsely promising del
 
 ### Tasks
 
-- [ ] Add an installable PWA manifest and intentional service-worker strategy.
-- [ ] Cache only safe application assets and public reference data.
-- [ ] Never cache protected incident details in a publicly reusable cache.
-- [ ] Add an encrypted or minimized local draft/queue strategy after documenting its privacy risks.
-- [ ] Clearly distinguish saved locally, sending, submitted, acknowledged, and failed states.
-- [ ] Retry queued submissions safely with idempotency keys.
-- [ ] Provide immediate official emergency-call alternatives when online submission fails.
-- [ ] Add connectivity and stale-data indicators.
-- [ ] Evaluate notification requirements and permissions; do not implement browser notifications without a defined product need and consent flow.
-- [ ] Test offline reload, queued submission recovery, duplicate prevention, and logout cleanup.
+- [x] Add an installable PWA manifest and intentional service-worker strategy.
+- [x] Cache only safe application assets and public reference data.
+- [x] Never cache protected incident details in a publicly reusable cache.
+- [x] Add an encrypted or minimized local draft/queue strategy after documenting its privacy risks.
+- [x] Clearly distinguish saved locally, sending, submitted, acknowledged, and failed states. *(Acknowledged is not a submission state; it belongs to the incident lifecycle and is shown on the report card.)*
+- [x] Retry queued submissions safely with idempotency keys.
+- [x] Provide immediate official emergency-call alternatives when online submission fails.
+- [x] Add connectivity and stale-data indicators.
+- [x] Evaluate notification requirements and permissions; do not implement browser notifications without a defined product need and consent flow. *(Evaluated and deliberately not implemented — see below.)*
+- [ ] Test offline reload, queued submission recovery, duplicate prevention, and logout cleanup. *(Queue behaviour, duplicate prevention, and sign-out clearing are unit tested. Offline reload needs a real browser and is outstanding with the other browser tests.)*
+
+### Offline queue privacy risks
+
+A queued report holds the description, precise coordinates, and a contact number in `localStorage`. That is readable by any script on the origin and by anyone who later picks up the phone, and phones are shared, lost, and handed to neighbours during an evacuation.
+
+Accepted at the user's direction because losing a report typed during a blackout is the worse failure. Mitigations: the entry is removed the moment the server accepts it, the whole queue is cleared on sign-out, and photos are not queued because they never enter the queue payload. No encryption is applied — a key kept beside the data on the same device would not add real protection.
+
+### Delivery wording
+
+`SUBMISSION_STATE_COPY` is the single source of user-facing submission wording, and a test asserts that the locally-saved and failed states never contain "sent", "delivered", or "received", and do say "nobody has seen it". Telling somebody their flood report was delivered when it is sitting in local storage is the worst lie this application could tell.
+
+### Notifications
+
+Not implemented. Push would need a defined product need, a consent flow, and a backend to send from, none of which exist. A permission prompt without a working delivery path would be worse than silence, since a resident could reasonably read it as a promise that they will be alerted.
 
 ### Acceptance checks
 
@@ -1095,9 +1109,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 10 implemented; Phase 7 privacy review still awaiting sign-off**
+- Current phase: **Phase 11 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
-- Next exact action: **Run `npm run test:unit` and `npm run test:rules`, deploy rules and indexes, seed the reviewer and the hotline records, sign off the Phase 7 privacy review, then begin Phase 11 only.**
+- Next exact action: **Run `npm run test:unit` and `npm run test:rules` to cover Phases 10 and 11, then begin Phase 12 only. Deployment, seeding, and the Phase 7 privacy review remain outstanding.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1119,7 +1133,7 @@ Update only after the corresponding verification has been run.
 | 8. Incident lifecycle | Complete | `feat(incidents): implement auditable status transitions`, `feat(incidents): add the responder incident queue`, `test(incidents): assert the responder route by heading` | On Windows: `npm run test:rules` passed all 25 including the five new incident cases; `npm run test:unit` passed 143 of 144, and the single failure was a guard test still asserting the Phase 1 placeholder heading `Incident Queue` rather than the real `Incident queue`. The guard itself worked - the router reached `/responder/incidents` and rendered the migrated page. Assertion corrected to match on heading role. `npm run lint` passed. |
 | 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
 | 10. Hotline consolidation | In progress | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
-| 11. Offline resilience | Not started | — | — |
+| 11. Offline resilience | In progress | `feat(pwa): add safe offline application support` | `npm run lint` passed. 11 new tests cover the delivery wording guarantees, per-report-id queue deduplication, removal on success, sign-out clearing, unreadable storage, and the emergency fallback. Unit run pending; offline reload needs a browser. |
 | 12. Accessibility and hardening | Not started | — | — |
 | 13. CI, deployment, and operations | Not started | — | — |
 | 14. Legacy retirement | Not started | — | — |
@@ -1191,6 +1205,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Require a verification timestamp before showing a hotline as verified | A record carrying `verified: true` with nothing behind it would assert a check nobody performed | `toHotline` ignores the flag unless `verifiedAt` is present, and a test covers it |
 | 2026-08-15 | Recompute the rating aggregate inside the review transaction and bound it in rules | The legacy page invented vote counts client-side; without a bound, any client could still write any total | A rating write may move the count by at most one, cannot touch `verified`, and one account holds at most one review per hotline |
 | 2026-08-15 | Leave the legacy hotline pages listing the numbers instead of redirecting | Redirecting to an empty directory would remove the only numbers a resident could reach until seeding happens | The pages keep the numbers as static, clearly unverified text and link to the app |
+| 2026-08-15 | Queue full reports locally and clear them on sign-out | User decision. Losing a report typed during a blackout is worse than the local exposure, but a shared phone must not keep somebody's coordinates and number after they sign out | Queue entries are removed on success and wiped on sign-out; the privacy risk is documented rather than encrypted away |
+| 2026-08-15 | Make the submission wording a tested guarantee rather than a convention | "Sent" applied to a locally queued emergency report is the worst inaccuracy this application could produce | A test asserts the saved and failed copy never says sent, delivered, or received, and always says nobody has seen it |
+| 2026-08-15 | Cache only the shell, never Firestore responses | A cache outlives the session and is readable by whoever next holds the device, and incident details carry coordinates and contact numbers | The service worker skips `/api/` and cross-origin requests entirely, so protected data cannot enter the cache |
+| 2026-08-15 | Do not implement notifications | There is no backend to send from and no defined product need, so a permission prompt would imply an alerting promise the system cannot keep | Recorded as evaluated and declined rather than left as an open task |
 
 ## 14. Handoff Log
 
@@ -1419,6 +1437,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Unit and rules runs outstanding. Rules and indexes from Phases 8 and 10 are undeployed. The reviewer and the hotline records are unseeded, and the Phase 7 privacy review is unsigned.
 - Commit: `refactor(hotlines): share hotline data and feedback UI`
 - Next exact action: Verify, then begin Phase 11 only.
+
+### 2026-08-15 — Phase 11: offline resilience
+
+- Completed: Added an installable PWA manifest and a shell-only service worker, an idempotent local submission queue cleared on sign-out, an honest saved/sending/sent/failed vocabulary backed by a test, a connectivity banner, and an emergency-call fallback shown when a submission fails.
+- Files/components changed: `public/manifest.webmanifest`, `public/service-worker.js`, `index.html`, `src/main.jsx`, `src/services/offline/submissionQueue.js`, `src/components/feedback/{ConnectivityBanner.jsx,EmergencyFallback.jsx}`, `src/routes/reports/ReportFormPage.jsx`, `src/app/providers/AuthProvider.jsx`, `src/test/offline.test.jsx`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. Unit tests were not run in the assistant sandbox.
+- Decisions/deviations: Queued reports hold full payloads at the user's direction, with the privacy risk documented rather than encrypted, since a key stored beside the data on the same device adds little. Notifications were evaluated and deliberately not implemented. Offline reload testing needs a real browser and stays outstanding with the other browser tests.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None in this session.
+- Blockers: Unit and rules runs outstanding for Phases 10 and 11. Rules and indexes undeployed, reviewer and hotlines unseeded, Phase 7 privacy review unsigned, browser tests outstanding project-wide.
+- Commit: `feat(pwa): add safe offline application support`
+- Next exact action: Verify, then begin Phase 12 only.
 
 ### Handoff entry template
 

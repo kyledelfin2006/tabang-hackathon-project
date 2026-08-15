@@ -9,3 +9,13 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <App />
   </React.StrictMode>,
 );
+
+// Registered after render so a service-worker failure can never stop the app
+// from loading. Caching is limited to the shell; see public/service-worker.js.
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {
+      // Offline support is an enhancement, not a requirement.
+    });
+  });
+}
