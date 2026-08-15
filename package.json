@@ -17,7 +17,10 @@
     "baseline:inventory": "node scripts/legacy-baseline/build-inventory.mjs",
     "test:links": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs",
     "test:smoke": "node --test tests/legacy/http-smoke.test.mjs",
-    "test:baseline": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs tests/legacy/http-smoke.test.mjs"
+    "test:baseline": "node --test tests/legacy/link-asset-validation.test.mjs tests/legacy/known-failures.test.mjs tests/legacy/http-smoke.test.mjs",
+    "scan:secrets": "node scripts/security/scan-secrets.mjs",
+    "audit:deps": "npm audit --omit=dev --audit-level=high",
+    "check": "npm run lint && npm run scan:secrets && npm run test:unit && npm run build"
   },
   "dependencies": {
     "firebase": "^12.17.1",

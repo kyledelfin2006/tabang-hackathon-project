@@ -1,6 +1,7 @@
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
+import LoadingState from "../components/feedback/LoadingState.jsx";
 import SkipLink from "../components/navigation/SkipLink.jsx";
 import BottomNav from "../components/navigation/BottomNav.jsx";
 import { useAuth } from "../app/providers/useAuth.js";
@@ -41,7 +42,16 @@ export default function ResponderLayout() {
         actionHref="/responderhomepage.html"
       />
       <main className="shell__content shell__content--with-nav" id="main">
-        <Outlet />
+        <Suspense
+          fallback={
+            <LoadingState
+              title="Loading"
+              message="Fetching this part of the app."
+            />
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
       <BottomNav items={items} />
     </div>

@@ -931,13 +931,21 @@ Bring the full migrated experience to a consistent quality baseline.
 - [x] Verify color contrast and do not use color as the only status signal. *(Every badge carries a text label; contrast still needs a tool run against the deployed build.)*
 - [x] Add reduced-motion behavior.
 - [x] Test screen-reader announcements for submission and incident-status changes. *(Live regions are asserted in the auth, report, and queue tests; announcement behaviour in a real screen reader is outstanding with the browser tests.)*
-- [ ] Lazy-load maps and heavy routes.
-- [ ] Optimize images and add appropriate responsive sizing.
-- [ ] Remove dead CSS, duplicate assets, legacy CDN imports, and unused dependencies.
-- [ ] Add Content Security Policy and other production headers through the deployment platform.
-- [ ] Ensure missing assets and routes return correct status/fallback behavior.
-- [ ] Review all uses of HTML insertion, popup creation, external URLs, and file uploads.
-- [ ] Add dependency, secret, and static-security checks that fit the repository.
+- [x] Lazy-load maps and heavy routes. *(All eleven guarded routes are split; there is still no map.)*
+- [x] Optimize images and add appropriate responsive sizing. *(The 830 KB Base64 landing logo became a 14 KB file in Phase 4; no other large images remain in the migrated app.)*
+- [ ] Remove dead CSS, duplicate assets, legacy CDN imports, and unused dependencies. *(Legacy CSS and CDN imports belong to pages Phase 14 retires; removing them now would break pages still in use.)*
+- [x] Add Content Security Policy and other production headers through the deployment platform.
+- [x] Ensure missing assets and routes return correct status/fallback behavior.
+- [x] Review all uses of HTML insertion, popup creation, external URLs, and file uploads. *(No `dangerouslySetInnerHTML` or `innerHTML` exists in `src/`; React escapes all rendered text. Uploads are covered in Phase 5.)*
+- [x] Add dependency, secret, and static-security checks that fit the repository.
+
+### Content Security Policy
+
+`connect-src` names Firebase, Cloudinary, and the Identity Toolkit explicitly and refuses everything else, which limits where data could be sent if a script were ever injected through report text. `script-src 'self'` allows no inline script. `style-src` still permits `'unsafe-inline'` because the legacy pages carry inline style attributes; that allowance is removed when Phase 14 retires them. The same policy is set by `server.mjs` and by Firebase Hosting, so it applies whichever serves the build.
+
+### Secret scanning
+
+`npm run scan:secrets` looks for the shapes this repository could plausibly leak: an inline Cloudinary secret, a private key block, a service-account JSON, a Google API key literal, or a committed `.env`. It found one match on its first run, `javascript/firebase.js`, which is recorded as a reviewed exception: a Firebase web API key is a public project identifier rather than a credential, and access is governed by the security rules. It is still worth noting because hardcoding it means the legacy pages cannot be pointed at an emulator, which the migrated app can do through environment variables.
 
 ### Acceptance checks
 
@@ -1109,9 +1117,9 @@ Before requesting approval, provide:
 
 Update this section after coding in every session.
 
-- Current phase: **Phase 12 slice 1 implemented; Phase 7 privacy review still awaiting sign-off**
+- Current phase: **Phase 12 implemented; Phase 7 privacy review still awaiting sign-off**
 - Last completed phase: **Phase 8 - Incident lifecycle and responder workspace**
-- Next exact action: **Run `npm run test:unit`, then complete Phase 12 slice 2 (code splitting, CSP and security headers, dependency and secret checks).**
+- Next exact action: **Run `npm run check` (lint, secret scan, unit tests, build) and confirm the build reports several chunks rather than one 885 kB bundle, then begin Phase 13 only.**
 - Working tree expectation after this plan is committed: **Clean apart from the pre-existing line-ending-only modifications to legacy files, which were left untouched**
 - Production changes performed: **Firestore rules and indexes deployed to `asu-tabang` with `npm run deploy:rules`. No data migration, no Storage bucket, no paid services enabled.**
 - Known blockers requiring user input: **Phase 3 verification cannot run inside the assistant sandbox; the long-term Cloudinary-versus-Firebase-Storage upload path is still open for Phase 5; Storage Rules cannot read Firestore, so responder-scoped Storage access needs custom claims or a redesign before Phase 5; production hosting and migration require later approval**
@@ -1134,7 +1142,7 @@ Update only after the corresponding verification has been run.
 | 9. Dashboard integrity | In progress | `fix(dashboard): replace hardcoded live disaster metrics`, `test(routes): assert migrated pages by heading role` | On Windows `npm run test:unit` ran 14 dashboard tests, all passing. Two unrelated guard tests failed on stale Phase 1 placeholder text; assertions corrected. `npm run lint` passed. One confirming run outstanding. |
 | 10. Hotline consolidation | In progress | `refactor(hotlines): share hotline data and feedback UI` | `npm run lint` passed. 17 new unit tests cover the verification projection, staleness, review bounds, and the rating aggregate including replace-not-stack. 4 new emulator tests cover public reads, forged aggregates, rating writes attempting to set verified, and one review per account. Unit and rules runs pending. |
 | 11. Offline resilience | In progress | `feat(pwa): add safe offline application support`, `test(offline): check for delivery claims, not banned words` | On Windows the wording test failed because it banned the word "sent", which the honest phrasing "Not sent yet" contains. Rewritten to detect an affirmative claim, with a second test guarding the pattern itself. `npm run lint` passed. One confirming run outstanding. |
-| 12. Accessibility and hardening | In progress | `fix(a11y): make application flows keyboard accessible` | Slice 1 of 2. `npm run lint` passed. 7 new tests cover zoom across all pages, skip navigation and its target landmark, text labels on every status, and drawer focus restoration. Performance and security headers are slice 2. Unit run pending. |
+| 12. Accessibility and hardening | In progress | `fix(a11y): make application flows keyboard accessible`, `perf: split routes and add browser security headers` | Both slices implemented. Slice 1 verified on Windows. Slice 2 splits all eleven guarded routes, adds a CSP and four other headers on both serving paths, and adds `scan:secrets` and `audit:deps`. `npm run lint` passed and the secret scan runs clean with one reviewed exception. A `npm run build` is needed to confirm the bundle actually splits. |
 | 13. CI, deployment, and operations | Not started | — | — |
 | 14. Legacy retirement | Not started | — | — |
 
@@ -1211,6 +1219,10 @@ Add entries; do not rewrite history without explanation.
 | 2026-08-15 | Do not implement notifications | There is no backend to send from and no defined product need, so a permission prompt would imply an alerting promise the system cannot keep | Recorded as evaluated and declined rather than left as an open task |
 | 2026-08-15 | Test for an affirmative delivery claim rather than for banned words | Banning "sent" outright rejected "Not sent yet", which is the exact wording the rule exists to encourage; a word ban punishes honest negations and would have pushed the copy toward vaguer phrasing | The check excludes negated matches and is itself covered by a test, so it cannot silently degrade into matching nothing |
 | 2026-08-15 | Restore pinch zoom on the seven legacy pages that blocked it | `maximum-scale=1.0` stops somebody with low vision enlarging an emergency number, which is precisely when they need to read it | A test reads the HTML of every page and fails if `maximum-scale` or `user-scalable=no` returns |
+| 2026-08-15 | Split every guarded route, leaving public and auth routes eager | The landing and login pages are the first paint and the smallest; the responder workspace and report forms are neither, and a resident should not download the incident queue | Eleven route chunks; a Suspense boundary sits inside each `main` so the skip link still lands on a real landmark while a chunk loads |
+| 2026-08-15 | Name every permitted origin in `connect-src` rather than allowing `https:` | An explicit list limits where data could be sent if a script were injected through report text, which is the realistic injection path here | Adding a third-party service now requires a deliberate CSP edit |
+| 2026-08-15 | Record the legacy Firebase web API key as a reviewed exception rather than removing or ignoring it | A web API key is a public project identifier, not a credential, so treating it as a leak would train the team to ignore the scanner | The exception carries its reasoning and expires with the legacy pages in Phase 14 |
+| 2026-08-15 | Leave legacy CSS and CDN imports in place | They belong to pages still serving residents; removing them now would break working pages to satisfy a cleanup task | Deferred to Phase 14, which retires the pages themselves |
 
 ## 14. Handoff Log
 
@@ -1475,6 +1487,18 @@ Append one concise entry after every coding session. Include facts and commands 
 - Blockers: Slice 2 owes code splitting for the 885 kB bundle, CSP and security headers, and dependency and secret checks. Deployment, seeding, the Phase 7 privacy review, and browser tests all remain outstanding.
 - Commit: `fix(a11y): make application flows keyboard accessible`
 - Next exact action: Verify, then complete Phase 12 slice 2.
+
+### 2026-08-15 — Phase 12 slice 2: performance and security headers
+
+- Completed: Split all eleven guarded routes behind `lazy` with Suspense boundaries inside each `main` landmark, added a Content Security Policy plus `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, and `X-Frame-Options` to both `server.mjs` and the new Firebase Hosting config, and added `npm run scan:secrets`, `npm run audit:deps`, and an aggregate `npm run check`.
+- Files/components changed: `src/app/router.jsx`, `src/layouts/{PublicLayout,ResidentLayout,ResponderLayout}.jsx`, `server.mjs`, `firebase.json`, `scripts/security/scan-secrets.mjs`, `package.json`, `AI_IMPLEMENTATION_PLAN.md`.
+- Verification commands and results: `npm run lint` passed. `node --check server.mjs` passed. `node scripts/security/scan-secrets.mjs` exits clean with one reviewed exception printed. The unit suite and `npm run build` were not run in the assistant sandbox, so the split is not yet confirmed against real output.
+- Decisions/deviations: The secret scanner flagged `javascript/firebase.js` on its first run. A Firebase web API key is a public project identifier rather than a credential, so it is recorded as a reviewed exception with its reasoning instead of being deleted or the pattern weakened. Legacy CSS and CDN imports stay until Phase 14 retires the pages that use them. The `firebase.json` now carries a `hosting` block, so a bare `firebase deploy` would attempt a hosting deploy; keep using `npm run deploy:rules` unless a hosting release is intended.
+- Uncommitted work: The pre-existing line-ending-only modifications to legacy files remain untouched.
+- Production changes: None. The hosting configuration is in source control only.
+- Blockers: The build must be run to confirm the bundle splits. Deployment, seeding, the Phase 7 privacy review, and browser tests remain outstanding.
+- Commit: `perf: split routes and add browser security headers`
+- Next exact action: Run `npm run check`, confirm multiple chunks in the build output, then begin Phase 13 only.
 
 ### Handoff entry template
 

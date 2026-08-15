@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
+import LoadingState from "../components/feedback/LoadingState.jsx";
 import SkipLink from "../components/navigation/SkipLink.jsx";
 
 export default function PublicLayout() {
@@ -14,7 +16,16 @@ export default function PublicLayout() {
         actionHref="/legacy-index.html"
       />
       <main className="shell__content" id="main">
-        <Outlet />
+        <Suspense
+          fallback={
+            <LoadingState
+              title="Loading"
+              message="Fetching this part of the app."
+            />
+          }
+        >
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );

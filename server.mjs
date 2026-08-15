@@ -70,6 +70,47 @@ const IDENTITY_VIEW_ROUTE = "/api/uploads/identity-view";
 const IDENTITY_DELETE_ROUTE = "/api/uploads/identity-delete";
 const MAX_SIGNATURE_BODY_BYTES = 8 * 1024;
 
+
+/*
+ * Browser security headers.
+ *
+ * The CSP is deliberately explicit about who may be contacted: Firebase for
+ * auth and data, Cloudinary for uploads and signed delivery, Google Fonts for
+ * the legacy pages. Anything else is refused, which limits where a script
+ * injected through a report description could send data.
+ *
+ * 'unsafe-inline' remains for styles because the legacy pages still carry
+ * inline style attributes. It is removed once Phase 14 retires them.
+ */
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+  "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+  "img-src 'self' data: blob: https://res.cloudinary.com",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.cloudinary.com https://identitytoolkit.googleapis.com",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+].join("; ");
+
+const SECURITY_HEADERS = {
+  "Content-Security-Policy": CONTENT_SECURITY_POLICY,
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  // A flood report page has no business reading the camera or microphone, and
+  // geolocation is requested only from the report form on this origin.
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
+  "X-Frame-Options": "DENY",
+};
+
+function applySecurityHeaders(res) {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(name, value);
+  }
+}
+
 function sendJson(res, status, payload) {
   const body = JSON.stringify(payload);
 
@@ -429,6 +470,8 @@ async function handleIdentityDeleteRequest(req, res) {
 }
 
 createServer((req, res) => {
+  applySecurityHeaders(res);
+
   const pathname = decodeURIComponent(new URL(req.url, `http://${host}:${port}`).pathname);
 
   if (pathname === IDENTITY_DELETE_ROUTE) {
