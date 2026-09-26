@@ -14,11 +14,6 @@ export function getRulesTestEnvironment() {
         port: 18085,
         rules: readFileSync("firebase/firestore.rules", "utf8"),
       },
-      storage: {
-        host: "127.0.0.1",
-        port: 19195,
-        rules: readFileSync("firebase/storage.rules", "utf8"),
-      },
     });
   }
 
@@ -28,7 +23,6 @@ export function getRulesTestEnvironment() {
 export async function resetRulesTestEnvironment() {
   const testEnvironment = await getRulesTestEnvironment();
   await testEnvironment.clearFirestore();
-  await testEnvironment.clearStorage();
 }
 
 export async function cleanupRulesTestEnvironment() {

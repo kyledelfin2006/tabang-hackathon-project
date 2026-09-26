@@ -12,10 +12,6 @@
       "host": "127.0.0.1",
       "port": 18085
     },
-    "storage": {
-      "host": "127.0.0.1",
-      "port": 19195
-    },
     "ui": {
       "enabled": false
     },

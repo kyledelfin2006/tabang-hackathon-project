@@ -62,8 +62,6 @@ describe("resolveFirebaseEmulatorConfig", () => {
         VITE_FIREBASE_AUTH_EMULATOR_URL: "http://127.0.0.1:9099",
         VITE_FIRESTORE_EMULATOR_HOST: "127.0.0.1",
         VITE_FIRESTORE_EMULATOR_PORT: "8081",
-        VITE_STORAGE_EMULATOR_HOST: "127.0.0.1",
-        VITE_STORAGE_EMULATOR_PORT: "9198",
       }),
     ).toEqual({
       enabled: true,
@@ -73,10 +71,6 @@ describe("resolveFirebaseEmulatorConfig", () => {
       firestore: {
         host: "127.0.0.1",
         port: 8081,
-      },
-      storage: {
-        host: "127.0.0.1",
-        port: 9198,
       },
     });
   });

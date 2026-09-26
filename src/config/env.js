@@ -18,7 +18,6 @@ const FIREBASE_CONFIG_KEY_MAP = Object.freeze({
 
 const DEFAULT_EMULATOR_PORTS = Object.freeze({
   firestore: 18085,
-  storage: 19195,
 });
 
 function readEnvValue(envSource, key) {
@@ -113,15 +112,6 @@ export function resolveFirebaseEmulatorConfig(envSource = import.meta.env) {
         envSource,
         "VITE_FIRESTORE_EMULATOR_PORT",
         DEFAULT_EMULATOR_PORTS.firestore,
-      ),
-    }),
-    storage: Object.freeze({
-      host:
-        readEnvValue(envSource, "VITE_STORAGE_EMULATOR_HOST") || "127.0.0.1",
-      port: parsePort(
-        envSource,
-        "VITE_STORAGE_EMULATOR_PORT",
-        DEFAULT_EMULATOR_PORTS.storage,
       ),
     }),
   });

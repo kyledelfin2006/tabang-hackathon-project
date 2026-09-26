@@ -29,6 +29,9 @@ jobs:
       - name: Scan for committed secrets
         run: npm run scan:secrets
 
+      - name: Colour contrast
+        run: npm run check:contrast
+
       - name: Unit tests
         run: npm run test:unit
 

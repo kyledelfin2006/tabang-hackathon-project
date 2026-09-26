@@ -1,3 +1,5 @@
+> Archived on 2026-09-26 under D-7; superseded by [FEAT-001 implementation plan](../plans/FEAT-001-implementation.md).
+
 # Tabang Architecture and Production-Readiness Implementation Plan
 
 > Execution target: an AI coding model with capabilities similar to GPT-5.4.

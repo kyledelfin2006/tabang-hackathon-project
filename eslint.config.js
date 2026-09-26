@@ -5,11 +5,11 @@ import reactRefresh from "eslint-plugin-react-refresh";
 
 export default [
   {
-    ignores: ["dist/**", "node_modules/**", "docs/**", "JS/**", "javascript/**", "tests/**"],
+    ignores: ["dist/**", "node_modules/**", "docs/**"],
   },
   js.configs.recommended,
   {
-    files: ["server.mjs", "vite.config.js", "eslint.config.js"],
+    files: ["server.mjs", "vite.config.js", "eslint.config.js", "scripts/**/*.mjs", "tests/**/*.mjs"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
