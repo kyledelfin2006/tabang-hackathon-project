@@ -98,7 +98,9 @@ describe("metric computation", () => {
     expect(describeCoverage({ truncated: true, pageLimit: 25 })).toMatch(
       /not totals/,
     );
-    expect(describeCoverage({ truncated: false })).toMatch(/every open incident/);
+    expect(describeCoverage({ truncated: false })).toMatch(
+      /every open incident/,
+    );
   });
 
   it("records when it counted", () => {
@@ -112,9 +114,9 @@ describe("staleness", () => {
   it("treats an old count as stale", () => {
     const generated = Date.parse("2026-08-14T02:00:00Z");
 
-    expect(isMetricSetStale(generated, generated + METRIC_STALE_AFTER_MS + 1)).toBe(
-      true,
-    );
+    expect(
+      isMetricSetStale(generated, generated + METRIC_STALE_AFTER_MS + 1),
+    ).toBe(true);
     expect(isMetricSetStale(generated, generated + 1000)).toBe(false);
   });
 
@@ -144,12 +146,19 @@ describe("responder dashboard route", () => {
     expect(screen.getByText("Coverage")).toBeInTheDocument();
   });
 
-  it("explains which figures it deliberately cannot provide", async () => {
+  it("keeps the dashboard focused on current response data", async () => {
     renderDashboard({ listIncidents: vi.fn().mockResolvedValue([]) });
 
     expect(
-      await screen.findByText("No population or evacuation figures"),
+      await screen.findByRole("heading", {
+        level: 2,
+        name: "Operational summary",
+      }),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/previous version/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Open the incident queue" }),
+    ).toHaveAttribute("href", "/responder/incidents");
   });
 
   it("shows no figures at all when the source fails", async () => {

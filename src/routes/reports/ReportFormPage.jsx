@@ -1,10 +1,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../app/providers/useAuth.js";
-import {
-  FormField,
-  FormStatus,
-} from "../../components/forms/FormField.jsx";
+import { FormField, FormStatus } from "../../components/forms/FormField.jsx";
 import ConnectivityBanner from "../../components/feedback/ConnectivityBanner.jsx";
 import EmergencyFallback from "../../components/feedback/EmergencyFallback.jsx";
 import ImageAttachments from "../../components/forms/ImageAttachments.jsx";
@@ -91,7 +88,8 @@ export default function ReportFormPage({
   const abortRef = useRef(null);
 
   const setField = useCallback(
-    (field) => (value) => setForm((current) => ({ ...current, [field]: value })),
+    (field) => (value) =>
+      setForm((current) => ({ ...current, [field]: value })),
     [],
   );
 
@@ -124,7 +122,11 @@ export default function ReportFormPage({
       const uploaded = [];
 
       for (const [index, attachment] of attachments.entries()) {
-        setProgress({ index: index + 1, total: attachments.length, percent: 0 });
+        setProgress({
+          index: index + 1,
+          total: attachments.length,
+          percent: 0,
+        });
 
         uploaded.push(
           await imageUploader.upload(attachment.file, {
@@ -150,13 +152,12 @@ export default function ReportFormPage({
       queue.remove(reportIdRef.current);
       setSubmissionState(SUBMISSION_STATE.submitted);
       navigate("/app/reports", { replace: true });
-    } catch (error) {
+    } catch {
       // The form keeps everything the resident typed so they can retry, and
       // the entry stays queued. The wording never claims delivery.
       setSubmissionState(SUBMISSION_STATE.failed);
       setFormError(
-        error?.message ??
-          "The report could not be sent. Your details are still here — try again.",
+        "The report could not be sent. Your details are still here. Try again.",
       );
     } finally {
       setSubmitting(false);
@@ -172,7 +173,6 @@ export default function ReportFormPage({
       <span className="section-tag">
         {isFlood ? "Report flooding" : "Request help"}
       </span>
-      <h2>{isFlood ? "Report a flood" : "Ask for assistance"}</h2>
       <p>
         {isFlood
           ? "Tell responders where the water is and how deep it has reached."

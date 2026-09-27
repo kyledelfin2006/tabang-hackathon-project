@@ -107,7 +107,11 @@ export default function ResponderApplicationPage({ applicationRepository }) {
     setFormError(null);
 
     const hasEvidence = Boolean(documents.identity && documents.selfie);
-    const { values, errors: fieldErrors, isValid } = validateApplication(form, {
+    const {
+      values,
+      errors: fieldErrors,
+      isValid,
+    } = validateApplication(form, {
       hasEvidence,
     });
 
@@ -133,10 +137,8 @@ export default function ResponderApplicationPage({ applicationRepository }) {
       });
 
       setExisting({ ...values, status: APPLICATION_STATUS.pending });
-    } catch (error) {
-      setFormError(
-        error?.message ?? "The application could not be sent. Try again.",
-      );
+    } catch {
+      setFormError("The application could not be sent. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -150,7 +152,7 @@ export default function ResponderApplicationPage({ applicationRepository }) {
     const copy = STATUS_COPY[existing.status] ?? STATUS_COPY.pending;
 
     return (
-      <Section id="application" title="Responder application">
+      <Section id="application" title="Application status">
         <div className="surface-card">
           <Badge tone={copy.tone}>{copy.label}</Badge>
           <p>{copy.message}</p>
@@ -177,14 +179,14 @@ export default function ResponderApplicationPage({ applicationRepository }) {
   return (
     <Section
       id="application"
-      title="Apply to be a responder"
+      title="Application form"
       description="Submitting this does not grant responder access. A reviewer checks every application."
     >
       <form className="auth-form" noValidate onSubmit={handleSubmit}>
         <FormStatus message={formError} />
 
         <div className="surface-card">
-          <h4>Your verified details</h4>
+          <h3>Your verified details</h3>
           <p>
             These come from your account and are not re-entered here, so an
             application always matches the account it belongs to.

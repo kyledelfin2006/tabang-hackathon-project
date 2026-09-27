@@ -68,7 +68,7 @@ export default function LoginPage() {
       <section className="auth-panel">
         <ErrorState
           title="Sign-in is unavailable"
-          message="This site is not configured to sign in right now. This is a fault on our side, not a problem with your details or your connection. In an emergency, call the hotline numbers directly rather than waiting for this."
+          message="We cannot sign in right now. If you need emergency help, call 911 or contact your barangay hall."
         />
       </section>
     );
@@ -76,8 +76,6 @@ export default function LoginPage() {
 
   return (
     <section className="auth-panel">
-      <span className="section-tag">Resident access</span>
-      <h2>Sign in to Tabang</h2>
       <p>Use the email address you registered with.</p>
 
       <form className="auth-form" noValidate onSubmit={handleSubmit}>

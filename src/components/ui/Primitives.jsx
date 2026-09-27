@@ -1,4 +1,25 @@
+import { useLayoutEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+
+export function PageHeading({ children, className = "" }) {
+  const headingRef = useRef(null);
+
+  useLayoutEffect(() => {
+    if (!document.activeElement?.closest('[role="dialog"]')) {
+      headingRef.current?.focus();
+    }
+  }, []);
+
+  return (
+    <h1
+      className={`page-title ${className}`.trim()}
+      ref={headingRef}
+      tabIndex={-1}
+    >
+      {children}
+    </h1>
+  );
+}
 
 export function Card({ children, className = "", as: Element = "article" }) {
   return (
@@ -13,7 +34,7 @@ export function Section({ title, description, action, children, id }) {
     <section aria-labelledby={headingId} className="stack-section">
       <div className="section-label">
         <div>
-          <h3 id={headingId}>{title}</h3>
+          <h2 id={headingId}>{title}</h2>
           {description ? <p>{description}</p> : null}
         </div>
         {action ?? null}
@@ -23,7 +44,13 @@ export function Section({ title, description, action, children, id }) {
   );
 }
 
-const BADGE_TONES = new Set(["neutral", "info", "success", "warning", "danger"]);
+const BADGE_TONES = new Set([
+  "neutral",
+  "info",
+  "success",
+  "warning",
+  "danger",
+]);
 
 export function Badge({ tone = "neutral", children }) {
   const safeTone = BADGE_TONES.has(tone) ? tone : "neutral";

@@ -84,8 +84,8 @@ export default function SignupPage() {
     return (
       <section className="auth-panel">
         <ErrorState
-          title="Sign-in is unavailable"
-          message="This site is not configured to create an account right now. This is a fault on our side, not a problem with your details or your connection. In an emergency, call the hotline numbers directly rather than waiting for this."
+          title="Account creation is unavailable"
+          message="We cannot create an account right now. If you need emergency help, call 911 or contact your barangay hall."
         />
       </section>
     );
@@ -94,7 +94,6 @@ export default function SignupPage() {
   return (
     <section className="auth-panel">
       <span className="section-tag">Resident registration</span>
-      <h2>Create a resident account</h2>
       <p>
         Residents can report flooding and request help. Responder access is
         reviewed separately after you sign in.

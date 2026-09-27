@@ -127,7 +127,7 @@ export default function ReviewQueuePage({ reviewRepository }) {
                 <span>{formatWhen(application.submittedAtMillis)}</span>
               </div>
 
-              <h4 className="report-card__title">{application.organization}</h4>
+              <h3 className="report-card__title">{application.organization}</h3>
 
               <div className="detail-list">
                 <span>

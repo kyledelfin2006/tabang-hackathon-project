@@ -40,7 +40,6 @@ export default function ResetPasswordPage() {
   return (
     <section className="auth-panel">
       <span className="section-tag">Account recovery</span>
-      <h2>Reset your password</h2>
       <p>We will email a reset link if the address has an account.</p>
 
       <form className="auth-form" noValidate onSubmit={handleSubmit}>
