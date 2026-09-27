@@ -35,8 +35,8 @@ jobs:
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Retired URL redirects
-        run: npm run test:redirects
+      - name: Server tests
+        run: npm run test:server
 
       - name: Build
         run: npm run build

@@ -1,6 +1,9 @@
-import { createReadStream, existsSync, statSync } from "node:fs";
 import { createServer } from "node:http";
-import { extname, join, normalize, resolve, sep } from "node:path";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { applySecurityHeaders } from "./securityHeaders.mjs";
+import { redirectLegacyUrl } from "./legacyRedirects.mjs";
+import { parseRequestTarget, serveStatic } from "./static.mjs";
 import {
   buildDestroyParams,
   buildIdentityUploadParams,
@@ -10,59 +13,7 @@ import {
   readCallerRole,
   signUploadParams,
   verifyFirebaseIdToken,
-} from "./scripts/uploads/cloudinarySignature.mjs";
-
-const root = resolve(".");
-const distRoot = resolve("dist");
-const port = Number(process.env.PORT || 8000);
-const host = process.env.HOST || "127.0.0.1";
-
-const types = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".mjs": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-};
-
-function getPath(url) {
-  const pathname = decodeURIComponent(new URL(url, `http://${host}:${port}`).pathname);
-  const clean = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  const fullPath = resolve(join(root, clean));
-  return fullPath === root || fullPath.startsWith(root + sep) ? fullPath : null;
-}
-
-function getDistPath(url) {
-  const pathname = decodeURIComponent(new URL(url, `http://${host}:${port}`).pathname);
-  const clean = normalize(pathname).replace(/^(\.\.[/\\])+/, "");
-  const fullPath = resolve(join(distRoot, clean));
-  return fullPath === distRoot || fullPath.startsWith(distRoot + sep) ? fullPath : null;
-}
-
-function serveFile(res, filePath, status = 200) {
-  res.writeHead(status, {
-    "Content-Type": types[extname(filePath).toLowerCase()] || "application/octet-stream",
-  });
-  createReadStream(filePath).pipe(res);
-}
-
-function serveNotFound(res) {
-  const notFoundPage = join(root, "404.html");
-
-  if (existsSync(notFoundPage)) {
-    serveFile(res, notFoundPage, 404);
-    return;
-  }
-
-  res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-  res.end("Not found");
-}
+} from "../scripts/uploads/cloudinarySignature.mjs";
 
 const SIGNATURE_ROUTE = "/api/uploads/cloudinary-signature";
 const IDENTITY_SIGNATURE_ROUTE = "/api/uploads/identity-signature";
@@ -70,46 +21,6 @@ const IDENTITY_VIEW_ROUTE = "/api/uploads/identity-view";
 const IDENTITY_DELETE_ROUTE = "/api/uploads/identity-delete";
 const MAX_SIGNATURE_BODY_BYTES = 8 * 1024;
 
-
-/*
- * Browser security headers.
- *
- * The CSP is deliberately explicit about who may be contacted: Firebase for
- * auth and data, Cloudinary for uploads and signed delivery. Anything else is
- * refused, which limits where a script injected through a report description
- * could send data.
- *
- * Phase 14 retired the legacy pages, so 'unsafe-inline' for styles and the
- * CDN font origins are gone: nothing left in the application needs them.
- */
-const CONTENT_SECURITY_POLICY = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self'",
-  "font-src 'self'",
-  "img-src 'self' data: blob: https://res.cloudinary.com",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://api.cloudinary.com https://identitytoolkit.googleapis.com",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "object-src 'none'",
-].join("; ");
-
-const SECURITY_HEADERS = {
-  "Content-Security-Policy": CONTENT_SECURITY_POLICY,
-  "X-Content-Type-Options": "nosniff",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  // A flood report page has no business reading the camera or microphone, and
-  // geolocation is requested only from the report form on this origin.
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=(self), interest-cohort=()",
-  "X-Frame-Options": "DENY",
-};
-
-function applySecurityHeaders(res) {
-  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
-    res.setHeader(name, value);
-  }
-}
 
 function sendJson(res, status, payload) {
   const body = JSON.stringify(payload);
@@ -155,17 +66,17 @@ function readJsonBody(req) {
  * The API secret stays in this process. The client cannot choose any signed
  * parameter, so it cannot widen the folder, size, or format it uploads with.
  */
-async function handleSignatureRequest(req, res) {
+async function handleSignatureRequest(req, res, env) {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "Use POST." });
 
     return;
   }
 
-  const apiKey = process.env.FIREBASE_WEB_API_KEY;
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const cloudinaryApiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  const apiKey = env.FIREBASE_WEB_API_KEY;
+  const cloudName = env.CLOUDINARY_CLOUD_NAME;
+  const cloudinaryApiKey = env.CLOUDINARY_API_KEY;
+  const apiSecret = env.CLOUDINARY_API_SECRET;
 
   if (!apiKey || !cloudName || !cloudinaryApiKey || !apiSecret) {
     // Fail closed: never fall back to an unsigned upload path.
@@ -213,13 +124,13 @@ async function handleSignatureRequest(req, res) {
   });
 }
 
-function uploadConfig() {
+function uploadConfig(env) {
   return {
-    apiKey: process.env.FIREBASE_WEB_API_KEY,
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
-    apiSecret: process.env.CLOUDINARY_API_SECRET,
+    apiKey: env.FIREBASE_WEB_API_KEY,
+    projectId: env.FIREBASE_PROJECT_ID,
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    cloudinaryApiKey: env.CLOUDINARY_API_KEY,
+    apiSecret: env.CLOUDINARY_API_SECRET,
   };
 }
 
@@ -229,14 +140,14 @@ function uploadConfig() {
  * Uses Cloudinary's authenticated delivery type so the asset is not reachable
  * on the public URL space, and scopes the folder to the verified uid.
  */
-async function handleIdentitySignatureRequest(req, res) {
+async function handleIdentitySignatureRequest(req, res, env) {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "Use POST." });
 
     return;
   }
 
-  const config = uploadConfig();
+  const config = uploadConfig(env);
 
   if (!config.apiKey || !config.cloudName || !config.cloudinaryApiKey || !config.apiSecret) {
     sendJson(res, 503, { error: "Uploads are not configured on this server." });
@@ -293,14 +204,14 @@ async function handleIdentitySignatureRequest(req, res) {
  * The role is read from roleAssignments through Firestore, which no client can
  * write, rather than trusted from the request.
  */
-async function handleIdentityViewRequest(req, res) {
+async function handleIdentityViewRequest(req, res, env) {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "Use POST." });
 
     return;
   }
 
-  const config = uploadConfig();
+  const config = uploadConfig(env);
 
   if (!config.apiKey || !config.projectId || !config.cloudName || !config.apiSecret) {
     sendJson(res, 503, { error: "Uploads are not configured on this server." });
@@ -376,14 +287,14 @@ async function handleIdentityViewRequest(req, res) {
  * reviewer is about to judge, and nobody else should be able to destroy it at
  * all.
  */
-async function handleIdentityDeleteRequest(req, res) {
+async function handleIdentityDeleteRequest(req, res, env) {
   if (req.method !== "POST") {
     sendJson(res, 405, { error: "Use POST." });
 
     return;
   }
 
-  const config = uploadConfig();
+  const config = uploadConfig(env);
 
   if (!config.apiKey || !config.projectId || !config.cloudName || !config.apiSecret) {
     sendJson(res, 503, { error: "Uploads are not configured on this server." });
@@ -469,88 +380,46 @@ async function handleIdentityDeleteRequest(req, res) {
   sendJson(res, 200, { deleted: true });
 }
 
-createServer((req, res) => {
-  applySecurityHeaders(res);
+export function createAppServer({ distRoot = resolve("dist"), env = process.env } = {}) {
+  return createServer((req, res) => {
+    applySecurityHeaders(res);
+    const parsed = parseRequestTarget(req.url ?? "/");
 
-  const pathname = decodeURIComponent(new URL(req.url, `http://${host}:${port}`).pathname);
-
-  if (pathname === IDENTITY_DELETE_ROUTE) {
-    handleIdentityDeleteRequest(req, res).catch(() => {
-      sendJson(res, 500, { error: "Unexpected server error." });
-    });
-
-    return;
-  }
-
-  if (pathname === IDENTITY_SIGNATURE_ROUTE) {
-    handleIdentitySignatureRequest(req, res).catch(() => {
-      sendJson(res, 500, { error: "Unexpected server error." });
-    });
-
-    return;
-  }
-
-  if (pathname === IDENTITY_VIEW_ROUTE) {
-    handleIdentityViewRequest(req, res).catch(() => {
-      sendJson(res, 500, { error: "Unexpected server error." });
-    });
-
-    return;
-  }
-
-  if (pathname === SIGNATURE_ROUTE) {
-    handleSignatureRequest(req, res).catch(() => {
-      sendJson(res, 500, { error: "Unexpected server error." });
-    });
-
-    return;
-  }
-  const hasExtension = extname(pathname) !== "";
-  const distIndex = join(distRoot, "index.html");
-  const legacyLanding = join(root, "legacy-index.html");
-  const distReady = existsSync(distIndex);
-  let filePath = getPath(req.url);
-  let distPath = getDistPath(req.url);
-
-  if (!filePath || !distPath) {
-    res.writeHead(403);
-    res.end("Forbidden");
-    return;
-  }
-
-  if (pathname === "/" && !distReady && existsSync(legacyLanding)) {
-    serveFile(res, legacyLanding);
-    return;
-  }
-
-  if (distReady && existsSync(distPath)) {
-    if (statSync(distPath).isDirectory()) {
-      distPath = join(distPath, "index.html");
-    }
-
-    if (existsSync(distPath)) {
-      serveFile(res, distPath);
+    if (parsed.error) {
+      res.writeHead(parsed.error, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Bad request");
       return;
     }
-  }
 
-  if (existsSync(filePath)) {
-    if (statSync(filePath).isDirectory()) {
-      filePath = join(filePath, "index.html");
-    }
+    const { pathname, search } = parsed;
+    const handlers = {
+      [IDENTITY_DELETE_ROUTE]: handleIdentityDeleteRequest,
+      [IDENTITY_SIGNATURE_ROUTE]: handleIdentitySignatureRequest,
+      [IDENTITY_VIEW_ROUTE]: handleIdentityViewRequest,
+      [SIGNATURE_ROUTE]: handleSignatureRequest,
+    };
+    const handler = handlers[pathname];
 
-    if (existsSync(filePath)) {
-      serveFile(res, filePath);
+    if (handler) {
+      handler(req, res, env).catch(() => {
+        sendJson(res, 500, { error: "Unexpected server error." });
+      });
       return;
     }
-  }
 
-  if (distReady && !hasExtension) {
-    serveFile(res, distIndex);
-    return;
-  }
+    if (redirectLegacyUrl(req, res, pathname, search)) {
+      return;
+    }
 
-  serveNotFound(res);
-}).listen(port, host, () => {
-  console.log(`Tabang is running at http://${host}:${port}/`);
-});
+    serveStatic(req, res, { distRoot, pathname });
+  });
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  const host = process.env.HOST || "127.0.0.1";
+  const port = Number(process.env.PORT || 8000);
+
+  createAppServer().listen(port, host, () => {
+    console.log(`Tabang is running at http://${host}:${port}/`);
+  });
+}
