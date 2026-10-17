@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-17T22:33:38+08:00
-State: Revision 2 approved; plan phase 1 complete, phase 2 next; execution mode `auto`, one Claude Code agent
+Updated: 2026-10-17T22:47:45+08:00
+State: Revision 2 approved; plan phases 1 and 2 complete, phase 3 next; execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
@@ -59,11 +59,12 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - The main checkout `Project_Tabang` on `main` still holds the Revision 1 documents and an older handoff; this file is the current one.
 - Untracked toolkit files (`.agents/`, `.claude/`, `.editorconfig`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) from `npx len-toolkit start` are preserved and never staged.
 - The local `.env` now also holds the local Supabase development values; it is gitignored.
-- Phases 2 to 8: not started.
+- Phase 2 is complete with checkpoint `feat(db): add the supabase schema, policies, and functions`: three migrations, 42 policy tests.
+- Phases 3 to 8: not started.
 
 ## Checks and evidence
 
-Phase 1 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, unit, server, `db:reset`, policy smoke tests, and two full `npm run check` runs passed on 2026-10-17.
+Phase 1 and 2 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, unit, server, `db:reset`, 42 policy tests, and full `npm run check` runs passed on 2026-10-17.
 `npm audit --omit=dev --audit-level=high` reports 4 high findings, all inside the `firebase` web SDK through `@grpc/grpc-js`; Phase 3 removes that dependency.
 The CI `policies` job has not run, because nothing is pushed.
 The Supabase free plan limits and email sender restrictions in the architecture are remembered, not verified.
@@ -81,6 +82,6 @@ Do not reset a count on a new session or silently reinterpret a failed check as 
 
 ## Next action
 
-Execute plan phase 2 (database schema, policies, functions, and storage) in this worktree, then continue through phase 8 in `auto` mode.
+Execute plan phase 3 (move the app to Supabase and remove Firebase and Cloudinary) in this worktree, then continue through phase 8 in `auto` mode.
 Docker Desktop must be running; start the stack with `npm run db:start`.
 A new session resumes with the prompt in plan section 5.

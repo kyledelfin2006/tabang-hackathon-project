@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-17T22:33:38+08:00
+Updated: 2026-10-17T22:47:45+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -182,26 +182,26 @@ Checkpoint message: `chore(supabase): merge earlier phases, add the local stack,
 
 Requirements: REQ-006, REQ-007, REQ-008, REQ-009, REQ-018 (database), REQ-022 (database), REQ-027 (database), REQ-042, REQ-043
 Depends on: Phase 1
-State: Draft, not started
+State: Complete; checkpoint commit `feat(db): add the supabase schema, policies, and functions`
 
 #### Tasks
 
-- [ ] Write migrations in `supabase/migrations/` for every table, constraint, index, and the `hotline_directory` view in `../product/ARCHITECTURE.md`, with row-level security enabled on every table.
-- [ ] Add a role helper that reads `role_assignments` for the caller and treats a missing row as `resident`.
-- [ ] Add policies and column privileges exactly as the architecture's schema table states; `signals` and `api_clients` get no policy.
-- [ ] Add the sign-up trigger that validates the metadata and creates the `profiles` row.
-- [ ] Add the functions in the architecture's function table, each checking the caller, fixing its `search_path`, raising the stable error codes, and granted only to the roles that may call it.
-- [ ] Seed `incident_transitions` from the same moves as `ALLOWED_TRANSITIONS`.
-- [ ] Create the `report-photos` and `identity-evidence` buckets with image-only type lists, size limits, and the storage policies in the architecture.
-- [ ] Export `ALLOWED_TRANSITIONS` from `incidentLifecycle.js` and add `tests/policies/transitionParity.test.mjs` comparing it with `incident_transitions`.
-- [ ] Add `tests/policies/helpers/` that create a resident, responder, reviewer, admin, and anonymous client against the local stack.
-- [ ] Add policy tests for every clause of REQ-006, REQ-007, REQ-008, REQ-009, and REQ-042, and for the claim, transition, verify, cancel, application, and decision functions including each refusal.
-- [ ] Never use the secret key in a test that checks what a user is supposed to be denied.
+- [x] Write migrations in `supabase/migrations/` for every table, constraint, index, and the `hotline_directory` view in `../product/ARCHITECTURE.md`, with row-level security enabled on every table.
+- [x] Add a role helper that reads `role_assignments` for the caller and treats a missing row as `resident`.
+- [x] Add policies and column privileges exactly as the architecture's schema table states; `signals` and `api_clients` get no policy.
+- [x] Add the sign-up trigger that validates the metadata and creates the `profiles` row.
+- [x] Add the functions in the architecture's function table, each checking the caller, fixing its `search_path`, raising the stable error codes, and granted only to the roles that may call it.
+- [x] Seed `incident_transitions` from the same moves as `ALLOWED_TRANSITIONS`.
+- [x] Create the `report-photos` and `identity-evidence` buckets with image-only type lists, size limits, and the storage policies in the architecture.
+- [x] Export `ALLOWED_TRANSITIONS` from `incidentLifecycle.js` and add `tests/policies/transitionParity.test.mjs` comparing it with `incident_transitions`.
+- [x] Add `tests/policies/helpers/` that create a resident, responder, reviewer, admin, and anonymous client against the local stack.
+- [x] Add policy tests for every clause of REQ-006, REQ-007, REQ-008, REQ-009, and REQ-042, and for the claim, transition, verify, cancel, application, and decision functions including each refusal.
+- [x] Never use the secret key in a test that checks what a user is supposed to be denied.
 
 #### Verification
 
-- [ ] `npm run db:reset` builds the schema from nothing, and `npm run test:policies` passes, with the tests listed by name in evidence; `npm run db:stop` recorded.
-- [ ] `npm run lint` and `npm run test:unit` pass.
+- [x] `npm run db:reset` builds the schema from nothing, and `npm run test:policies` passes, with the tests listed by name in evidence; `npm run db:stop` recorded.
+- [x] `npm run lint` and `npm run test:unit` pass.
 
 Checkpoint message: `feat(db): add the supabase schema, policies, and functions`
 Applying these migrations to a hosted project is Len's action after Phase 8.

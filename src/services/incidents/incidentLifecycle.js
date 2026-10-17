@@ -14,7 +14,7 @@ export const INCIDENT_STATUS = Object.freeze({
  * quietly reopen, because the resident has already been told it was handled.
  * Cancellation is a resident action and is deliberately absent here.
  */
-const ALLOWED_TRANSITIONS = Object.freeze({
+export const ALLOWED_TRANSITIONS = Object.freeze({
   [INCIDENT_STATUS.new]: Object.freeze([INCIDENT_STATUS.acknowledged]),
   [INCIDENT_STATUS.acknowledged]: Object.freeze([
     INCIDENT_STATUS.dispatched,
