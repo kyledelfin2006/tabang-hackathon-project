@@ -21,7 +21,8 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
-    "api-clients": "node --env-file-if-exists=.env scripts/api-clients.mjs"
+    "api-clients": "node --env-file-if-exists=.env scripts/api-clients.mjs",
+    "seed:hotlines": "node --env-file-if-exists=.env scripts/seed-hotlines.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-18T01:11:36+08:00
+Updated: 2026-10-18T01:18:37+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -329,23 +329,23 @@ Checkpoint message: `feat(api): add the versioned api foundation and client keys
 
 Requirements: REQ-013 (hotline seeding tool), REQ-034, REQ-035, REQ-036
 Depends on: Phase 6
-State: Draft, not started
+State: Complete; checkpoint commit `feat(api): add partner incidents, signals, and the dost seam`
 
 #### Tasks
 
-- [ ] `server/routes/incidents.mjs` with a fixed `toPartnerIncident` projection (D-5), filters, `since`, and a cursor encoding `updated_at` and id.
-- [ ] A new migration with the index for the partner incident query.
-- [ ] `server/routes/advisories.mjs`, public with `Access-Control-Allow-Origin: *` for `GET` only, excluding expired items.
-- [ ] `server/signals/canonicalSignal.mjs` (pure validation against `aklanPlaces.js`) and `server/routes/signals.mjs` calling `ingest_signal` through the store.
-- [ ] `server/integrations/dostSignal.mjs` exporting `toCanonicalSignal` and `verifyRequest`, both throwing a typed "contract pending" error, and the 501 route; fixtures under `tests/server/fixtures/dost-signal/` are labeled synthetic.
-- [ ] `scripts/seed-hotlines.mjs` loading `docs/hotline-seed.json` with every record left unverified.
-- [ ] Extend `docs/api/openapi.json`.
+- [x] `server/routes/incidents.mjs` with a fixed `toPartnerIncident` projection (D-5), filters, `since`, and a cursor encoding `updated_at` and id.
+- [x] A new migration with the index for the partner incident query.
+- [x] `server/routes/advisories.mjs`, public with `Access-Control-Allow-Origin: *` for `GET` only, excluding expired items.
+- [x] `server/signals/canonicalSignal.mjs` (pure validation against `aklanPlaces.js`) and `server/routes/signals.mjs` calling `ingest_signal` through the store.
+- [x] `server/integrations/dostSignal.mjs` exporting `toCanonicalSignal` and `verifyRequest`, both throwing a typed "contract pending" error, and the 501 route; fixtures under `tests/server/fixtures/dost-signal/` are labeled synthetic.
+- [x] `scripts/seed-hotlines.mjs` loading `docs/hotline-seed.json` with every record left unverified.
+- [x] Extend `docs/api/openapi.json`.
 
 #### Verification
 
-- [ ] `npm run test:server` covers: projection never contains `contactPhone`, `description`, coordinates, or `reporterId`; cursor paging over 30 records; `since`; signal validation errors; repeated signal creates one advisory; expired advisory hidden; DOST route 501.
-- [ ] `npm run db:reset` and `npm run test:policies` pass; `npm run db:stop` recorded.
-- [ ] `npm run lint`, `npm run test:unit`, and `npm run build` pass.
+- [x] `npm run test:server` covers: projection never contains `contactPhone`, `description`, coordinates, or `reporterId`; cursor paging over 30 records; `since`; signal validation errors; repeated signal creates one advisory; expired advisory hidden; DOST route 501.
+- [x] `npm run db:reset` and `npm run test:policies` pass; `npm run db:stop` recorded.
+- [x] `npm run lint`, `npm run test:unit`, and `npm run build` pass.
 
 Checkpoint message: `feat(api): add partner incidents, signals, and the dost seam`
 

@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-18T01:11:36+08:00
-State: Revision 2 approved; plan phases 1 to 6 complete (barangay lists blocked), phase 7 next; execution mode `auto`, one Claude Code agent
+Updated: 2026-10-18T01:18:37+08:00
+State: Revision 2 approved; plan phases 1 to 7 complete (barangay lists blocked), phase 8 next; execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
@@ -66,11 +66,12 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - Phase 5 is complete with checkpoint `feat(responder): paged queue, evidence review, and advisory publishing`: paged queue, exact dashboard counts, incident photos, map link, verify and reject, advisory publishing, reviewer evidence links and notes, reapply after rejection, workspace links, modal focus trap, bottom-navigation clearance, and the copy scan.
 - The privacy page in `src/routes/auth/PrivacyPage.jsx` is a draft pending Len's review; it is not legal advice.
 - Phase 6 is complete with checkpoint `feat(api): add the versioned api foundation and client keys`: `/api/v1` router with the error envelope, request ids, partner key checks, scopes, rate limits, redacted request logs, `GET /api/v1/health`, the OpenAPI document, and `npm run api-clients`.
-- Phases 7 and 8: not started.
+- Phase 7 is complete with checkpoint `feat(api): add partner incidents, signals, and the dost seam`: `GET /api/v1/incidents` and `/{id}` in the D-5 projection with cursor paging and `since`, public `GET /api/v1/advisories`, idempotent `POST /api/v1/signals`, the DOST route answering 501, and `npm run seed:hotlines`.
+- Phase 8: not started.
 
 ## Checks and evidence
 
-Phase 1 to 6 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
+Phase 1 to 7 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
 `npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities since Phase 3 removed `firebase`.
 `README.md` and `docs/operations.md` still describe Firebase until Phase 8 rewrites them.
 The CI `policies` job has not run, because nothing is pushed.
@@ -90,6 +91,6 @@ Do not reset a count on a new session or silently reinterpret a failed check as 
 
 ## Next action
 
-Execute plan phase 7 (partner incidents, advisories, signals, and the DOST seam) in this worktree, then phase 8, in `auto` mode.
+Execute plan phase 8 (documentation and release readiness) in this worktree, in `auto` mode.
 Docker Desktop must be running; start the stack with `npm run db:start`.
 A new session resumes with the prompt in plan section 5.

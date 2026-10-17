@@ -93,7 +93,7 @@ function clientIp(req) {
 /**
  * Builds the /api handler from a route table.
  *
- * Each route is `{ method, path, scope?, public?, cors?, maxBodyBytes?,
+ * Each route is `{ method, path, scope?, usesStore?, cors?, maxBodyBytes?,
  * handler }`. A route with a `scope` needs a partner API key that carries it;
  * every other route is public and limited per IP instead. Handlers receive
  * `{ query, params, body, client, store, env }` and return
@@ -155,11 +155,11 @@ export function createApiHandler({
         res.setHeader("Access-Control-Allow-Origin", "*");
       }
 
-      if (route.scope) {
-        if (!store) {
-          throw new ApiError(503, "unavailable", "The API is not configured on this server.");
-        }
+      if ((route.scope || route.usesStore) && !store) {
+        throw new ApiError(503, "unavailable", "The API is not configured on this server.");
+      }
 
+      if (route.scope) {
         client = await authenticateClient(req.headers.authorization, {
           findClient: store.findApiClient,
         });
