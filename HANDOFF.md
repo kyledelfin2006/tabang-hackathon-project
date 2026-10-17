@@ -1,76 +1,81 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-09-26T20:08:00+08:00
-State: G0 complete; A1 committed on `feat-001/integration`
+Updated: 2026-10-17T22:21:39+08:00
+State: Revision 2 approved; plan phase 1 in progress, execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
 
 - Workspace rules: `../AGENTS.md`
 - Index: [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md)
-- Architecture: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 1
-- Feature: [docs/features/FEAT-001-stabilization-and-integration-api.md](docs/features/FEAT-001-stabilization-and-integration-api.md) Revision 1
-- Plan: [docs/plans/FEAT-001-implementation.md](docs/plans/FEAT-001-implementation.md) Revision 1
-- Review evidence: workspace-root `PROJECT_REVIEW_REPORT.md`
+- Architecture: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 2, approved
+- Feature: [docs/features/FEAT-001-stabilization-and-integration-api.md](docs/features/FEAT-001-stabilization-and-integration-api.md) Revision 2, approved
+- Plan: [docs/plans/FEAT-001-implementation.md](docs/plans/FEAT-001-implementation.md) Revision 2, approved
+- Review evidence: [docs/evidence/2026-09-26-project-review.md](docs/evidence/2026-09-26-project-review.md)
 
 Reread these files and inspect actual Git status before acting; prior chat memory is not authoritative.
+The Revision 1 documents are in Git at `d928c56` on `feat-001/integration`.
 
 ## Approval and allowed work
 
-Approval reference: Len in chat on 2026-09-26 at about 16:27 +08:00, replying "Okay I approve" to the presented architecture, FEAT-001, plan, execution mode, and decisions D-5 to D-9.
-The approved files are not yet committed; their revisions are identified by SHA-256 prefix of the files recorded here at 16:30 +08:00, after only status and approval fields were updated.
+Revision 1 was approved by Len in chat on 2026-09-26 at about 16:27 +08:00 ("Okay I approve"), with execution mode `hard-stop` and D-5 to D-9.
+On 2026-10-03 Len said in chat that the Firebase account is inaccessible, that the project will switch to Supabase, that time is not a constraint, and that the app is a work in progress and not live.
+Len then chose, in chat on 2026-10-03: Supabase Storage for files (D-11), direct access with row-level security (D-12), revising FEAT-001 in place (D-14), and local Supabase in Docker for tests (D-13).
+Those choices set the direction; they are not approval of the Revision 2 documents, which were drafted afterwards.
+On 2026-10-17 at about 22:15 +08:00 Len said in chat: "Switch to auto and make these instructions executable by claude code as a single agent no need to divide tasks anymore".
+The plan draft was revised accordingly: execution mode `auto`, one Claude Code agent, eight sequential phases, no tracks or gates.
+That instruction changed the draft; it was not itself approval.
+On 2026-10-17 at about 22:21 +08:00 Len approved the revisions in chat: "alright i approve of the revisions, you may also execute the ingtegration yourself after dinng phase 1"
+This approves Architecture Revision 2, FEAT-001 Revision 2, plan Revision 2, D-15 to D-19, execution mode `auto`, and execution by Claude Code in this session starting with phase 1.
 
-| Document | Approved revision | SHA-256 prefix at approval record | Len chat approval reference |
+| Document or decision | Revision | State | Len chat approval reference |
 | --- | --- | --- | --- |
-| Architecture | Revision 1 | `0243d23ec57d` | 2026-09-26 about 16:27 +08:00 |
-| FEAT-001 | Revision 1 | `c4449b259a02` | 2026-09-26 about 16:27 +08:00 |
-| FEAT-001 plan | Revision 1 | `789878aa94f0` | 2026-09-26 about 16:27 +08:00 |
-| Execution mode | `hard-stop` | - | 2026-09-26 about 16:27 +08:00 |
-| D-5 partner data excludes personal data | Approved | - | 2026-09-26 about 16:27 +08:00 |
-| D-6 new dependency `firebase-admin`, server only | Approved | - | 2026-09-26 about 16:27 +08:00 |
-| D-7 adopt `AGENTS.md` workflow, archive `AI_IMPLEMENTATION_PLAN.md` | Approved | - | 2026-09-26 about 16:27 +08:00 |
-| D-8 remove Firebase Storage rules, tests, emulator config | Approved | - | 2026-09-26 about 16:27 +08:00 |
-| D-9 legacy URLs as server 301 redirects | Approved | - | 2026-09-26 about 16:27 +08:00 |
+| Architecture | Revision 2 | Approved | 2026-10-17 about 22:21 +08:00 |
+| FEAT-001 | Revision 2 | Approved | 2026-10-17 about 22:21 +08:00 |
+| FEAT-001 plan | Revision 2 | Approved | 2026-10-17 about 22:21 +08:00 |
+| Execution mode | `auto` | Approved | 2026-10-17 about 22:15 and 22:21 +08:00 |
+| Execution model | One Claude Code agent | Approved | 2026-10-17 about 22:15 and 22:21 +08:00 |
+| D-10 to D-14 | - | Decided in chat, recorded in the drafts | 2026-10-03, before the drafts existed |
+| D-15 no data migration | - | Approved | 2026-10-17 about 22:21 +08:00 |
+| D-16 add `@supabase/supabase-js` and dev `supabase`; remove three Firebase packages | - | Approved | 2026-10-17 about 22:21 +08:00 |
+| D-17 email confirmation off during development | - | Approved | 2026-10-17 about 22:21 +08:00 |
+| D-18 state changes through database functions | - | Approved | 2026-10-17 about 22:21 +08:00 |
+| D-19 hotline rating totals computed by a view | - | Approved | 2026-10-17 about 22:21 +08:00 |
+| D-6 `firebase-admin` | - | Withdrawn by Revision 2 | - |
 
-Confirmed earlier in chat on 2026-09-26: D-1 (DOST Signal both directions), D-2 (one Node host), D-3 (barangay picker with optional GPS), D-4 (offline replay).
-Allowed phases: all FEAT-001 phases (A1 to A5, B1 to B3, C1 to C3) and gates G0 to G2, in the plan's order and under `hard-stop` mode.
+Allowed phases: plan Revision 2 phases 1 to 8, in order.
+No agent continues a Revision 1 phase or the earlier track split; in particular nobody starts A3, resumes B1, or starts C2.
 Architecture and behavior changes return to Len; this handoff cannot override the linked specs.
 
 ## Progress and working tree
 
-- G0 complete: phase A1 is committed on `feat-001/integration` with the message `chore(repo): track the signing module and make checks pass on a fresh clone`.
-- Find the hash with `git log --grep "track the signing module" feat-001/integration`; this file cannot hold its own commit hash.
-- Worktree `../Project_Tabang-integration` holds `feat-001/integration`, created from `main` at `80a51de`.
-- The approved architecture, FEAT-001, and plan files are committed byte-for-byte as approved; their SHA-256 prefixes still match the table above.
-- The main checkout `Project_Tabang` on `main` is unchanged; its untracked `.agents/`, `.claude/`, and planning files remain there.
-- A1 also tracks `src/services/uploads/*.js`, which the old `uploads/` ignore rule hid and REQ-002 needs; see the track A status file.
-- Tracks B and C may now create `feat-001/track-b` and `feat-001/track-c` from `feat-001/integration`.
-- Gates: G0 complete, G1 not started, G2 not started.
-- Track status files: `docs/plans/FEAT-001-track-a-status.md` (this branch), and the B and C status files on their branches.
+- A1 (gate G0) is committed on `feat-001/integration` at `d928c56`.
+- A2 is committed on `feat-001/track-a` at `32d17bf` and is not merged into integration.
+- C1 is committed on `feat-001/track-c` at `81b1012` and is not merged into integration.
+- Revision 1's B1 is uncommitted in `../Project_Tabang-track-b`: `firebase/firestore.rules`, `tests/rules/firestore.rules.test.mjs`, `src/services/incidents/incidentLifecycle.js`, `src/services/reports/reportRepository.js`, `src/test/reports.test.js`, and the untracked `src/test/transitionParity.test.js`, status file, and evidence file.
+- That work must be preserved; plan Phase 1 parks it, with its status and evidence files, on `archive/feat-001-b1-firestore-rules` once approved.
+- The approved Revision 2 documents are committed on `feat-001/integration` with message `docs(feat-001): approve revision 2 for supabase and single-agent execution`.
+- The main checkout `Project_Tabang` on `main` still holds the Revision 1 documents and an older handoff; this file is the current one.
+- Plan Revision 2 phases 1 to 8: not started.
 
 ## Checks and evidence
 
-Actual results for A1 are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md), run on 2026-09-26 between 20:01 and 20:07 +08:00:
-
-- `npm run lint`: passed, now covering `scripts/` and `tests/`.
-- `npm run test:unit`: 200 of 200 passed in three consecutive runs.
-- `npm run test:rules`: 26 of 26 passed after removing the 3 storage tests (D-8); the emulator left `java` on 18085, which Agent A stopped.
-- `npm run check` with the local `.env`: passed.
-- Clean extract of the staged tree: `npm ci` and `npm run test:unit` passed with only `.env` copied.
-- The post-commit throwaway worktree check is recorded by Agent A in the next track A evidence update.
-
-Review evidence from before FEAT-001 is at [docs/evidence/2026-09-26-project-review.md](docs/evidence/2026-09-26-project-review.md).
+No check was run for Revision 2; it is documentation only.
+Observed on 2026-10-03 at about 18:50 +08:00: Docker 29.7.2 is installed, the Docker daemon was not running, and Node is 24.14.0.
+The Supabase free plan limits and email sender restrictions in the architecture are remembered, not verified.
+Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md) and on the track branches.
 
 ## Blockers and attempts
 
 | Problem | Fix-and-check attempts used (maximum 3) | Changes tried and observed result | Required decision or access |
 | --- | --- | --- | --- |
-| None | - | - | - |
+| Revision 1 B1: Firestore rules exceed the emulator's 1000-expression limit on denied report writes. | 3 of 3 | Recorded by Agent B in the track B status file: three restructurings; the last run reported 32 of 32 passing but logged expression-limit errors, so it was not accepted. | Superseded if Revision 2 is approved, because Firestore rules are removed. |
+| The Firebase project cannot be administered. | - | Len cannot access the owning account. | Revision 2 approval, or account recovery. |
 
-Pending Len actions that do not block G0: rotate the Cloudinary secret if `server.mjs` was ever reachable from another machine; provide a Firebase service account in the local `.env` before phase A3; choose the Node host (Q-1); obtain the DOST Signal contract (Q-2).
+Do not reset a count on a new session or silently reinterpret a failed check as passing.
 
 ## Next action
 
-Execution mode is `hard-stop`: Agent A waits for Len's go-ahead before phase A2.
-Agents B and C can start B1 and C1 now, following their prompts in plan section 5.
+Execute plan phase 1 in this worktree, then continue through phase 8 in `auto` mode.
+A new session resumes with the prompt in plan section 5.
