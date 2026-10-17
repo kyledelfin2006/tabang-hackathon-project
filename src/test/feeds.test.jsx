@@ -182,6 +182,7 @@ describe("my reports route", () => {
 
     await screen.findByText("You have not filed any reports");
     expect(listMyReports).toHaveBeenCalledWith({ reporterId: "resident-1" });
+    expect(listMyReports).toHaveBeenCalledTimes(1);
   });
 
   it("cancels only after an explicit confirmation", async () => {

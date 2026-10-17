@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-17T22:21:39+08:00
-State: Revision 2 approved; plan phase 1 in progress, execution mode `auto`, one Claude Code agent
+Updated: 2026-10-17T22:33:38+08:00
+State: Revision 2 approved; plan phase 1 complete, phase 2 next; execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
@@ -50,32 +50,37 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 
 ## Progress and working tree
 
-- A1 (gate G0) is committed on `feat-001/integration` at `d928c56`.
-- A2 is committed on `feat-001/track-a` at `32d17bf` and is not merged into integration.
-- C1 is committed on `feat-001/track-c` at `81b1012` and is not merged into integration.
-- Revision 1's B1 is uncommitted in `../Project_Tabang-track-b`: `firebase/firestore.rules`, `tests/rules/firestore.rules.test.mjs`, `src/services/incidents/incidentLifecycle.js`, `src/services/reports/reportRepository.js`, `src/test/reports.test.js`, and the untracked `src/test/transitionParity.test.js`, status file, and evidence file.
-- That work must be preserved; plan Phase 1 parks it, with its status and evidence files, on `archive/feat-001-b1-firestore-rules` once approved.
-- The approved Revision 2 documents are committed on `feat-001/integration` with message `docs(feat-001): approve revision 2 for supabase and single-agent execution`.
+- A1 (gate G0) is committed at `d928c56`.
+- Approved Revision 2 documents are committed at `ca7ead5` `docs(feat-001): approve revision 2 for supabase and single-agent execution`.
+- Phase 1 is complete with checkpoint `chore(supabase): merge earlier phases, add the local stack, and remove firebase tooling` on `feat-001/integration`.
+- Phase 1 merged A2 (`32d17bf`, merge `56deeac`) and C1 (`81b1012`, merge `12de08f`) into integration.
+- Revision 1's B1 work is parked, not discarded, at `c2f8dde` on `archive/feat-001-b1-firestore-rules`; `../Project_Tabang-track-b` stays on that branch.
+- The track worktrees and branches are no longer used; removing them is Len's action.
 - The main checkout `Project_Tabang` on `main` still holds the Revision 1 documents and an older handoff; this file is the current one.
-- Plan Revision 2 phases 1 to 8: not started.
+- Untracked toolkit files (`.agents/`, `.claude/`, `.editorconfig`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) from `npx len-toolkit start` are preserved and never staged.
+- The local `.env` now also holds the local Supabase development values; it is gitignored.
+- Phases 2 to 8: not started.
 
 ## Checks and evidence
 
-No check was run for Revision 2; it is documentation only.
-Observed on 2026-10-03 at about 18:50 +08:00: Docker 29.7.2 is installed, the Docker daemon was not running, and Node is 24.14.0.
+Phase 1 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, unit, server, `db:reset`, policy smoke tests, and two full `npm run check` runs passed on 2026-10-17.
+`npm audit --omit=dev --audit-level=high` reports 4 high findings, all inside the `firebase` web SDK through `@grpc/grpc-js`; Phase 3 removes that dependency.
+The CI `policies` job has not run, because nothing is pushed.
 The Supabase free plan limits and email sender restrictions in the architecture are remembered, not verified.
-Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md) and on the track branches.
+Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md), [docs/evidence/FEAT-001-track-c.md](docs/evidence/FEAT-001-track-c.md), and on the archive branch.
 
 ## Blockers and attempts
 
 | Problem | Fix-and-check attempts used (maximum 3) | Changes tried and observed result | Required decision or access |
 | --- | --- | --- | --- |
-| Revision 1 B1: Firestore rules exceed the emulator's 1000-expression limit on denied report writes. | 3 of 3 | Recorded by Agent B in the track B status file: three restructurings; the last run reported 32 of 32 passing but logged expression-limit errors, so it was not accepted. | Superseded if Revision 2 is approved, because Firestore rules are removed. |
-| The Firebase project cannot be administered. | - | Len cannot access the owning account. | Revision 2 approval, or account recovery. |
+| Revision 1 B1: Firestore rules exceed the emulator's 1000-expression limit on denied report writes. | 3 of 3 | Recorded by Agent B in the track B status file: three restructurings; the last run reported 32 of 32 passing but logged expression-limit errors, so it was not accepted. | Closed: Firestore rules were removed in Phase 1. |
+| `MyReportsPage` queried with `reporterId: undefined` before the session arrived, failing `feeds.test.jsx` under load (REQ-004). | 1, resolved | The page now skips loading until a reporter id exists, and the test asserts one call; three unit runs and two full checks passed. | None. |
+| The Firebase project cannot be administered. | - | Len cannot access the owning account. | Account recovery so it can be deleted (Q-6); no longer blocks work. |
 
 Do not reset a count on a new session or silently reinterpret a failed check as passing.
 
 ## Next action
 
-Execute plan phase 1 in this worktree, then continue through phase 8 in `auto` mode.
+Execute plan phase 2 (database schema, policies, functions, and storage) in this worktree, then continue through phase 8 in `auto` mode.
+Docker Desktop must be running; start the stack with `npm run db:start`.
 A new session resumes with the prompt in plan section 5.

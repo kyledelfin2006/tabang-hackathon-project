@@ -1,3 +1,5 @@
+> Archived on 2026-10-17 when FEAT-001 moved to single-agent execution; superseded by [HANDOFF.md](../../HANDOFF.md).
+
 # FEAT-001 Track C status
 
 Created: 2026-09-27T14:22:10+08:00

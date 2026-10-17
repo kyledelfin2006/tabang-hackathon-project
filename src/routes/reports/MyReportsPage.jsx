@@ -53,12 +53,19 @@ export default function MyReportsPage({ reportRepository }) {
 
   useEffect(() => {
     activeRef.current += 1;
+
+    // Never query before the session names a reporter; an id-less query would
+    // briefly show an empty list that is not this resident's.
+    if (!reporterId) {
+      return undefined;
+    }
+
     loadFirstPage(activeRef.current);
 
     return () => {
       activeRef.current += 1;
     };
-  }, [loadFirstPage]);
+  }, [loadFirstPage, reporterId]);
 
   const retry = useCallback(() => {
     activeRef.current += 1;

@@ -1,5 +1,5 @@
 /*
- * Refuses to build a bundle that cannot talk to Firebase.
+ * Refuses to build a bundle that cannot talk to Supabase.
  *
  * Vite inlines VITE_* values at build time. If they are absent the build still
  * succeeds and produces an app where every sign-in fails, which is invisible
@@ -11,17 +11,10 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 
-const REQUIRED = [
-  "VITE_FIREBASE_API_KEY",
-  "VITE_FIREBASE_AUTH_DOMAIN",
-  "VITE_FIREBASE_PROJECT_ID",
-  "VITE_FIREBASE_STORAGE_BUCKET",
-  "VITE_FIREBASE_MESSAGING_SENDER_ID",
-  "VITE_FIREBASE_APP_ID",
-];
+const REQUIRED = ["VITE_SUPABASE_URL", "VITE_SUPABASE_PUBLISHABLE_KEY"];
 
 if (process.env.CI === "true") {
-  console.log("CI build: skipping the Firebase configuration check.");
+  console.log("CI build: skipping the Supabase configuration check.");
   process.exit(0);
 }
 
@@ -49,18 +42,18 @@ if (missing.length > 0) {
   console.error(
     [
       "",
-      "This build has no Firebase configuration, so sign-in would fail for",
+      "This build has no Supabase configuration, so sign-in would fail for",
       "everyone who visits the deployed site.",
       "",
       "Missing: " + missing.join(", "),
       "",
-      "Copy .env.example to .env and fill in the values from the Firebase",
-      "console under Project settings > General > Your apps. They are safe to",
-      "keep locally but must not be committed; .env is already ignored.",
+      "Copy .env.example to .env and fill in the values printed by",
+      "`npx supabase status` (local) or the Supabase dashboard (hosted). They",
+      "are safe to keep locally but must not be committed; .env is ignored.",
       "",
     ].join("\n"),
   );
   process.exit(1);
 }
 
-console.log("Firebase configuration present.");
+console.log("Supabase configuration present.");

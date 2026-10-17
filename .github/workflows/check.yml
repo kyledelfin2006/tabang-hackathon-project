@@ -5,7 +5,7 @@ on:
     branches: ["**"]
   pull_request:
 
-# No deployment happens here. Releasing rules or hosting stays a deliberate
+# No deployment happens here. Releasing migrations or hosting stays a deliberate
 # human action, because both change what real residents and responders see.
 permissions:
   contents: read
@@ -41,7 +41,7 @@ jobs:
       - name: Build
         run: npm run build
 
-  rules:
+  policies:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,14 +51,22 @@ jobs:
           node-version: "22"
           cache: npm
 
-      # The emulator needs a JVM. This job is separate so a JVM problem cannot
-      # mask a failure in the fast checks above.
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
+      # npm ci installs the Supabase CLI as a dev dependency. The local stack
+      # runs in the runner's Docker and never touches a hosted project. This job
+      # is separate so a container problem cannot mask a failure above.
       - run: npm ci
 
-      - name: Security rules tests
-        run: npm run test:rules
+      - name: Start local Supabase
+        run: npm run db:start
+
+      - name: Export local Supabase settings
+        run: |
+          npx supabase status -o env \
+            --override-name api.url=SUPABASE_URL \
+            --override-name auth.publishable_key=VITE_SUPABASE_PUBLISHABLE_KEY \
+            --override-name auth.secret_key=SUPABASE_SECRET_KEY \
+            | grep -E '^(SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|SUPABASE_SECRET_KEY)=' \
+            | tr -d '"' >> "$GITHUB_ENV"
+
+      - name: Database policy tests
+        run: npm run test:policies

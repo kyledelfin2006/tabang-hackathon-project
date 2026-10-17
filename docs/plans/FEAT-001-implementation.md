@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-17T22:21:39+08:00
+Updated: 2026-10-17T22:33:38+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -147,34 +147,34 @@ Each phase depends on the one before it.
 
 Requirements: REQ-043 (tooling), REQ-039 (tooling part), D-13, D-14, D-16, D-17
 Depends on: Len's approval of Revision 2 recorded in `HANDOFF.md`
-State: Draft, not started
+State: Complete; checkpoint commit `chore(supabase): merge earlier phases, add the local stack, and remove firebase tooling`
 
 #### Tasks
 
-- [ ] Confirm `HANDOFF.md` records Len's approval of Architecture Revision 2, FEAT-001 Revision 2, this plan Revision 2, and D-15 to D-19; if it does not, stop.
-- [ ] Park the Revision 1 B1 work without discarding it: in `../Project_Tabang-track-b`, run `git switch -c archive/feat-001-b1-firestore-rules`, stage only the five modified files, `src/test/transitionParity.test.js`, `docs/plans/FEAT-001-track-b-status.md`, and `docs/evidence/FEAT-001-track-b.md`, inspect the staged diff, commit `wip(rules): park the unfinished firestore rules work`, and confirm with `git log -1`; leave that worktree on the archive branch.
-- [ ] In `../Project_Tabang-integration`, run `git merge --no-ff feat-001/track-a`, then `git merge --no-ff feat-001/track-c`; on a conflict run `git merge --abort`, record the files in `HANDOFF.md`, and stop.
-- [ ] Move `docs/plans/FEAT-001-track-a-status.md` and `docs/plans/FEAT-001-track-c-status.md` to `docs/archive/` with a first line linking `../../HANDOFF.md`.
-- [ ] Create `docs/evidence/FEAT-001.md` from the verification template, with a first line linking the earlier track evidence files.
-- [ ] Run `npm install @supabase/supabase-js` and `npm install --save-dev supabase` (D-16).
-- [ ] Run `npx supabase init`; in `supabase/config.toml` set the project id to `tabang` and turn email confirmation off (D-17); commit no keys.
-- [ ] Remove Firebase tooling: `firebase.json`, `.firebaserc`, `firebase/`, `tests/rules/`, the dev dependencies `firebase-tools` and `@firebase/rules-unit-testing`, and the scripts `deploy:rules`, `firebase:emulators`, and `test:rules`.
-- [ ] Keep the `firebase` web SDK dependency; the SPA imports it until Phase 3 removes it.
-- [ ] Remove the `overrides` block from `package.json` only if `npm ci` and `npm audit --omit=dev --audit-level=high` stay clean without it; record the result either way.
-- [ ] Add scripts: `db:start` (`supabase start`), `db:stop` (`supabase stop`), `db:reset` (`supabase db reset`), and `test:policies` (`node --test --test-concurrency=1 tests/policies/`).
-- [ ] Add `tests/policies/smoke.test.mjs` that passes when the local auth and data endpoints answer.
-- [ ] `.env.example`: add key names `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, and `SUPABASE_SECRET_KEY`, with a comment that the last one is server only; if `npx supabase status` prints the keys under other names, use the names it prints and record the mapping in evidence.
-- [ ] Add the local values from `npx supabase status` to the gitignored `.env`; never stage or print them.
-- [ ] `scripts/build/check-env.mjs`: require the two `VITE_SUPABASE_*` keys and stop requiring the Firebase keys.
-- [ ] CI: replace the `rules` job with a `policies` job that installs the Supabase CLI, starts the local stack, and runs `npm run test:policies`.
-- [ ] Update `docs/SPEC_INDEX.md`.
+- [x] Confirm `HANDOFF.md` records Len's approval of Architecture Revision 2, FEAT-001 Revision 2, this plan Revision 2, and D-15 to D-19; if it does not, stop.
+- [x] Park the Revision 1 B1 work without discarding it: in `../Project_Tabang-track-b`, run `git switch -c archive/feat-001-b1-firestore-rules`, stage only the five modified files, `src/test/transitionParity.test.js`, `docs/plans/FEAT-001-track-b-status.md`, and `docs/evidence/FEAT-001-track-b.md`, inspect the staged diff, commit `wip(rules): park the unfinished firestore rules work`, and confirm with `git log -1`; leave that worktree on the archive branch.
+- [x] In `../Project_Tabang-integration`, run `git merge --no-ff feat-001/track-a`, then `git merge --no-ff feat-001/track-c`; on a conflict run `git merge --abort`, record the files in `HANDOFF.md`, and stop.
+- [x] Move `docs/plans/FEAT-001-track-a-status.md` and `docs/plans/FEAT-001-track-c-status.md` to `docs/archive/` with a first line linking `../../HANDOFF.md`.
+- [x] Create `docs/evidence/FEAT-001.md` from the verification template, with a first line linking the earlier track evidence files.
+- [x] Run `npm install @supabase/supabase-js` and `npm install --save-dev supabase` (D-16).
+- [x] Run `npx supabase init`; in `supabase/config.toml` set the project id to `tabang` and turn email confirmation off (D-17); commit no keys.
+- [x] Remove Firebase tooling: `firebase.json`, `.firebaserc`, `firebase/`, `tests/rules/`, the dev dependencies `firebase-tools` and `@firebase/rules-unit-testing`, and the scripts `deploy:rules`, `firebase:emulators`, and `test:rules`.
+- [x] Keep the `firebase` web SDK dependency; the SPA imports it until Phase 3 removes it.
+- [x] Remove the `overrides` block from `package.json` only if `npm ci` and `npm audit --omit=dev --audit-level=high` stay clean without it; record the result either way.
+- [x] Add scripts: `db:start` (`supabase start`), `db:stop` (`supabase stop`), `db:reset` (`supabase db reset`), and `test:policies` (`node --test --test-concurrency=1 tests/policies/`).
+- [x] Add `tests/policies/smoke.test.mjs` that passes when the local auth and data endpoints answer.
+- [x] `.env.example`: add key names `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`, and `SUPABASE_SECRET_KEY`, with a comment that the last one is server only; if `npx supabase status` prints the keys under other names, use the names it prints and record the mapping in evidence.
+- [x] Add the local values from `npx supabase status` to the gitignored `.env`; never stage or print them.
+- [x] `scripts/build/check-env.mjs`: require the two `VITE_SUPABASE_*` keys and stop requiring the Firebase keys.
+- [x] CI: replace the `rules` job with a `policies` job that installs the Supabase CLI, starts the local stack, and runs `npm run test:policies`.
+- [x] Update `docs/SPEC_INDEX.md`.
 
 #### Verification
 
-- [ ] `npm ci`, `npm run lint`, `npm run test:unit`, and `npm run test:server` pass.
-- [ ] With Docker running: `npm run db:start`, `npm run db:reset`, and `npm run test:policies` pass, then `npm run db:stop`.
-- [ ] `npm run check` passes with the local Supabase values in `.env`.
-- [ ] `npm audit --omit=dev --audit-level=high` result recorded.
+- [x] `npm ci`, `npm run lint`, `npm run test:unit`, and `npm run test:server` pass.
+- [x] With Docker running: `npm run db:start`, `npm run db:reset`, and `npm run test:policies` pass, then `npm run db:stop`.
+- [x] `npm run check` passes with the local Supabase values in `.env`.
+- [x] `npm audit --omit=dev --audit-level=high` result recorded (4 high findings in the `firebase` SDK, removed in Phase 3).
 
 Checkpoint message: `chore(supabase): merge earlier phases, add the local stack, and remove firebase tooling`
 

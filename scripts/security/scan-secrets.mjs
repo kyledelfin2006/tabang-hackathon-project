@@ -31,6 +31,12 @@ const PATTERNS = [
     name: "Google API key literal",
     pattern: /\bAIza[0-9A-Za-z_-]{35}\b/,
   },
+  {
+    // Bypasses row-level security, so it must only live in the server's
+    // environment.
+    name: "Supabase secret key literal",
+    pattern: /\bsb_secret_[0-9A-Za-z_-]{20,}/,
+  },
 ];
 
 const SCANNED_EXTENSIONS = new Set([
