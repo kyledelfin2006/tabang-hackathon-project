@@ -15,6 +15,7 @@ import {
   TransitionError,
   buildIncidentQuerySpec,
   createIncidentRepository,
+  rowToIncident,
 } from "../services/incidents/incidentRepository.js";
 
 describe("incident transitions", () => {
@@ -103,7 +104,7 @@ describe("incident projection", () => {
       description: "Water is knee deep.",
       contactPhone: "09171234567",
       preciseLocation: { latitude: 11.7061, longitude: 122.3648 },
-      createdAt: { toMillis: () => 1_755_000_000_000 },
+      createdAtMillis: 1_755_000_000_000,
     });
 
     expect(incident.contactPhone).toBe("09171234567");
@@ -145,8 +146,8 @@ describe("incident queue spec", () => {
 
   it("orders oldest first so the longest wait is handled first", () => {
     expect(buildIncidentQuerySpec().orderBy).toEqual([
-      ["createdAt", "asc"],
-      ["__name__", "asc"],
+      ["created_at", "asc"],
+      ["id", "asc"],
     ]);
   });
 
@@ -157,153 +158,73 @@ describe("incident queue spec", () => {
   });
 });
 
-describe("claiming an incident", () => {
-  function repositoryOver(stored) {
-    const writes = [];
-    const events = [];
+describe("incident rows", () => {
+  it("maps a database row to plain values", () => {
+    const incident = rowToIncident(
+      {
+        id: "report-1",
+        kind: "help",
+        incident_status: "acknowledged",
+        verification_status: "pending",
+        priority: "medium",
+        public_location_label: "Poblacion, Kalibo",
+        description: "Two families on a roof.",
+        contact_phone: "09171234567",
+        latitude: null,
+        longitude: null,
+        severity: null,
+        need: "rescue",
+        people_affected: 6,
+        assigned_responder_ids: ["responder-1"],
+        created_at: "2026-10-17T08:00:00+08:00",
+        acknowledged_at: "2026-10-17T08:05:00+08:00",
+      },
+      Date.parse("2026-10-17T09:00:00+08:00"),
+    );
 
-    const transaction = {
-      get: async () => ({
-        exists: () => stored !== null,
-        data: () => stored,
-      }),
-      update: (_ref, data) => writes.push(data),
-      set: (_ref, data) => events.push(data),
-    };
-
-    return {
-      writes,
-      events,
-      repository: createIncidentRepository({
-        db: {},
-        documentRef: (_db, ...segments) => ({ path: segments.join("/") }),
-        transactionRunner: (_db, work) => work(transaction),
-      }),
-    };
-  }
-
-  it("claims an unassigned incident and records who did it", async () => {
-    const { repository, writes, events } = repositoryOver({
-      incidentStatus: "new",
-      assignedResponderIds: [],
-    });
-
-    await repository.claimIncident({
-      incidentId: "report-1",
-      responderId: "responder-5",
-      actorRole: "responder",
-    });
-
-    expect(writes[0].assignedResponderIds).toEqual(["responder-5"]);
-    expect(writes[0].incidentStatus).toBe("acknowledged");
-    expect(events[0].actorId).toBe("responder-5");
-    expect(events[0].fromStatus).toBe("new");
-    expect(events[0].toStatus).toBe("acknowledged");
-  });
-
-  it("rejects a second responder instead of overwriting the first", async () => {
-    const { repository, writes } = repositoryOver({
-      incidentStatus: "acknowledged",
-      assignedResponderIds: ["responder-5"],
-    });
-
-    await expect(
-      repository.claimIncident({
-        incidentId: "report-1",
-        responderId: "responder-6",
-        actorRole: "responder",
-      }),
-    ).rejects.toBeInstanceOf(AlreadyClaimedError);
-
-    expect(writes).toHaveLength(0);
-  });
-
-  it("lets the assigned responder act again without error", async () => {
-    const { repository, writes } = repositoryOver({
-      incidentStatus: "acknowledged",
-      assignedResponderIds: ["responder-5"],
-    });
-
-    await repository.claimIncident({
-      incidentId: "report-1",
-      responderId: "responder-5",
-      actorRole: "responder",
-    });
-
-    expect(writes).toHaveLength(1);
-  });
-
-  it("refuses to claim an incident that no longer exists", async () => {
-    const { repository } = repositoryOver(null);
-
-    await expect(
-      repository.claimIncident({
-        incidentId: "gone",
-        responderId: "responder-5",
-        actorRole: "responder",
-      }),
-    ).rejects.toBeInstanceOf(TransitionError);
+    expect(incident.preciseLocation).toBeNull();
+    expect(incident.createdAtMillis).toBe(Date.parse("2026-10-17T08:00:00+08:00"));
+    expect(incident.isClaimed).toBe(true);
+    expect(incident.waitingFor).toBe("1 hr 0 min");
   });
 });
 
-describe("transitioning an incident", () => {
-  function repositoryOver(stored) {
-    const writes = [];
-    const events = [];
+// The database functions decide; these check only that their answers reach
+// the screens as the error types the screens already recognise.
+function clientAnswering(message) {
+  return { rpc: async () => ({ error: message ? { message, code: "P0001" } : null }) };
+}
 
-    const transaction = {
-      get: async () => ({ exists: () => true, data: () => stored }),
-      update: (_ref, data) => writes.push(data),
-      set: (_ref, data) => events.push(data),
-    };
+describe("incident actions", () => {
+  it("reports a lost claim race as AlreadyClaimedError", async () => {
+    const repository = createIncidentRepository({ client: clientAnswering("already_claimed") });
 
-    return {
-      writes,
-      events,
-      repository: createIncidentRepository({
-        db: {},
-        documentRef: (_db, ...segments) => ({ path: segments.join("/") }),
-        transactionRunner: (_db, work) => work(transaction),
-      }),
-    };
-  }
-
-  it("re-checks the stored status, not the one the screen showed", async () => {
-    // The screen believed this was still acknowledged.
-    const { repository, writes } = repositoryOver({
-      incidentStatus: "resolved",
-      assignedResponderIds: ["responder-5"],
-    });
-
-    await expect(
-      repository.transitionIncident({
-        incidentId: "report-1",
-        toStatus: "dispatched",
-        actorId: "responder-5",
-        actorRole: "responder",
-      }),
-    ).rejects.toBeInstanceOf(TransitionError);
-
-    expect(writes).toHaveLength(0);
+    await expect(repository.claimIncident({ incidentId: "report-1" })).rejects.toBeInstanceOf(
+      AlreadyClaimedError,
+    );
   });
 
-  it("writes the audit event alongside a valid transition", async () => {
-    const { repository, writes, events } = repositoryOver({
-      incidentStatus: "dispatched",
-      assignedResponderIds: ["responder-5"],
+  it("reports a refused or missing step as TransitionError", async () => {
+    for (const message of ["invalid_transition", "not_found"]) {
+      const repository = createIncidentRepository({ client: clientAnswering(message) });
+
+      await expect(
+        repository.transitionIncident({ incidentId: "report-1", toStatus: "resolved" }),
+      ).rejects.toBeInstanceOf(TransitionError);
+    }
+  });
+
+  it("passes the incident, status, and note to the database function", async () => {
+    const calls = [];
+    const repository = createIncidentRepository({
+      client: { rpc: async (name, args) => (calls.push([name, args]), { error: null }) },
     });
 
-    await repository.transitionIncident({
-      incidentId: "report-1",
-      toStatus: "resolved",
-      actorId: "responder-5",
-      actorRole: "responder",
-      note: "Family moved to the covered court.",
-    });
+    await repository.transitionIncident({ incidentId: "report-1", toStatus: "dispatched", note: "Boat sent." });
 
-    expect(writes[0].incidentStatus).toBe("resolved");
-    expect(writes[0].resolvedAt).toBeDefined();
-    expect(events[0].note).toBe("Family moved to the covered court.");
+    expect(calls).toEqual([
+      ["transition_incident", { report_id: "report-1", to_status: "dispatched", note: "Boat sent." }],
+    ]);
   });
 });
 

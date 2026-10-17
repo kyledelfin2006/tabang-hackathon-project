@@ -5,7 +5,7 @@ import {
   validateHelpRequest,
 } from "../services/reports/reportSchemas.js";
 import {
-  buildReportDocument,
+  buildReportRow,
   createReportRepository,
 } from "../services/reports/reportRepository.js";
 
@@ -116,120 +116,92 @@ describe("public summary", () => {
   });
 });
 
-describe("report document", () => {
+describe("report row", () => {
   it("keeps precise location and phone out of public fields", () => {
     const { values } = validateFloodReport(validFlood);
-    const document = buildReportDocument({
-      reporterId: "resident-1",
+    const row = buildReportRow({
+      reportId: "report-1",
       values,
-      images: [{ publicId: "tabang/reports/resident-1/abc" }],
+      imagePaths: ["resident-1/report-1/photo.jpg"],
     });
 
-    expect(document.preciseLocation).toEqual({
-      latitude: 11.7061,
-      longitude: 122.3648,
-    });
-    expect(document.contactPhone).toBe("09171234567");
-    expect(document.publicSummary).not.toContain("09171234567");
-    expect(document.publicSummary).not.toContain("11.7061");
-    // Originals stay protected until a responder publishes a derivative.
-    expect(document.publicImagePaths).toEqual([]);
-    expect(document.imagePaths).toEqual(["tabang/reports/resident-1/abc"]);
+    expect(row).toMatchObject({ latitude: 11.7061, longitude: 122.3648 });
+    expect(row.contact_phone).toBe("09171234567");
+    expect(row.public_summary).not.toContain("09171234567");
+    expect(row.public_summary).not.toContain("11.7061");
+    expect(row.image_paths).toEqual(["resident-1/report-1/photo.jpg"]);
   });
 
-  it("starts every report in the pending, unassigned state", () => {
+  it("never sends the fields the database sets itself", () => {
     const { values } = validateFloodReport(validFlood);
-    const document = buildReportDocument({
-      reporterId: "resident-1",
-      values,
-      images: [],
-    });
+    const row = buildReportRow({ reportId: "report-1", values });
 
-    expect(document.verificationStatus).toBe("pending");
-    expect(document.incidentStatus).toBe("new");
-    expect(document.assignedResponderIds).toBeUndefined();
+    // The database grants no insert on these, so it would refuse the row.
+    for (const column of [
+      "reporter_id",
+      "priority",
+      "verification_status",
+      "incident_status",
+      "assigned_responder_ids",
+      "created_at",
+      "updated_at",
+    ]) {
+      expect(row).not.toHaveProperty(column);
+    }
   });
 
-  it("uses a server timestamp rather than the device clock", () => {
-    const { values } = validateFloodReport(validFlood);
-    const document = buildReportDocument({
-      reporterId: "resident-1",
-      values,
-      images: [],
-    });
+  it("keeps help fields and flood fields apart", () => {
+    const flood = buildReportRow({ reportId: "a", values: validateFloodReport(validFlood).values });
+    const help = buildReportRow({ reportId: "b", values: validateHelpRequest(validHelp).values });
 
-    expect(typeof document.createdAt).toBe("object");
-    expect(document.createdAt).not.toBeInstanceOf(Date);
+    expect(flood).toMatchObject({ severity: "knee" });
+    expect(flood).not.toHaveProperty("need");
+    expect(help).toMatchObject({ need: "rescue", people_affected: 4 });
+    expect(help).not.toHaveProperty("severity");
   });
 });
 
 describe("submission idempotency", () => {
-  function repositoryWithStore(store) {
-    const transaction = {
-      get: async (reference) => ({ exists: () => store.has(reference.path) }),
-      set: (reference, data) => store.set(reference.path, data),
+  function repositoryAnswering(error) {
+    const inserted = [];
+    const client = {
+      from: () => ({
+        insert: async (row) => (inserted.push(row), { error }),
+      }),
     };
 
-    return createReportRepository({
-      db: {},
-      documentRef: (_db, collection, id) => ({ path: `${collection}/${id}` }),
-      transactionRunner: (_db, work) => work(transaction),
-    });
+    return { inserted, repository: createReportRepository({ client }) };
   }
 
-  it("writes the report once", async () => {
-    const store = new Map();
+  const submission = {
+    reportId: "report-1",
+    values: validateFloodReport(validFlood).values,
+    images: [{ path: "resident-1/report-1/photo.jpg" }],
+  };
 
-    await repositoryWithStore(store).submitReport({
-      reportId: "report-1",
-      reporterId: "resident-1",
-      values: validateFloodReport(validFlood).values,
-      images: [],
-    });
-
-    expect(store.size).toBe(1);
-    expect(store.get("reports/report-1").reporterId).toBe("resident-1");
-  });
-
-  it("does not file a second report when the same id is retried", async () => {
-    const store = new Map();
-    const repository = repositoryWithStore(store);
-    const submission = {
-      reportId: "report-1",
-      reporterId: "resident-1",
-      values: validateFloodReport(validFlood).values,
-      images: [],
-    };
+  it("writes the report at the form session's id", async () => {
+    const { inserted, repository } = repositoryAnswering(null);
 
     await repository.submitReport(submission);
-    const firstWrite = store.get("reports/report-1");
 
+    expect(inserted).toHaveLength(1);
+    expect(inserted[0]).toMatchObject({
+      id: "report-1",
+      image_paths: ["resident-1/report-1/photo.jpg"],
+    });
+  });
+
+  it("treats a retry of an already filed report as success", async () => {
     // A double click, or a retry after a timeout that actually succeeded.
-    await repository.submitReport(submission);
-    await repository.submitReport(submission);
+    const { repository } = repositoryAnswering({ code: "23505", message: "duplicate key" });
 
-    expect(store.size).toBe(1);
-    expect(store.get("reports/report-1")).toBe(firstWrite);
+    await expect(repository.submitReport(submission)).resolves.toEqual({ reportId: "report-1" });
   });
 
-  it("files separate reports for separate form sessions", async () => {
-    const store = new Map();
-    const repository = repositoryWithStore(store);
-    const values = validateFloodReport(validFlood).values;
+  it("surfaces any other failure without the provider's message", async () => {
+    const { repository } = repositoryAnswering({ code: "42501", message: "permission denied for table reports" });
 
-    await repository.submitReport({
-      reportId: "report-1",
-      reporterId: "resident-1",
-      values,
-      images: [],
-    });
-    await repository.submitReport({
-      reportId: "report-2",
-      reporterId: "resident-1",
-      values,
-      images: [],
-    });
-
-    expect(store.size).toBe(2);
+    await expect(repository.submitReport(submission)).rejects.toMatchObject({ code: "42501" });
+    await expect(repository.submitReport(submission)).rejects.not.toThrow(/permission denied/);
   });
 });

@@ -58,7 +58,7 @@ export default function LoginPage() {
   /*
    * A form that cannot possibly work should not be offered.
    *
-   * When Firebase has no configuration every submission fails identically,
+   * When Supabase has no configuration every submission fails identically,
    * and the person is left retyping a password that was never wrong. Saying
    * so up front is more honest than letting them find out one attempt at a
    * time.

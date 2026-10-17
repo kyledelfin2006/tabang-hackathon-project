@@ -6,13 +6,7 @@ import {
   describeFileRejection,
   sniffImageType,
 } from "../services/uploads/imageValidation.js";
-import {
-  ALLOWED_UPLOAD_FORMATS,
-  MAX_UPLOAD_BYTES,
-  buildSignedUploadParams,
-  signUploadParams,
-  verifyFirebaseIdToken,
-} from "../../scripts/uploads/cloudinarySignature.mjs";
+import { createStorageUploader } from "../services/uploads/storageUploader.js";
 
 function bytesOf(values) {
   const buffer = new Uint8Array(16);
@@ -106,75 +100,62 @@ describe("upload validation", () => {
   });
 });
 
-describe("cloudinary upload signing", () => {
-  it("scopes the upload folder to the verified uid", () => {
-    const params = buildSignedUploadParams({
-      uid: "resident-1",
-      timestampSeconds: 1_755_000_000,
+describe("report photo upload", () => {
+  function uploaderWith(error = null) {
+    const uploads = [];
+    const client = {
+      storage: {
+        from: (bucket) => ({
+          upload: async (path, file, options) => (uploads.push({ bucket, path, options }), { error }),
+        }),
+      },
+    };
+
+    return { uploads, uploader: createStorageUploader({ client }) };
+  }
+
+  it("stores the photo privately under the reporter's report folder", async () => {
+    const { uploads, uploader } = uploaderWith();
+    const onProgress = vi.fn();
+    const file = new File(["x"], "photo.jpg", { type: "image/jpeg" });
+
+    const result = await uploader.upload(file, {
+      reporterId: "resident-1",
+      reportId: "report-1",
+      onProgress,
     });
 
-    expect(params.folder).toBe("tabang/reports/resident-1");
-    expect(params.max_bytes).toBe(MAX_UPLOAD_BYTES);
-    expect(params.allowed_formats).toBe(ALLOWED_UPLOAD_FORMATS.join(","));
-    expect(params.overwrite).toBe("false");
+    expect(uploads[0].bucket).toBe("report-photos");
+    expect(uploads[0].path).toMatch(/^resident-1\/report-1\/[0-9a-f-]+\.jpg$/);
+    expect(uploads[0].options).toEqual({ contentType: "image/jpeg" });
+    expect(result).toEqual({ path: uploads[0].path });
+    expect(onProgress).toHaveBeenCalledWith(100);
   });
 
-  it("refuses to sign without a verified uid", () => {
-    expect(() => buildSignedUploadParams({ timestampSeconds: 1 })).toThrow(
-      /verified uid/,
-    );
-  });
+  it("does not upload once cancelled", async () => {
+    const { uploads, uploader } = uploaderWith();
+    const controller = new AbortController();
 
-  it("signs the sorted parameter string and depends on the secret", () => {
-    const params = buildSignedUploadParams({
-      uid: "resident-1",
-      timestampSeconds: 1_755_000_000,
-    });
-    const signature = signUploadParams(params, "secret-one");
-
-    expect(signature).toMatch(/^[a-f0-9]{40}$/);
-    expect(signUploadParams(params, "secret-two")).not.toBe(signature);
-    // Key order must not change the signature.
-    expect(
-      signUploadParams(
-        Object.fromEntries(Object.entries(params).reverse()),
-        "secret-one",
-      ),
-    ).toBe(signature);
-  });
-
-  it("refuses to sign when the secret is missing", () => {
-    expect(() => signUploadParams({ folder: "x" }, "")).toThrow(
-      /CLOUDINARY_API_SECRET/,
-    );
-  });
-
-  it("returns null for an unverifiable token instead of a uid", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue({ ok: false });
+    controller.abort();
 
     await expect(
-      verifyFirebaseIdToken({
-        idToken: "forged",
-        apiKey: "key",
-        fetchImpl,
+      uploader.upload(new File(["x"], "a.jpg", { type: "image/jpeg" }), {
+        reporterId: "r",
+        reportId: "p",
+        signal: controller.signal,
       }),
-    ).resolves.toBeNull();
+    ).rejects.toThrow(/cancelled/);
+    expect(uploads).toEqual([]);
   });
 
-  it("returns the uid for a valid token", async () => {
-    const fetchImpl = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ users: [{ localId: "resident-1" }] }),
-    });
+  it("surfaces a refused upload without the provider's message", async () => {
+    const { uploader } = uploaderWith({ statusCode: "413", message: "Payload too large" });
 
     await expect(
-      verifyFirebaseIdToken({ idToken: "good", apiKey: "key", fetchImpl }),
-    ).resolves.toEqual({ uid: "resident-1" });
-  });
-
-  it("does not call Google without an api key", async () => {
-    await expect(
-      verifyFirebaseIdToken({ idToken: "good", apiKey: "" }),
-    ).rejects.toThrow(/FIREBASE_WEB_API_KEY/);
+      uploader.upload(new File(["x"], "a.jpg", { type: "image/jpeg" }), {
+        reporterId: "r",
+        reportId: "p",
+      }),
+    ).rejects.not.toThrow(/Payload too large/);
   });
 });

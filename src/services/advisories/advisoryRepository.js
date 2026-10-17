@@ -1,16 +1,8 @@
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
-import { getFirebaseDb } from "../../config/firebase.js";
+import { getSupabaseClient } from "../../config/supabase.js";
+import { toMillis, unwrap } from "../data/unwrap.js";
 
 export const ADVISORY_PAGE_SIZE = 6;
 
-const PUBLIC_FEED_COLLECTION = "publicFeed";
 const ALLOWED_KINDS = new Set(["flood", "help", "advisory"]);
 const MAX_SUMMARY_LENGTH = 240;
 
@@ -22,26 +14,13 @@ function asText(value, maxLength) {
   return value.replace(/\s+/g, " ").trim().slice(0, maxLength);
 }
 
-function toMillis(value) {
-  if (!value) {
-    return null;
-  }
-
-  if (typeof value.toMillis === "function") {
-    return value.toMillis();
-  }
-
-  const parsed = Date.parse(value);
-
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
 /**
- * Projects a publicFeed document onto the only fields the UI may render.
+ * Projects a public_feed row onto the only fields the UI may render.
  *
  * Anything not listed here - precise coordinates, contact numbers, private
  * descriptions, original image paths - is dropped before it reaches a
- * component, so an over-broad document cannot leak through the view.
+ * component, so an over-broad row cannot leak through the view. Takes plain
+ * values: the timestamp is in milliseconds.
  */
 export function toPublicAdvisory(id, raw = {}) {
   return Object.freeze({
@@ -49,32 +28,38 @@ export function toPublicAdvisory(id, raw = {}) {
     summary: asText(raw.summary, MAX_SUMMARY_LENGTH),
     barangay: asText(raw.barangay, 80),
     kind: ALLOWED_KINDS.has(raw.kind) ? raw.kind : "advisory",
-    createdAtMillis: toMillis(raw.createdAt),
+    createdAtMillis: Number.isFinite(raw.createdAtMillis)
+      ? raw.createdAtMillis
+      : null,
   });
 }
 
-export function createAdvisoryRepository({ db } = {}) {
+export function createAdvisoryRepository({ client } = {}) {
+  const supabase = () => client ?? getSupabaseClient();
+
   return {
     /**
      * Reads at most ADVISORY_PAGE_SIZE sanitized items. The legacy homepage
-     * fetched every floodReports and helpRequests document to build an image
-     * carousel; this query is bounded and never touches those collections.
+     * fetched every report to build an image carousel; this query is bounded
+     * and reads only the public feed. Expired items are already hidden by the
+     * database; the published filter also hides an author's own drafts.
      */
     async listRecentAdvisories({ pageSize = ADVISORY_PAGE_SIZE } = {}) {
-      const database = db ?? getFirebaseDb();
       const boundedSize = Math.min(Math.max(1, pageSize), ADVISORY_PAGE_SIZE);
-
-      const snapshot = await getDocs(
-        query(
-          collection(database, PUBLIC_FEED_COLLECTION),
-          where("published", "==", true),
-          orderBy("createdAt", "desc"),
-          limit(boundedSize),
-        ),
+      const rows = unwrap(
+        await supabase()
+          .from("public_feed")
+          .select("id, kind, summary, barangay, created_at")
+          .eq("published", true)
+          .order("created_at", { ascending: false })
+          .limit(boundedSize),
       );
 
-      return snapshot.docs.map((document) =>
-        toPublicAdvisory(document.id, document.data()),
+      return rows.map((row) =>
+        toPublicAdvisory(row.id, {
+          ...row,
+          createdAtMillis: toMillis(row.created_at),
+        }),
       );
     },
   };

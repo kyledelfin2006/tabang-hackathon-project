@@ -10,11 +10,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:unit": "node ./node_modules/vitest/vitest.mjs run src/test",
-    "start": "node server/index.mjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs",
     "scan:secrets": "node scripts/security/scan-secrets.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "check": "npm run lint && npm run scan:secrets && npm run check:contrast && npm run test:unit && npm run test:server && npm run build",
-    "test:server": "node --test tests/server/static.test.mjs tests/server/redirects.test.mjs",
+    "test:server": "node --test tests/server/static.test.mjs tests/server/redirects.test.mjs tests/server/securityHeaders.test.mjs",
     "test:policies": "node --test --test-concurrency=1 \"tests/policies/**/*.test.mjs\"",
     "check:contrast": "node ./scripts/a11y/check-contrast.mjs",
     "check:env": "node ./scripts/build/check-env.mjs",
@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
-    "firebase": "^12.17.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.2"

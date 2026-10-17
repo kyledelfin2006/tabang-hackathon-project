@@ -1,18 +1,5 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-} from "firebase/firestore";
-import { getFirebaseDb } from "../../config/firebase.js";
-
-const HOTLINES_COLLECTION = "hotlines";
-const REVIEWS_SUBCOLLECTION = "reviews";
+import { getSupabaseClient } from "../../config/supabase.js";
+import { toMillis, unwrap } from "../data/unwrap.js";
 
 export const HOTLINE_PAGE_SIZE = 50;
 export const MAX_COMMENT_LENGTH = 300;
@@ -34,13 +21,13 @@ function collapse(value, maxLength) {
  * `verified` is never inferred from the record merely existing. A hotline is
  * only shown as verified when a reviewer has recorded a verification, because
  * telling a resident an emergency number is confirmed when nobody checked is
- * the failure that matters here.
+ * the failure that matters here. Takes plain values: the timestamp is in
+ * milliseconds, and the rating totals are computed by the database.
  */
 export function toHotline(id, raw = {}, now = Date.now()) {
-  const verifiedAtMillis =
-    typeof raw.verifiedAt?.toMillis === "function"
-      ? raw.verifiedAt.toMillis()
-      : null;
+  const verifiedAtMillis = Number.isFinite(raw.verifiedAtMillis)
+    ? raw.verifiedAtMillis
+    : null;
   const verified = raw.verified === true && verifiedAtMillis !== null;
 
   return Object.freeze({
@@ -92,15 +79,26 @@ export function validateReview({ rating, comment }) {
   };
 }
 
-export function createHotlineRepository({
-  db,
-  documentRef = doc,
-  collectionRef = collection,
-  runQuery = getDocs,
-  readDocument = getDoc,
-  transactionRunner = runTransaction,
-  now = () => Date.now(),
-} = {}) {
+function rowToHotline(row, now) {
+  return toHotline(
+    row.id,
+    {
+      organization: row.organization,
+      coverageArea: row.coverage_area,
+      phoneNumbers: row.phone_numbers,
+      verified: row.verified,
+      verifiedAtMillis: toMillis(row.verified_at),
+      verifiedBy: row.verified_by,
+      ratingCount: row.rating_count,
+      ratingTotal: row.rating_total,
+    },
+    now,
+  );
+}
+
+export function createHotlineRepository({ client, now = () => Date.now() } = {}) {
+  const supabase = () => client ?? getSupabaseClient();
+
   return {
     /**
      * One directory, read by residents and responders alike.
@@ -109,98 +107,48 @@ export function createHotlineRepository({
      * two views could disagree about what to call in an emergency.
      */
     async listHotlines() {
-      const database = db ?? getFirebaseDb();
-      const snapshot = await runQuery(
-        query(
-          collectionRef(database, HOTLINES_COLLECTION),
-          orderBy("organization", "asc"),
-          limit(HOTLINE_PAGE_SIZE),
-        ),
+      const rows = unwrap(
+        await supabase()
+          .from("hotline_directory")
+          .select("*")
+          .order("organization", { ascending: true })
+          .limit(HOTLINE_PAGE_SIZE),
       );
       const clock = now();
 
-      return snapshot.docs.map((document) =>
-        toHotline(document.id, document.data(), clock),
-      );
+      return rows.map((row) => rowToHotline(row, clock));
     },
 
     async getMyReview({ hotlineId, uid }) {
-      const database = db ?? getFirebaseDb();
-      const snapshot = await readDocument(
-        documentRef(
-          database,
-          HOTLINES_COLLECTION,
-          hotlineId,
-          REVIEWS_SUBCOLLECTION,
-          uid,
-        ),
+      const row = unwrap(
+        await supabase()
+          .from("hotline_reviews")
+          .select("rating, comment")
+          .eq("hotline_id", hotlineId)
+          .eq("reviewer_id", uid)
+          .maybeSingle(),
       );
 
-      return snapshot.exists()
-        ? Object.freeze({
-            rating: snapshot.data().rating ?? null,
-            comment: snapshot.data().comment ?? "",
-          })
+      return row
+        ? Object.freeze({ rating: row.rating ?? null, comment: row.comment ?? "" })
         : null;
     },
 
     /**
      * Records one review per account per hotline.
      *
-     * The review lives at the reviewer's own uid, so a second submission
-     * replaces their previous one rather than stacking. The aggregate is
-     * recomputed inside the same transaction from the previous value, so a
-     * client cannot post an arbitrary total: the legacy page generated vote
-     * counts with Math.random and kept them in memory.
+     * The review is keyed by the hotline and the signed-in account, so a second
+     * submission replaces the previous one rather than stacking. Totals are
+     * computed from the stored reviews by the hotline_directory view, so there
+     * is nothing for a client to forge: the legacy page generated vote counts
+     * with Math.random and kept them in memory.
      */
-    async submitReview({ hotlineId, uid, rating, comment }) {
-      const database = db ?? getFirebaseDb();
-      const hotlineRef = documentRef(database, HOTLINES_COLLECTION, hotlineId);
-      const reviewRef = documentRef(
-        database,
-        HOTLINES_COLLECTION,
-        hotlineId,
-        REVIEWS_SUBCOLLECTION,
-        uid,
+    async submitReview({ hotlineId, rating, comment }) {
+      unwrap(
+        await supabase()
+          .from("hotline_reviews")
+          .upsert({ hotline_id: hotlineId, rating, comment }),
       );
-
-      await transactionRunner(database, async (transaction) => {
-        const [hotlineSnapshot, existingReview] = await Promise.all([
-          transaction.get(hotlineRef),
-          transaction.get(reviewRef),
-        ]);
-
-        if (!hotlineSnapshot.exists()) {
-          throw new Error("That hotline is no longer listed.");
-        }
-
-        const hotline = hotlineSnapshot.data();
-        const previousRating = existingReview.exists()
-          ? (existingReview.data().rating ?? 0)
-          : null;
-        const ratingCount = Number.isInteger(hotline.ratingCount)
-          ? hotline.ratingCount
-          : 0;
-        const ratingTotal = Number.isInteger(hotline.ratingTotal)
-          ? hotline.ratingTotal
-          : 0;
-
-        transaction.set(reviewRef, {
-          rating,
-          comment,
-          reviewerId: uid,
-          updatedAt: serverTimestamp(),
-        });
-
-        transaction.update(hotlineRef, {
-          ratingCount: previousRating === null ? ratingCount + 1 : ratingCount,
-          ratingTotal:
-            previousRating === null
-              ? ratingTotal + rating
-              : ratingTotal - previousRating + rating,
-          updatedAt: serverTimestamp(),
-        });
-      });
     },
   };
 }

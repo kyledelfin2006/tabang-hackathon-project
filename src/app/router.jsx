@@ -19,6 +19,7 @@ import LoginPage from "../routes/auth/LoginPage.jsx";
 import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
 import ResetPasswordPage from "../routes/auth/ResetPasswordPage.jsx";
 import SignupPage from "../routes/auth/SignupPage.jsx";
+import UpdatePasswordPage from "../routes/auth/UpdatePasswordPage.jsx";
 import {
   LandingRoute,
   NotFoundRoute,
@@ -100,6 +101,15 @@ export const appRoutes = [
           </RequireAnonymous>
         ),
         handle: { title: "Reset your password" },
+      },
+      {
+        path: "update-password",
+        element: (
+          <RequireAuth>
+            <UpdatePasswordPage />
+          </RequireAuth>
+        ),
+        handle: { title: "Choose a new password" },
       },
       {
         path: "privacy",

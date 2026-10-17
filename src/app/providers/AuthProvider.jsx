@@ -16,8 +16,8 @@ const ANONYMOUS_SESSION = Object.freeze({
 /**
  * The single source of session truth for the application.
  *
- * Components never call Firebase directly; they read this context and call the
- * gateway actions it exposes. Tests inject a fake gateway instead of Firebase.
+ * Components never call Supabase directly; they read this context and call the
+ * gateway actions it exposes. Tests inject a fake gateway instead of Supabase.
  */
 export default function AuthProvider({ children, gateway }) {
   const [session, setSession] = useState(null);
@@ -25,10 +25,10 @@ export default function AuthProvider({ children, gateway }) {
   const [loadedGateway, setLoadedGateway] = useState(null);
 
   /*
-   * The Firebase SDK is imported dynamically.
+   * The Supabase SDK is imported dynamically.
    *
-   * A static import put the whole SDK in the entry chunk, so every visitor
-   * downloaded roughly 880 kB before the landing page could paint, including
+   * A static import puts the whole SDK in the entry chunk, so every visitor
+   * would download it before the landing page could paint, including
    * anyone who only wanted a hotline number. Splitting the routes alone did
    * not help, because this provider is mounted for every route.
    *
@@ -41,13 +41,13 @@ export default function AuthProvider({ children, gateway }) {
 
     let cancelled = false;
 
-    import("../../services/auth/firebaseAuthGateway.js")
+    import("../../services/auth/supabaseAuthGateway.js")
       .then((module) => {
         if (cancelled) {
           return;
         }
 
-        setLoadedGateway({ gateway: module.createFirebaseAuthGateway(), error: null });
+        setLoadedGateway({ gateway: module.createAuthGateway(), error: null });
       })
       .catch((error) => {
         if (cancelled) {
@@ -56,10 +56,10 @@ export default function AuthProvider({ children, gateway }) {
 
         // Missing configuration must fail loudly rather than silently
         // rendering protected content. The message names the missing
-        // VITE_FIREBASE_* keys, so it goes to the console verbatim: without it
+        // VITE_SUPABASE_* keys, so it goes to the console verbatim: without it
         // the only visible symptom is every sign-in failing for no stated
         // reason.
-        console.error("Tabang: Firebase failed to initialise.", error);
+        console.error("Tabang: Supabase failed to initialise.", error);
 
         setLoadedGateway({
           gateway: null,
@@ -84,10 +84,15 @@ export default function AuthProvider({ children, gateway }) {
       return undefined;
     }
 
-    return setup.gateway.observeSession((nextSession) => {
-      setSession(nextSession ?? null);
-      setSessionResolved(true);
-    });
+    return setup.gateway.observeSession(
+      (nextSession) => {
+        setSession(nextSession ?? null);
+        setSessionResolved(true);
+      },
+      // A different user is signing in: stay loading until their session is
+      // built, so guards do not bounce them back to the sign-in form.
+      { onPending: () => setSessionResolved(false) },
+    );
   }, [setup]);
 
   const requireGateway = useCallback(() => {
@@ -96,13 +101,13 @@ export default function AuthProvider({ children, gateway }) {
        * Carries a code so the error mapper can name this properly.
        *
        * Without one it fell through to the generic message, which told the
-       * person to try again in a moment — advice that can never work, because
-       * the app has no Firebase configuration and every retry fails
+       * person to try again in a moment, advice that can never work, because
+       * the app has no Supabase configuration and every retry fails
        * identically. The cause is almost always a build made without the
-       * VITE_FIREBASE_* values present.
+       * VITE_SUPABASE_* values present.
        */
       const error = new Error(
-        "Authentication is unavailable: the app has no Firebase configuration.",
+        "Authentication is unavailable: the app has no Supabase configuration.",
       );
 
       error.code = "app/auth-unavailable";
@@ -135,6 +140,10 @@ export default function AuthProvider({ children, gateway }) {
     (uid, input) => requireGateway().updateOwnProfile(uid, input),
     [requireGateway],
   );
+  const updatePassword = useCallback(
+    (password) => requireGateway().updatePassword(password),
+    [requireGateway],
+  );
 
   const value = useMemo(() => {
     let status = SESSION_STATUS.loading;
@@ -157,7 +166,7 @@ export default function AuthProvider({ children, gateway }) {
       isResponder: authenticated && isResponderRole(role),
       isReviewer: authenticated && isReviewerRole(role),
       // Optional: `setup` is null on the first render in production, before
-      // the dynamic Firebase import resolves. Tests inject a gateway, so
+      // the dynamic Supabase import resolves. Tests inject a gateway, so
       // `setup` is always truthy there and never exercised this path.
       initializationError: setup?.error ?? null,
       signIn,
@@ -165,6 +174,7 @@ export default function AuthProvider({ children, gateway }) {
       sendPasswordReset,
       signOut: signOutOfSession,
       updateOwnProfile,
+      updatePassword,
     };
   }, [
     setup,
@@ -175,6 +185,7 @@ export default function AuthProvider({ children, gateway }) {
     sendPasswordReset,
     signOutOfSession,
     updateOwnProfile,
+    updatePassword,
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

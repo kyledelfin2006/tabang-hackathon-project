@@ -97,16 +97,16 @@ export function elapsedSince(millis, now = Date.now()) {
  * Responders handling an incident need the precise location and the contact
  * number. They are never given the reporter's other profile fields or any
  * identity evidence, so this projection lists exactly what the workspace uses.
+ * Takes plain values: timestamps are milliseconds and the location is
+ * `{ latitude, longitude }` or null.
  */
 export function toIncident(id, raw = {}, now = Date.now()) {
-  const createdAtMillis =
-    typeof raw.createdAt?.toMillis === "function"
-      ? raw.createdAt.toMillis()
-      : null;
-  const acknowledgedAtMillis =
-    typeof raw.acknowledgedAt?.toMillis === "function"
-      ? raw.acknowledgedAt.toMillis()
-      : null;
+  const createdAtMillis = Number.isFinite(raw.createdAtMillis)
+    ? raw.createdAtMillis
+    : null;
+  const acknowledgedAtMillis = Number.isFinite(raw.acknowledgedAtMillis)
+    ? raw.acknowledgedAtMillis
+    : null;
 
   const incident = {
     id,
@@ -139,9 +139,8 @@ export function toIncident(id, raw = {}, now = Date.now()) {
 /**
  * Builds the append-only audit event for a transition.
  *
- * The actor is taken from the verified session rather than from anything the
- * caller passes in, and the rules require it to match the writing account, so
- * an event cannot be attributed to somebody else.
+ * The database functions write the stored event with the caller's own id and
+ * role; this mirrors that shape for display and for tests.
  */
 export function buildTransitionEvent({
   fromStatus,

@@ -1,7 +1,7 @@
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { getFirebaseAuth, getFirebaseDb } from "../../config/firebase.js";
+import { getSupabaseClient } from "../../config/supabase.js";
+import { toDataError, toMillis, unwrap } from "../data/unwrap.js";
 
-const APPLICATIONS_COLLECTION = "responderApplications";
+const EVIDENCE_BUCKET = "identity-evidence";
 
 export const CONSENT_VERSION = "2026-04-privacy-and-terms";
 
@@ -63,118 +63,90 @@ export function toApplicationView(raw) {
     badgeNumber: raw.badgeNumber ?? "",
     municipality: raw.municipality ?? "",
     reviewNotes: raw.reviewNotes ?? "",
-    submittedAtMillis:
-      typeof raw.submittedAt?.toMillis === "function"
-        ? raw.submittedAt.toMillis()
-        : null,
+    submittedAtMillis: Number.isFinite(raw.submittedAtMillis)
+      ? raw.submittedAtMillis
+      : null,
   });
 }
 
-export function createApplicationRepository({ db, auth } = {}) {
+export function createApplicationRepository({ client } = {}) {
+  const supabase = () => client ?? getSupabaseClient();
+
   return {
     async getMyApplication(uid) {
-      const database = db ?? getFirebaseDb();
-      const snapshot = await getDoc(
-        doc(database, APPLICATIONS_COLLECTION, uid),
+      const row = unwrap(
+        await supabase()
+          .from("responder_applications")
+          .select("status, organization, badge_number, municipality, review_notes, submitted_at")
+          .eq("applicant_id", uid)
+          .maybeSingle(),
       );
 
-      return snapshot.exists() ? toApplicationView(snapshot.data()) : null;
+      return row
+        ? toApplicationView({
+            status: row.status,
+            organization: row.organization,
+            badgeNumber: row.badge_number,
+            municipality: row.municipality,
+            reviewNotes: row.review_notes,
+            submittedAtMillis: toMillis(row.submitted_at),
+          })
+        : null;
     },
 
     /**
      * Submits an application in the pending state.
      *
-     * Applying grants nothing. Responder access comes only from a reviewer
-     * writing roleAssignments, which no client can touch, so this document is
-     * a request rather than a credential. The review fields are deliberately
-     * absent; the rules reject a create that includes them.
+     * Applying grants nothing. Responder access comes only from a reviewer's
+     * decision, which writes role_assignments inside the database, so this is
+     * a request rather than a credential. The function sets the status and
+     * clears any earlier review itself; the client cannot choose either.
      */
-    async submitApplication({ uid, values, evidence }) {
-      const database = db ?? getFirebaseDb();
-
-      await setDoc(doc(database, APPLICATIONS_COLLECTION, uid), {
-        applicantId: uid,
-        organization: values.organization,
-        badgeNumber: values.badgeNumber,
-        municipality: values.municipality,
-        identityDocumentPath: evidence.identityDocumentPath,
-        selfiePath: evidence.selfiePath,
-        consentVersion: CONSENT_VERSION,
-        status: APPLICATION_STATUS.pending,
-        submittedAt: serverTimestamp(),
-      });
+    async submitApplication({ values, evidence }) {
+      unwrap(
+        await supabase().rpc("submit_application", {
+          organization: values.organization,
+          badge_number: values.badgeNumber,
+          municipality: values.municipality,
+          identity_document_path: evidence.identityDocumentPath,
+          selfie_path: evidence.selfiePath,
+          consent_version: CONSENT_VERSION,
+        }),
+      );
     },
 
     /**
-     * Uploads identity evidence through the authenticated-delivery endpoint.
-     *
-     * These assets are never uploaded through the public report signature, so
-     * an ID document cannot end up on the public delivery URL space.
+     * Stores identity evidence in the private identity-evidence bucket, under
+     * the applicant's own folder. These files never share a bucket with report
+     * photos, so an ID document cannot end up readable by responders.
      */
     async uploadEvidence(file, { onProgress, signal } = {}) {
-      const currentUser = (auth ?? getFirebaseAuth()).currentUser;
+      const {
+        data: { session },
+      } = await supabase().auth.getSession();
+      const uid = session?.user?.id;
 
-      if (!currentUser) {
+      if (!uid) {
         throw new Error("Sign in before uploading identity documents.");
       }
 
-      const response = await fetch("/api/uploads/identity-signature", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: await currentUser.getIdToken() }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Identity uploads are unavailable right now.");
+      if (signal?.aborted) {
+        throw new Error("The upload was cancelled.");
       }
 
-      const { cloudName, apiKey, params, signature } = await response.json();
-      const form = new FormData();
+      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${uid}/${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabase()
+        .storage.from(EVIDENCE_BUCKET)
+        .upload(path, file, { contentType: file.type || "image/jpeg" });
 
-      form.append("file", file);
-      form.append("api_key", apiKey);
-      form.append("signature", signature);
-
-      for (const [key, value] of Object.entries(params)) {
-        form.append(key, String(value));
+      if (error) {
+        throw toDataError(error);
       }
 
-      return new Promise((resolve, reject) => {
-        const request = new XMLHttpRequest();
+      onProgress?.(100);
 
-        request.open(
-          "POST",
-          `https://api.cloudinary.com/v1_1/${encodeURIComponent(cloudName)}/image/upload`,
-        );
-
-        request.upload.onprogress = (event) => {
-          if (event.lengthComputable && onProgress) {
-            onProgress(Math.round((event.loaded / event.total) * 100));
-          }
-        };
-
-        request.onload = () => {
-          if (request.status < 200 || request.status >= 300) {
-            reject(new Error("The document upload was rejected."));
-
-            return;
-          }
-
-          try {
-            resolve({ publicId: JSON.parse(request.responseText).public_id });
-          } catch {
-            reject(new Error("The upload response could not be read."));
-          }
-        };
-
-        request.onerror = () =>
-          reject(new Error("The upload failed. Check your connection."));
-        request.onabort = () => reject(new Error("The upload was cancelled."));
-
-        signal?.addEventListener("abort", () => request.abort(), { once: true });
-
-        request.send(form);
-      });
+      return { path };
     },
   };
 }

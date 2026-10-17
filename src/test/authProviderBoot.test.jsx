@@ -19,7 +19,7 @@ function SessionProbe() {
 }
 
 describe("provider boot without an injected gateway", () => {
-  it("renders while the firebase import is still pending", () => {
+  it("renders while the supabase import is still pending", () => {
     render(
       <AppErrorBoundary>
         <AuthProvider>

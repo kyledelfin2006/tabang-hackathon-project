@@ -22,7 +22,7 @@ const verifiedRaw = {
   coverageArea: "Province of Aklan",
   phoneNumbers: ["(036) 262-4979"],
   verified: true,
-  verifiedAt: { toMillis: () => Date.parse("2026-08-01T00:00:00Z") },
+  verifiedAtMillis: Date.parse("2026-08-01T00:00:00Z"),
   verifiedBy: "MDRRMO Kalibo",
   ratingCount: 4,
   ratingTotal: 16,
@@ -66,7 +66,7 @@ describe("hotline projection", () => {
     const verifiedAtMillis = Date.parse("2026-01-01T00:00:00Z");
     const hotline = toHotline(
       "a",
-      { ...verifiedRaw, verifiedAt: { toMillis: () => verifiedAtMillis } },
+      { ...verifiedRaw, verifiedAtMillis },
       verifiedAtMillis + VERIFICATION_STALE_AFTER_MS + 1,
     );
 
@@ -89,83 +89,24 @@ describe("review validation", () => {
   });
 });
 
-describe("rating aggregate", () => {
-  function repositoryOver({ hotline, existingReview }) {
-    const hotlineWrites = [];
-    const reviewWrites = [];
-
-    const transaction = {
-      get: async (reference) =>
-        reference.path.includes("/reviews/")
-          ? {
-              exists: () => existingReview !== null,
-              data: () => existingReview,
-            }
-          : { exists: () => true, data: () => hotline },
-      set: (_ref, data) => reviewWrites.push(data),
-      update: (_ref, data) => hotlineWrites.push(data),
-    };
-
-    return {
-      hotlineWrites,
-      reviewWrites,
-      repository: createHotlineRepository({
-        db: {},
-        documentRef: (_db, ...segments) => ({ path: segments.join("/") }),
-        transactionRunner: (_db, work) => work(transaction),
-      }),
-    };
-  }
-
-  it("adds one rating for a first-time reviewer", async () => {
-    const { repository, hotlineWrites } = repositoryOver({
-      hotline: { ratingCount: 2, ratingTotal: 8 },
-      existingReview: null,
+// Totals are computed by the hotline_directory view from stored reviews;
+// tests/policies/hotlines.test.mjs proves they cannot be forged.
+describe("rating submission", () => {
+  it("writes only the review, never a count or a total", async () => {
+    const writes = [];
+    const repository = createHotlineRepository({
+      client: {
+        from: (table) => ({
+          upsert: async (row) => (writes.push([table, row]), { error: null }),
+        }),
+      },
     });
 
-    await repository.submitReview({
-      hotlineId: "a",
-      uid: "resident-1",
-      rating: 5,
-      comment: "",
-    });
+    await repository.submitReview({ hotlineId: "a", rating: 4, comment: "Answered quickly." });
 
-    expect(hotlineWrites[0].ratingCount).toBe(3);
-    expect(hotlineWrites[0].ratingTotal).toBe(13);
-  });
-
-  it("replaces a previous rating instead of stacking a second one", async () => {
-    const { repository, hotlineWrites } = repositoryOver({
-      hotline: { ratingCount: 2, ratingTotal: 8 },
-      existingReview: { rating: 3 },
-    });
-
-    await repository.submitReview({
-      hotlineId: "a",
-      uid: "resident-1",
-      rating: 5,
-      comment: "",
-    });
-
-    // Count is unchanged; only the delta moves the total.
-    expect(hotlineWrites[0].ratingCount).toBe(2);
-    expect(hotlineWrites[0].ratingTotal).toBe(10);
-  });
-
-  it("stores the review under the reviewer's own id", async () => {
-    const { repository, reviewWrites } = repositoryOver({
-      hotline: { ratingCount: 0, ratingTotal: 0 },
-      existingReview: null,
-    });
-
-    await repository.submitReview({
-      hotlineId: "a",
-      uid: "resident-1",
-      rating: 4,
-      comment: "Answered quickly.",
-    });
-
-    expect(reviewWrites[0].reviewerId).toBe("resident-1");
+    expect(writes).toEqual([
+      ["hotline_reviews", { hotline_id: "a", rating: 4, comment: "Answered quickly." }],
+    ]);
   });
 });
 

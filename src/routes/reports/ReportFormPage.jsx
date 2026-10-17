@@ -12,7 +12,7 @@ import {
   HELP_NEEDS,
   validateReport,
 } from "../../services/reports/reportSchemas.js";
-import { createCloudinaryUploader } from "../../services/uploads/cloudinaryUploader.js";
+import { createStorageUploader } from "../../services/uploads/storageUploader.js";
 import {
   SUBMISSION_STATE,
   SUBMISSION_STATE_COPY,
@@ -61,7 +61,7 @@ export default function ReportFormPage({
     [reportRepository],
   );
   const imageUploader = useMemo(
-    () => uploader ?? createCloudinaryUploader(),
+    () => uploader ?? createStorageUploader(),
     [uploader],
   );
 
@@ -130,6 +130,8 @@ export default function ReportFormPage({
 
         uploaded.push(
           await imageUploader.upload(attachment.file, {
+            reporterId: user.uid,
+            reportId: reportIdRef.current,
             signal: abortRef.current.signal,
             onProgress: (percent) =>
               setProgress({

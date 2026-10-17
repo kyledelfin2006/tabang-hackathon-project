@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-17T22:47:45+08:00
-State: Revision 2 approved; plan phases 1 and 2 complete, phase 3 next; execution mode `auto`, one Claude Code agent
+Updated: 2026-10-18T00:37:36+08:00
+State: Revision 2 approved; plan phases 1 to 3 complete, phase 4 next; execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
@@ -60,12 +60,14 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - Untracked toolkit files (`.agents/`, `.claude/`, `.editorconfig`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) from `npx len-toolkit start` are preserved and never staged.
 - The local `.env` now also holds the local Supabase development values; it is gitignored.
 - Phase 2 is complete with checkpoint `feat(db): add the supabase schema, policies, and functions`: three migrations, 42 policy tests.
-- Phases 3 to 8: not started.
+- Phase 3 is complete with checkpoint `feat(data): move auth, data, and uploads to supabase`: the app runs on Supabase, Firebase and Cloudinary are gone from code and dependencies, and a `/update-password` page keeps emailed reset links working.
+- Phases 4 to 8: not started.
 
 ## Checks and evidence
 
-Phase 1 and 2 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, unit, server, `db:reset`, 42 policy tests, and full `npm run check` runs passed on 2026-10-17.
-`npm audit --omit=dev --audit-level=high` reports 4 high findings, all inside the `firebase` web SDK through `@grpc/grpc-js`; Phase 3 removes that dependency.
+Phase 1 to 3 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
+`npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities since Phase 3 removed `firebase`.
+`README.md` and `docs/operations.md` still describe Firebase until Phase 8 rewrites them.
 The CI `policies` job has not run, because nothing is pushed.
 The Supabase free plan limits and email sender restrictions in the architecture are remembered, not verified.
 Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md), [docs/evidence/FEAT-001-track-c.md](docs/evidence/FEAT-001-track-c.md), and on the archive branch.
@@ -82,6 +84,6 @@ Do not reset a count on a new session or silently reinterpret a failed check as 
 
 ## Next action
 
-Execute plan phase 3 (move the app to Supabase and remove Firebase and Cloudinary) in this worktree, then continue through phase 8 in `auto` mode.
+Execute plan phase 4 (resident flows) in this worktree, then continue through phase 8 in `auto` mode.
 Docker Desktop must be running; start the stack with `npm run db:start`.
 A new session resumes with the prompt in plan section 5.

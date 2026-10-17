@@ -83,10 +83,10 @@ describe("auth error messages", () => {
   it("uses one message for every credential failure", () => {
     const messages = new Set(
       [
-        "auth/user-not-found",
-        "auth/wrong-password",
-        "auth/invalid-credential",
-        "auth/invalid-email",
+        "invalid_credentials",
+        "user_not_found",
+        "email_address_invalid",
+        "user_banned",
       ].map((code) => describeAuthError({ code })),
     );
 
@@ -94,7 +94,7 @@ describe("auth error messages", () => {
   });
 
   it("does not confirm that an email is already registered", () => {
-    expect(describeAuthError({ code: "auth/email-already-in-use" })).not.toMatch(
+    expect(describeAuthError({ code: "user_already_exists" })).not.toMatch(
       /already (has|exists|registered)/i,
     );
   });

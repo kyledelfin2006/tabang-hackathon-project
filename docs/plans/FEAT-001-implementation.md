@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-17T22:47:45+08:00
+Updated: 2026-10-18T00:37:36+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -210,30 +210,30 @@ Applying these migrations to a hosted project is Len's action after Phase 8.
 
 Requirements: REQ-005, REQ-010 (Content Security Policy), REQ-020, REQ-039, REQ-040, REQ-041
 Depends on: Phase 2
-State: Draft, not started
+State: Complete; checkpoint commit `feat(data): move auth, data, and uploads to supabase`
 
 This phase changes the provider and nothing else: every screen behaves as it does today.
 
 #### Tasks
 
-- [ ] Add `src/config/supabase.js` with `getSupabaseClient()` and a reset for tests; make `src/config/env.js` resolve the Supabase settings; delete `src/config/firebase.js` and replace `src/test/firebase-config.test.js` with a Supabase config test.
-- [ ] Replace `firebaseAuthGateway.js` with `supabaseAuthGateway.js`, keeping the same methods and session shape; `register` sends name, phone, and barangay as sign-up metadata.
-- [ ] Session: use one auth state subscription, build the session outside that callback, ignore stale builds with a sequence number, and keep `status` as `loading` while a changed user's session is built; update `fakeAuthGateway.js` and `authProviderBoot.test.jsx`.
-- [ ] Map Supabase auth error codes in `authErrors.js` to the existing plain messages.
-- [ ] Port the report, incident, hotline, advisory, application, and review repositories to the client and the Phase 2 functions, mapping rows to the plain shapes the domain mappers take.
-- [ ] Replace `cloudinaryUploader.js` with `storageUploader.js`, and make `uploadEvidence` use the `identity-evidence` bucket; keep `imageValidation.js` and `prepareImage.js` as they are.
-- [ ] Update the unit tests that used Firestore-shaped fakes, and remove every import of `scripts/uploads/cloudinarySignature.mjs` from tests and source.
-- [ ] Remove the server's upload handlers, `scripts/uploads/`, and the `firebase` dependency.
-- [ ] Remove every Firebase and Cloudinary key name from `.env.example` and `scripts/build/check-env.mjs`.
-- [ ] Set the Content Security Policy in `server/securityHeaders.mjs` to `'self'` and the configured Supabase origin for `connect-src` and `img-src`.
-- [ ] Add `src/test/providerIsolation.test.js`, which scans `src/` and `server/` and fails if `@supabase/supabase-js` is imported anywhere except `src/config/supabase.js` and `server/supabaseAdmin.mjs`, and `src/test/domainPurity.test.js` (REQ-040).
-- [ ] Add policy tests that drive the real repositories and gateway: resident report then responder claim (REQ-005), and sign-up, sign-in, sign-out, and reset request (REQ-041).
+- [x] Add `src/config/supabase.js` with `getSupabaseClient()` and a reset for tests; make `src/config/env.js` resolve the Supabase settings; delete `src/config/firebase.js` and replace `src/test/firebase-config.test.js` with a Supabase config test.
+- [x] Replace `firebaseAuthGateway.js` with `supabaseAuthGateway.js`, keeping the same methods and session shape; `register` sends name, phone, and barangay as sign-up metadata.
+- [x] Session: use one auth state subscription, build the session outside that callback, ignore stale builds with a sequence number, and keep `status` as `loading` while a changed user's session is built; update `fakeAuthGateway.js` and `authProviderBoot.test.jsx`.
+- [x] Map Supabase auth error codes in `authErrors.js` to the existing plain messages.
+- [x] Port the report, incident, hotline, advisory, application, and review repositories to the client and the Phase 2 functions, mapping rows to the plain shapes the domain mappers take.
+- [x] Replace `cloudinaryUploader.js` with `storageUploader.js`, and make `uploadEvidence` use the `identity-evidence` bucket; keep `imageValidation.js` and `prepareImage.js` as they are.
+- [x] Update the unit tests that used Firestore-shaped fakes, and remove every import of `scripts/uploads/cloudinarySignature.mjs` from tests and source.
+- [x] Remove the server's upload handlers, `scripts/uploads/`, and the `firebase` dependency.
+- [x] Remove every Firebase and Cloudinary key name from `.env.example` and `scripts/build/check-env.mjs`.
+- [x] Set the Content Security Policy in `server/securityHeaders.mjs` to `'self'` and the configured Supabase origin for `connect-src` and `img-src`.
+- [x] Add `src/test/providerIsolation.test.js`, which scans `src/` and `server/` and fails if `@supabase/supabase-js` is imported anywhere except `src/config/supabase.js` and `server/supabaseAdmin.mjs`, and `src/test/domainPurity.test.js` (REQ-040).
+- [x] Add policy tests that drive the real repositories and gateway: resident report then responder claim (REQ-005), and sign-up, sign-in, sign-out, and reset request (REQ-041).
 
 #### Verification
 
-- [ ] `npm run lint`, `npm run test:unit`, `npm run test:server`, and `npm run build` pass.
-- [ ] `npm run db:reset` and `npm run test:policies` pass; `npm run db:stop` recorded.
-- [ ] A search of the repository, excluding `docs/archive`, `docs/evidence`, and `node_modules`, for `firebase` and `cloudinary` is recorded with every remaining hit explained (REQ-039).
+- [x] `npm run lint`, `npm run test:unit`, `npm run test:server`, and `npm run build` pass.
+- [x] `npm run db:reset` and `npm run test:policies` pass; `npm run db:stop` recorded.
+- [x] A search of the repository, excluding `docs/archive`, `docs/evidence`, and `node_modules`, for `firebase` and `cloudinary` is recorded with every remaining hit explained (REQ-039).
 
 Checkpoint message: `feat(data): move auth, data, and uploads to supabase`
 

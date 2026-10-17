@@ -131,8 +131,8 @@ export default function ResponderApplicationPage({ applicationRepository }) {
         uid,
         values,
         evidence: {
-          identityDocumentPath: identity.publicId,
-          selfiePath: selfie.publicId,
+          identityDocumentPath: identity.path,
+          selfiePath: selfie.path,
         },
       });
 
