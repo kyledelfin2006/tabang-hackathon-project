@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-18T00:37:36+08:00
-State: Revision 2 approved; plan phases 1 to 3 complete, phase 4 next; execution mode `auto`, one Claude Code agent
+Updated: 2026-10-18T00:50:53+08:00
+State: Revision 2 approved; plan phases 1 to 4 complete (barangay lists blocked), phase 5 next; execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
@@ -61,11 +61,13 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - The local `.env` now also holds the local Supabase development values; it is gitignored.
 - Phase 2 is complete with checkpoint `feat(db): add the supabase schema, policies, and functions`: three migrations, 42 policy tests.
 - Phase 3 is complete with checkpoint `feat(data): move auth, data, and uploads to supabase`: the app runs on Supabase, Firebase and Cloudinary are gone from code and dependencies, and a `/update-password` page keeps emailed reset links working.
-- Phases 4 to 8: not started.
+- Phase 4 is complete with checkpoint `feat(resident): barangay picker, offline replay, and honest failures`: municipality picker, optional GPS, error summary, send without photos, 911 on failure, pending reports with send now and discard, automatic replay, cancel only when allowed, and account details editing.
+- Phase 4 gap: barangay lists are empty because the PSA PSGC download was refused (HTTP 403); the form takes the barangay as text until Len supplies the file.
+- Phases 5 to 8: not started.
 
 ## Checks and evidence
 
-Phase 1 to 3 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
+Phase 1 to 4 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
 `npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities since Phase 3 removed `firebase`.
 `README.md` and `docs/operations.md` still describe Firebase until Phase 8 rewrites them.
 The CI `policies` job has not run, because nothing is pushed.
@@ -78,12 +80,13 @@ Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-00
 | --- | --- | --- | --- |
 | Revision 1 B1: Firestore rules exceed the emulator's 1000-expression limit on denied report writes. | 3 of 3 | Recorded by Agent B in the track B status file: three restructurings; the last run reported 32 of 32 passing but logged expression-limit errors, so it was not accepted. | Closed: Firestore rules were removed in Phase 1. |
 | `MyReportsPage` queried with `reporterId: undefined` before the session arrived, failing `feeds.test.jsx` under load (REQ-004). | 1, resolved | The page now skips loading until a reporter id exists, and the test asserts one call; three unit runs and two full checks passed. | None. |
+| Aklan barangay lists for REQ-014 cannot be built from the PSA PSGC publication. | - | `psa.gov.ph` returned HTTP 403 to every download attempt on 2026-10-18; municipalities are listed and the barangay is typed. | Len supplies the PSGC publication file (or another approved PSA source). |
 | The Firebase project cannot be administered. | - | Len cannot access the owning account. | Account recovery so it can be deleted (Q-6); no longer blocks work. |
 
 Do not reset a count on a new session or silently reinterpret a failed check as passing.
 
 ## Next action
 
-Execute plan phase 4 (resident flows) in this worktree, then continue through phase 8 in `auto` mode.
+Execute plan phase 5 (responder and reviewer flows, accessibility, and privacy copy) in this worktree, then continue through phase 8 in `auto` mode.
 Docker Desktop must be running; start the stack with `npm run db:start`.
 A new session resumes with the prompt in plan section 5.

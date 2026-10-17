@@ -25,7 +25,9 @@ import { PNG_BYTES } from "./helpers/files.mjs";
 
 const floodValues = validateFloodReport({
   description: "The water reached the market road and is still rising fast.",
-  publicLocationLabel: "Poblacion, Kalibo",
+  municipality: "Kalibo",
+  barangay: "Poblacion",
+  landmark: "Beside the public market",
   contactPhone: "09171234567",
   latitude: "11.7061",
   longitude: "122.3648",
@@ -80,6 +82,42 @@ test("REQ-005: a resident's report from the real client path is claimed by a res
     await resident.client.from("reports").select("image_paths").eq("id", reportId).single(),
   );
   assert.deepEqual(stored.image_paths, [uploaded.path]);
+});
+
+test("REQ-014: a report without GPS keeps its municipality, barangay, and landmark", async () => {
+  const resident = await createUser();
+  const reports = createReportRepository({ client: resident.client });
+  const values = validateFloodReport({
+    description: "The water reached the market road and is still rising fast.",
+    municipality: "Numancia",
+    barangay: "Poblacion",
+    landmark: "Near the chapel",
+    contactPhone: "09171234567",
+    severity: "waist",
+  }).values;
+  const reportId = randomUUID();
+
+  await reports.submitReport({ reportId, values });
+
+  const [report] = (await reports.listMyReports({ reporterId: resident.id })).reports;
+  assert.deepEqual(
+    {
+      municipality: report.municipality,
+      barangay: report.barangay,
+      landmark: report.landmark,
+      canCancel: report.canCancel,
+    },
+    { municipality: "Numancia", barangay: "Poblacion", landmark: "Near the chapel", canCancel: true },
+  );
+
+  const stored = assertOk(
+    await resident.client.from("reports").select("latitude, longitude, public_summary").eq("id", reportId).single(),
+  );
+  assert.deepEqual(stored, {
+    latitude: null,
+    longitude: null,
+    public_summary: "Flooding reported in Poblacion, Numancia (waist deep).",
+  });
 });
 
 test("my reports pages through every report exactly once", async () => {

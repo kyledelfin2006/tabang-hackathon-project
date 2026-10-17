@@ -78,7 +78,7 @@ export default function ReportCard({ report, variant = "personal", onCancel }) {
 
       <p className="report-card__time">{formatWhen(report.createdAtMillis)}</p>
 
-      {isPersonal && onCancel && !report.isCancelled ? (
+      {isPersonal && onCancel && report.canCancel ? (
         <div className="button-row">
           <button
             className="action-button action-button--secondary"

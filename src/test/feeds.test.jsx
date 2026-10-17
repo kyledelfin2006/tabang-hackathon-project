@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import AppProviders from "../app/providers/AppProviders.jsx";
-import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
+import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
 import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
 import {
   REPORT_PAGE_SIZE,
@@ -30,6 +30,7 @@ const personalReport = {
   incidentStatus: "new",
   createdAtMillis: Date.parse("2026-08-14T02:00:00Z"),
   isCancelled: false,
+  canCancel: true,
   isStale: false,
 };
 
@@ -161,10 +162,12 @@ describe("my reports route", () => {
   });
 });
 
-describe("community feed route", () => {
+// The separate community page now redirects to the resident home, which is
+// the one place advisories are shown.
+describe("advisories on the resident home", () => {
   it("renders only sanitized public fields", async () => {
     renderWithProviders(
-      <CommunityFeedPage
+      <ResidentHomePage
         advisoryRepository={{
           listRecentAdvisories: vi.fn().mockResolvedValue([publicAdvisory]),
         }}
@@ -180,7 +183,7 @@ describe("community feed route", () => {
     // A deliberately over-broad document: the public variant has no branch
     // that renders any of these fields, so none may reach the DOM.
     renderWithProviders(
-      <CommunityFeedPage
+      <ResidentHomePage
         advisoryRepository={{
           listRecentAdvisories: vi.fn().mockResolvedValue([
             {
@@ -200,19 +203,5 @@ describe("community feed route", () => {
     expect(document.body.textContent).not.toContain(
       "Private description that must not leak.",
     );
-  });
-
-  it("explains that individual reports are not listed automatically", async () => {
-    renderWithProviders(
-      <CommunityFeedPage
-        advisoryRepository={{
-          listRecentAdvisories: vi.fn().mockResolvedValue([]),
-        }}
-      />,
-    );
-
-    expect(
-      await screen.findByText("No advisories published yet"),
-    ).toBeInTheDocument();
   });
 });

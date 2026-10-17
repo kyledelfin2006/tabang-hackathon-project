@@ -137,7 +137,15 @@ export default function AuthProvider({ children, gateway }) {
     createSubmissionQueue().clear();
   }, [requireGateway]);
   const updateOwnProfile = useCallback(
-    (uid, input) => requireGateway().updateOwnProfile(uid, input),
+    async (uid, input) => {
+      await requireGateway().updateOwnProfile(uid, input);
+      // The stored row changed; show it now rather than after a reload.
+      setSession((current) =>
+        current?.user?.uid === uid
+          ? { ...current, profile: { ...current.profile, ...input } }
+          : current,
+      );
+    },
     [requireGateway],
   );
   const updatePassword = useCallback(

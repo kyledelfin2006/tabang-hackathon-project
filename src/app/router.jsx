@@ -5,7 +5,11 @@
  * apply usefully here.
  */
 import { lazy } from "react";
-import { createBrowserRouter, createMemoryRouter } from "react-router-dom";
+import {
+  Navigate,
+  createBrowserRouter,
+  createMemoryRouter,
+} from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout.jsx";
 import ResidentLayout from "../layouts/ResidentLayout.jsx";
 import ResponderLayout from "../layouts/ResponderLayout.jsx";
@@ -35,9 +39,6 @@ const ReportFormPage = lazy(
   () => import("../routes/reports/ReportFormPage.jsx"),
 );
 const MyReportsPage = lazy(() => import("../routes/reports/MyReportsPage.jsx"));
-const CommunityFeedPage = lazy(
-  () => import("../routes/community/CommunityFeedPage.jsx"),
-);
 const ResponderApplicationPage = lazy(
   () => import("../routes/responder/ResponderApplicationPage.jsx"),
 );
@@ -134,9 +135,10 @@ export const appRoutes = [
         handle: { title: "Resident home" },
       },
       {
+        // Advisories now have one home: the resident home page.
         path: "community",
-        element: <CommunityFeedPage />,
-        handle: { title: "Community advisories" },
+        element: <Navigate replace to="/app" />,
+        handle: { redirectTo: "/app" },
       },
       {
         path: "reports",

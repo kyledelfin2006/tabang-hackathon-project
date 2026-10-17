@@ -11,7 +11,9 @@ import {
 
 const validFlood = {
   description: "The water reached the market road and is still rising fast.",
-  publicLocationLabel: "Poblacion, Kalibo",
+  municipality: "Kalibo",
+  barangay: "Poblacion",
+  landmark: "Beside the public market",
   contactPhone: "09171234567",
   latitude: "11.7061",
   longitude: "122.3648",
@@ -113,6 +115,59 @@ describe("public summary", () => {
     expect(summary).not.toMatch(/09171234567/);
     expect(summary).not.toMatch(/Rizal Street/);
     expect(summary).toContain("Poblacion, Kalibo");
+    expect(summary).not.toContain("public market");
+  });
+
+  it("uses readable labels", () => {
+    expect(buildPublicSummary(validateFloodReport(validFlood).values)).toBe(
+      "Flooding reported in Poblacion, Kalibo (knee deep).",
+    );
+    expect(buildPublicSummary(validateHelpRequest(validHelp).values)).toBe(
+      "Assistance requested in Poblacion, Kalibo (rescue or evacuation).",
+    );
+  });
+});
+
+describe("REQ-014: location without GPS", () => {
+  it("accepts a report with a municipality and barangay and no coordinates", () => {
+    const { isValid, values } = validateFloodReport({
+      ...validFlood,
+      latitude: "",
+      longitude: "",
+      landmark: "",
+    });
+
+    expect(isValid).toBe(true);
+    expect(values).toMatchObject({
+      municipality: "Kalibo",
+      barangay: "Poblacion",
+      landmark: "",
+      latitude: null,
+      longitude: null,
+      publicLocationLabel: "Poblacion, Kalibo",
+    });
+  });
+
+  it("requires a listed Aklan municipality and a barangay", () => {
+    const { errors } = validateFloodReport({
+      ...validFlood,
+      municipality: "Quezon City",
+      barangay: "  ",
+    });
+
+    expect(errors.municipality).toBeDefined();
+    expect(errors.barangay).toBeDefined();
+  });
+
+  it("refuses half a coordinate pair and an overlong landmark", () => {
+    const { errors } = validateFloodReport({
+      ...validFlood,
+      longitude: "",
+      landmark: "x".repeat(121),
+    });
+
+    expect(errors.location).toBeDefined();
+    expect(errors.landmark).toBeDefined();
   });
 });
 

@@ -10,7 +10,9 @@ import {
   Section,
   Skeleton,
 } from "../../components/ui/Primitives.jsx";
+import usePendingReports from "../../components/reports/usePendingReports.js";
 import { createAdvisoryRepository } from "../../services/advisories/advisoryRepository.js";
+import { createSubmissionQueue } from "../../services/offline/submissionQueue.js";
 
 const QUICK_ACTIONS = [
   {
@@ -94,11 +96,19 @@ function AdvisoryList({ advisories }) {
   );
 }
 
-export default function ResidentHomePage({ advisoryRepository }) {
+export default function ResidentHomePage({
+  advisoryRepository,
+  submissionQueue,
+}) {
   const repository = useMemo(
     () => advisoryRepository ?? createAdvisoryRepository(),
     [advisoryRepository],
   );
+  const queue = useMemo(
+    () => submissionQueue ?? createSubmissionQueue(),
+    [submissionQueue],
+  );
+  const pendingReports = usePendingReports(queue);
 
   const [advisories, setAdvisories] = useState([]);
   const [loadState, setLoadState] = useState("loading");
@@ -167,6 +177,23 @@ export default function ResidentHomePage({ advisoryRepository }) {
 
   return (
     <>
+      {pendingReports.length > 0 ? (
+        <section className="feedback-card" role="status">
+          <h2>
+            {pendingReports.length === 1
+              ? "1 report is saved on this phone and not sent yet"
+              : `${pendingReports.length} reports are saved on this phone and not sent yet`}
+          </h2>
+          <p>
+            Nobody has seen {pendingReports.length === 1 ? "it" : "them"} yet.
+            They are resent when your connection returns.
+          </p>
+          <div className="button-row">
+            <ActionLink to="/app/reports">Send now or discard</ActionLink>
+          </div>
+        </section>
+      ) : null}
+
       <section className="page-hero">
         <div>
           <span className="section-tag">Resident home</span>
@@ -259,9 +286,6 @@ export default function ResidentHomePage({ advisoryRepository }) {
         <ul className="link-list">
           <li>
             <Link to="/app/reports">See the reports you have submitted</Link>
-          </li>
-          <li>
-            <Link to="/app/community">Browse community advisories</Link>
           </li>
           <li>
             <Link to="/app/responder-application">Apply to be a responder</Link>

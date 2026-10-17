@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-18T00:37:36+08:00
+Updated: 2026-10-18T00:50:53+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -241,28 +241,28 @@ Checkpoint message: `feat(data): move auth, data, and uploads to supabase`
 
 Requirements: REQ-014, REQ-015, REQ-016, REQ-017, REQ-018 (resident view), REQ-019 (cancel), REQ-021, REQ-028 (mapping), REQ-030
 Depends on: Phase 3
-State: Draft, not started
+State: Complete except the PSGC barangay lists (blocked, see HANDOFF); checkpoint commit `feat(resident): barangay picker, offline replay, and honest failures`
 
 #### Tasks
 
 - [ ] Build `src/services/places/aklanPlaces.js` from the PSA Philippine Standard Geographic Code publication for Aklan; record the source URL, file, and retrieval date in evidence and `PLACES_SOURCE`.
-- [ ] If the PSGC source cannot be reached, record a blocker in `HANDOFF.md` asking Len for the file, continue with the 17 municipalities only, and never invent barangay names.
-- [ ] Update `reportSchemas.js` and the report repository to the section 2.1 and 2.2 contracts, including optional coordinates and `image_paths` from the uploader's `path`.
-- [ ] Add `submitReport.js`, `replayQueuedReports.js`, queue `discard`, `attempts`, and `lastFailure`.
-- [ ] Add `describeActionError.js`, and the `toPersonalReport` fields `municipality`, `barangay`, `landmark`, and `canCancel`.
-- [ ] Report form: municipality select, then barangay select, optional landmark, optional "Use my current location"; remove the latitude and longitude inputs.
-- [ ] Use `createReportSubmitter`; on `reason: "upload"` show "Send without photos"; on other failures show `EmergencyFallback` with hotlines from the directory plus 911.
-- [ ] Error summary at the top of the form, focused after a failed submit, linking each invalid field; every field error referenced by `aria-describedby`.
-- [ ] Pending reports panel on "My reports" and a banner on home, with "Send now" and "Discard"; `ResidentLayout` runs `replayQueuedReports` on mount and on the `online` event.
-- [ ] "Cancel" only when `canCancel`; cancel and "Load older reports" failures show `describeActionError` copy.
-- [ ] One advisories view on home; `/app/community` redirects to `/app`; delete `CommunityFeedPage.jsx`.
-- [ ] Account page profile edit for name, phone, and barangay using `updateOwnProfile`.
+- [x] If the PSGC source cannot be reached, record a blocker in `HANDOFF.md` asking Len for the file, continue with the 17 municipalities only, and never invent barangay names.
+- [x] Update `reportSchemas.js` and the report repository to the section 2.1 and 2.2 contracts, including optional coordinates and `image_paths` from the uploader's `path`.
+- [x] Add `submitReport.js`, `replayQueuedReports.js`, queue `discard`, `attempts`, and `lastFailure`.
+- [x] Add `describeActionError.js`, and the `toPersonalReport` fields `municipality`, `barangay`, `landmark`, and `canCancel`.
+- [x] Report form: municipality select, then barangay select, optional landmark, optional "Use my current location"; remove the latitude and longitude inputs.
+- [x] Use `createReportSubmitter`; on `reason: "upload"` show "Send without photos"; on other failures show `EmergencyFallback` with hotlines from the directory plus 911.
+- [x] Error summary at the top of the form, focused after a failed submit, linking each invalid field; every field error referenced by `aria-describedby`.
+- [x] Pending reports panel on "My reports" and a banner on home, with "Send now" and "Discard"; `ResidentLayout` runs `replayQueuedReports` on mount and on the `online` event.
+- [x] "Cancel" only when `canCancel`; cancel and "Load older reports" failures show `describeActionError` copy.
+- [x] One advisories view on home; `/app/community` redirects to `/app`; delete `CommunityFeedPage.jsx`.
+- [x] Account page profile edit for name, phone, and barangay using `updateOwnProfile`.
 
 #### Verification
 
-- [ ] `npm run test:unit` passes, with tests for schema validation, the submitter's four outcomes, replay idempotency, discard, error mapping, the picker, the error summary focus, send without photos, the pending panel actions, replay on `online`, and cancel visibility.
-- [ ] `npm run db:reset` and `npm run test:policies` pass against the new report shape; `npm run db:stop` recorded.
-- [ ] `npm run lint` and `npm run build` pass.
+- [x] `npm run test:unit` passes, with tests for schema validation, the submitter's four outcomes, replay idempotency, discard, error mapping, the picker, the error summary focus, send without photos, the pending panel actions, replay on `online`, and cancel visibility.
+- [x] `npm run db:reset` and `npm run test:policies` pass against the new report shape; `npm run db:stop` recorded.
+- [x] `npm run lint` and `npm run build` pass.
 
 Checkpoint message: `feat(resident): barangay picker, offline replay, and honest failures`
 

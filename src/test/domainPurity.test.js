@@ -10,6 +10,7 @@ const DOMAIN_MODULES = [
   "src/services/auth/roles.js",
   "src/services/metrics/dashboardMetrics.js",
   "src/services/observability/redact.js",
+  "src/services/places/aklanPlaces.js",
 ];
 
 const FORBIDDEN = [

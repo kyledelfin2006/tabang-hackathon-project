@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 
 export function FormField({
+  id,
   label,
   name,
   type = "text",
@@ -12,7 +13,9 @@ export function FormField({
   inputMode,
   required = true,
 }) {
-  const fieldId = useId();
+  const generatedId = useId();
+  // A fixed id lets an error summary link straight to the field.
+  const fieldId = id ?? generatedId;
   const errorId = `${fieldId}-error`;
   const hintId = `${fieldId}-hint`;
   const describedBy =

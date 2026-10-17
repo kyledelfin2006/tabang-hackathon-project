@@ -55,12 +55,21 @@ test("REQ-009: report rows are schema-checked", async () => {
     { latitude: 40, longitude: 122 },
     { severity: null },
     { image_paths: ["someone-else/report/photo.jpg"] },
+    { municipality: "Quezon City" },
   ];
 
   for (const overrides of invalid) {
     assertDenied(
       await resident.client.from("reports").insert(floodReport(resident.id, overrides)),
       { code: CHECK_VIOLATION },
+    );
+  }
+
+  // REQ-014: every report names its municipality and barangay.
+  for (const missing of ["municipality", "barangay"]) {
+    assertDenied(
+      await resident.client.from("reports").insert(floodReport(resident.id, { [missing]: null })),
+      { code: "23502" },
     );
   }
 });

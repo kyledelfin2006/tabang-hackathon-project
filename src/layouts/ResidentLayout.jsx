@@ -1,4 +1,4 @@
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
 import LoadingState from "../components/feedback/LoadingState.jsx";
@@ -8,6 +8,8 @@ import NavDrawer from "../components/navigation/NavDrawer.jsx";
 import { useAuth } from "../app/providers/useAuth.js";
 import usePageTitle from "../components/navigation/usePageTitle.js";
 import { PageHeading } from "../components/ui/Primitives.jsx";
+import { createSubmissionQueue } from "../services/offline/submissionQueue.js";
+import { replayQueuedReports } from "../services/reports/replayQueuedReports.js";
 
 const bottomNavItems = [
   { to: "/app", label: "Home" },
@@ -23,17 +25,49 @@ const drawerItems = [
   { to: "/app/help/new", label: "Request help" },
   { to: "/app/hotlines", label: "Hotlines" },
   { to: "/app/reports", label: "My reports" },
-  { to: "/app/community", label: "Community advisories" },
   { to: "/app/responder-application", label: "Apply as responder" },
   { to: "/app/account", label: "Account" },
 ];
 
-export default function ResidentLayout() {
+export default function ResidentLayout({ submissionQueue, reportRepository }) {
   const pageTitle = usePageTitle();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const navigate = useNavigate();
+  const reporterId = user?.uid;
+
+  // Reports saved on this phone are resent when the app opens and whenever
+  // the connection comes back, without the resident having to remember.
+  useEffect(() => {
+    if (!reporterId) {
+      return undefined;
+    }
+
+    const queue = submissionQueue ?? createSubmissionQueue();
+    const replay = async () => {
+      if (queue.list().length === 0) {
+        return;
+      }
+
+      try {
+        // Loaded on demand: a static import would pull the Supabase SDK into
+        // the entry chunk that every visitor downloads.
+        const repository =
+          reportRepository ??
+          (await import("../services/reports/reportRepository.js")).createReportRepository();
+
+        await replayQueuedReports({ queue, repository, reporterId });
+      } catch {
+        // The entries stay queued and are retried on the next open or online.
+      }
+    };
+
+    replay();
+    window.addEventListener("online", replay);
+
+    return () => window.removeEventListener("online", replay);
+  }, [reporterId, submissionQueue, reportRepository]);
 
   async function handleSignOut() {
     setDrawerOpen(false);

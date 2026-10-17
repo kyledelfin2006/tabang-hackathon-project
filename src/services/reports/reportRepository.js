@@ -8,7 +8,10 @@ export const REPORT_PAGE_SIZE = 10;
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
 
 const PERSONAL_COLUMNS =
-  "id, kind, public_location_label, description, severity, need, people_affected, verification_status, incident_status, created_at";
+  "id, kind, municipality, barangay, landmark, public_location_label, description, severity, need, people_affected, verification_status, incident_status, created_at";
+
+// Cancellation is refused by the database once responders are acting on it.
+const CANCELLABLE_STATUSES = new Set(["new", "acknowledged"]);
 
 /**
  * Describes the personal report query without touching the database.
@@ -50,6 +53,9 @@ export function toPersonalReport(id, raw = {}, now = Date.now()) {
   return Object.freeze({
     id,
     kind: raw.kind === "help" ? "help" : "flood",
+    municipality: raw.municipality ?? "",
+    barangay: raw.barangay ?? "",
+    landmark: raw.landmark ?? "",
     publicLocationLabel: raw.publicLocationLabel ?? "",
     description: raw.description ?? "",
     severity: raw.severity ?? null,
@@ -59,6 +65,7 @@ export function toPersonalReport(id, raw = {}, now = Date.now()) {
     incidentStatus: raw.incidentStatus ?? "new",
     createdAtMillis,
     isCancelled: raw.incidentStatus === "cancelled",
+    canCancel: CANCELLABLE_STATUSES.has(raw.incidentStatus ?? "new"),
     // Computed when the page is fetched rather than during render, so the
     // card stays a pure function of its props.
     isStale:
@@ -72,6 +79,9 @@ export function toPersonalReport(id, raw = {}, now = Date.now()) {
 function rowToPersonalReport(row) {
   return toPersonalReport(row.id, {
     kind: row.kind,
+    municipality: row.municipality,
+    barangay: row.barangay,
+    landmark: row.landmark,
     publicLocationLabel: row.public_location_label,
     description: row.description,
     severity: row.severity,
@@ -97,6 +107,9 @@ export function buildReportRow({ reportId, values, imagePaths = [] }) {
   const base = {
     id: reportId,
     kind: values.kind,
+    municipality: values.municipality,
+    barangay: values.barangay,
+    landmark: values.landmark || null,
     public_location_label: values.publicLocationLabel,
     public_summary: buildPublicSummary(values),
     latitude: hasLocation ? values.latitude : null,

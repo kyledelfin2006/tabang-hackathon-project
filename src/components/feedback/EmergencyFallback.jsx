@@ -2,8 +2,8 @@
  * Shown when a report cannot reach the server.
  *
  * A resident whose submission just failed needs a number to ring, not an
- * apology. These are the same records the hotline directory serves, and they
- * carry the same unverified warning rather than implying they are confirmed.
+ * apology. 911 is always listed; the directory numbers follow when they could
+ * be loaded, with the same unverified warning the directory shows.
  */
 export default function EmergencyFallback({ hotlines = [] }) {
   return (
@@ -14,26 +14,29 @@ export default function EmergencyFallback({ hotlines = [] }) {
         yet. If this is urgent, call for help directly now.
       </p>
 
-      {hotlines.length > 0 ? (
-        <ul className="link-list">
-          {hotlines.map((hotline) => (
-            <li key={hotline.id}>
-              {hotline.organization}:{" "}
-              {hotline.phoneNumbers.map((number) => (
-                <a href={`tel:${encodeURIComponent(number)}`} key={number}>
-                  {number}
-                </a>
-              ))}
-              {hotline.verified ? "" : " (not yet verified)"}
-            </li>
-          ))}
-        </ul>
-      ) : (
+      <ul className="link-list">
+        <li>
+          National emergency hotline: <a href="tel:911">911</a>
+        </li>
+        {hotlines.map((hotline) => (
+          <li key={hotline.id}>
+            {hotline.organization}:{" "}
+            {hotline.phoneNumbers.map((number) => (
+              <a href={`tel:${encodeURIComponent(number)}`} key={number}>
+                {number}
+              </a>
+            ))}
+            {hotline.verified ? "" : " (not yet verified)"}
+          </li>
+        ))}
+      </ul>
+
+      {hotlines.length === 0 ? (
         <p>
-          Contact your barangay hall or the municipal DRRM office directly. The
-          hotline directory could not be loaded on this device.
+          You can also contact your barangay hall or the municipal DRRM office
+          directly.
         </p>
-      )}
+      ) : null}
     </section>
   );
 }

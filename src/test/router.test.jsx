@@ -22,9 +22,14 @@ function renderRoute(path, session = null, routes = appRoutes) {
   return { gateway, router, unmount: rendered.unmount };
 }
 
+// Redirect routes render no page of their own, so they carry no title.
 function leafRoutes(routes) {
   return routes.flatMap((route) =>
-    route.children?.length ? leafRoutes(route.children) : [route],
+    route.children?.length
+      ? leafRoutes(route.children)
+      : route.handle?.redirectTo
+        ? []
+        : [route],
   );
 }
 
@@ -40,6 +45,10 @@ function routeCases(routes, parentPath = "") {
 
     if (route.children?.length) {
       return routeCases(route.children, path);
+    }
+
+    if (route.handle?.redirectTo) {
+      return [];
     }
 
     return [
@@ -114,6 +123,15 @@ describe("application shell routing", () => {
     expect(
       screen.getByRole("navigation", { name: "Primary route navigation" }),
     ).toBeInTheDocument();
+  });
+
+  it("sends the retired community page to the resident home", async () => {
+    const { router } = renderRoute("/app/community", residentSession());
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Resident home" }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/app");
   });
 
   it("renders the not-found route", async () => {
