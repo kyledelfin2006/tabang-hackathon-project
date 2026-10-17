@@ -6,11 +6,16 @@ const EVIDENCE_BUCKET = "identity-evidence";
 
 export const REVIEW_PAGE_SIZE = 20;
 
+// Long enough to look at a document, short enough that a copied link dies.
+const EVIDENCE_LINK_SECONDS = 5 * 60;
+
 /** Takes plain values: the timestamp is in milliseconds. */
 export function toReviewItem(id, raw = {}) {
   return Object.freeze({
     id,
     applicantId: raw.applicantId ?? id,
+    applicantName: raw.applicantName ?? "",
+    applicantEmail: raw.applicantEmail ?? "",
     organization: raw.organization ?? "",
     badgeNumber: raw.badgeNumber ?? "",
     municipality: raw.municipality ?? "",
@@ -37,9 +42,27 @@ export function createReviewRepository({ client } = {}) {
           .limit(REVIEW_PAGE_SIZE),
       );
 
+      // Reviewers may read applicants' profiles, so the name and email come
+      // from the account itself rather than anything typed on the form.
+      const profiles =
+        rows.length === 0
+          ? []
+          : unwrap(
+              await supabase()
+                .from("profiles")
+                .select("id, display_name, email")
+                .in(
+                  "id",
+                  rows.map((row) => row.applicant_id),
+                ),
+            );
+      const byId = new Map(profiles.map((profile) => [profile.id, profile]));
+
       return rows.map((row) =>
         toReviewItem(row.applicant_id, {
           applicantId: row.applicant_id,
+          applicantName: byId.get(row.applicant_id)?.display_name,
+          applicantEmail: byId.get(row.applicant_id)?.email,
           organization: row.organization,
           badgeNumber: row.badge_number,
           municipality: row.municipality,
@@ -49,6 +72,17 @@ export function createReviewRepository({ client } = {}) {
           submittedAtMillis: toMillis(row.submitted_at),
         }),
       );
+    },
+
+    /** An expiring link to one evidence file, for a reviewer to open. */
+    async getEvidenceUrl(path) {
+      const { signedUrl } = unwrap(
+        await supabase()
+          .storage.from(EVIDENCE_BUCKET)
+          .createSignedUrl(path, EVIDENCE_LINK_SECONDS),
+      );
+
+      return signedUrl;
     },
 
     /**
@@ -72,16 +106,19 @@ export function createReviewRepository({ client } = {}) {
         }),
       );
 
-      const paths = [application.identityDocumentPath, application.selfiePath].filter(
-        Boolean,
-      );
+      const paths = [
+        application.identityDocumentPath,
+        application.selfiePath,
+      ].filter(Boolean);
 
       if (paths.length === 0) {
         return { evidenceDeleted: true };
       }
 
       try {
-        const { data, error } = await supabase().storage.from(EVIDENCE_BUCKET).remove(paths);
+        const { data, error } = await supabase()
+          .storage.from(EVIDENCE_BUCKET)
+          .remove(paths);
 
         return { evidenceDeleted: !error && data?.length === paths.length };
       } catch {

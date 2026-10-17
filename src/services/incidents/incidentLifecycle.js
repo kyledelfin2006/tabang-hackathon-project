@@ -40,6 +40,29 @@ export function canTransition(fromStatus, toStatus) {
   return allowedNextStatuses(fromStatus).includes(toStatus);
 }
 
+// What responders and residents read; the stored values are for code.
+export const STATUS_LABELS = Object.freeze({
+  [INCIDENT_STATUS.new]: "Unclaimed",
+  [INCIDENT_STATUS.acknowledged]: "Acknowledged",
+  [INCIDENT_STATUS.dispatched]: "Dispatched",
+  [INCIDENT_STATUS.onScene]: "On scene",
+  [INCIDENT_STATUS.resolved]: "Resolved",
+  [INCIDENT_STATUS.cancelled]: "Cancelled",
+});
+
+export const VERIFICATION_LABELS = Object.freeze({
+  pending: "Not yet verified",
+  verified: "Verified",
+  rejected: "Could not be verified",
+});
+
+export const ROLE_LABELS = Object.freeze({
+  resident: "Resident",
+  responder: "Responder",
+  reviewer: "Reviewer",
+  admin: "Administrator",
+});
+
 export function describeTransitionRejection(fromStatus, toStatus) {
   if (!Object.values(INCIDENT_STATUS).includes(toStatus)) {
     return `${toStatus} is not an incident status.`;
@@ -88,7 +111,9 @@ export function elapsedSince(millis, now = Date.now()) {
 
   const hours = Math.floor(minutes / 60);
 
-  return hours < 24 ? `${hours} hr ${minutes % 60} min` : `${Math.floor(hours / 24)} d`;
+  return hours < 24
+    ? `${hours} hr ${minutes % 60} min`
+    : `${Math.floor(hours / 24)} d`;
 }
 
 /**
@@ -115,9 +140,13 @@ export function toIncident(id, raw = {}, now = Date.now()) {
     verificationStatus: raw.verificationStatus ?? "pending",
     priority: raw.priority ?? "medium",
     publicLocationLabel: raw.publicLocationLabel ?? "",
+    municipality: raw.municipality ?? "",
+    barangay: raw.barangay ?? "",
+    landmark: raw.landmark ?? "",
     description: raw.description ?? "",
     contactPhone: raw.contactPhone ?? "",
     preciseLocation: raw.preciseLocation ?? null,
+    imagePaths: Array.isArray(raw.imagePaths) ? raw.imagePaths : [],
     severity: raw.severity ?? null,
     need: raw.need ?? null,
     peopleAffected: raw.peopleAffected ?? null,

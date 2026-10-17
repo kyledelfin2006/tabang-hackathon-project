@@ -6,14 +6,9 @@ import {
   Section,
   Skeleton,
 } from "../../components/ui/Primitives.jsx";
-import {
-  INCIDENT_PAGE_SIZE,
-  createIncidentRepository,
-} from "../../services/incidents/incidentRepository.js";
+import { createIncidentRepository } from "../../services/incidents/incidentRepository.js";
 import {
   METRIC_DEFINITIONS,
-  computeMetrics,
-  describeCoverage,
   isMetricSetStale,
 } from "../../services/metrics/dashboardMetrics.js";
 
@@ -34,15 +29,17 @@ export default function ResponderDashboardPage({ incidentRepository }) {
   const load = useCallback(
     async (requestId) => {
       try {
-        const incidents = await repository.listIncidents({ status: "open" });
+        // Exact counts from the database, however many incidents are open.
+        const counts = await repository.countIncidents();
 
         if (activeRef.current !== requestId) {
           return;
         }
 
-        setMetrics(
-          computeMetrics(incidents, { pageLimit: INCIDENT_PAGE_SIZE }),
-        );
+        setMetrics({
+          values: counts,
+          generatedAtMillis: counts.countedAtMillis,
+        });
         setLoadState("ready");
       } catch {
         if (activeRef.current === requestId) {
@@ -129,10 +126,7 @@ export default function ResponderDashboardPage({ incidentRepository }) {
             </span>
             <span>
               <strong>Coverage</strong>
-              {describeCoverage({
-                truncated: metrics.truncated,
-                pageLimit: INCIDENT_PAGE_SIZE,
-              })}
+              Counted from every open incident in this deployment.
             </span>
           </div>
         </>

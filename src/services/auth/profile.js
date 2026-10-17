@@ -137,4 +137,4 @@ export function validateEmailOnlyInput(input = {}) {
   return { values, errors, isValid: Object.keys(errors).length === 0 };
 }
 
-export { MIN_PASSWORD_LENGTH, PHONE_PATTERN };
+export { MIN_PASSWORD_LENGTH, PHONE_PATTERN, collapseWhitespace };

@@ -15,6 +15,8 @@ const application = {
   organization: "Aklan MDRRMO",
   badgeNumber: "MD-2291",
   municipality: "Kalibo",
+  applicantName: "Maria Santos",
+  applicantEmail: "maria@example.test",
   consentVersion: "2026-04-privacy-and-terms",
   identityDocumentPath: "resident-9/id.jpg",
   selfiePath: "resident-9/selfie.jpg",
@@ -118,7 +120,7 @@ describe("review queue route", () => {
   });
 
   it("decides only after confirmation", async () => {
-    const decide = vi.fn().mockResolvedValue(undefined);
+    const decide = vi.fn().mockResolvedValue({ evidenceDeleted: true });
 
     renderQueue({
       listPendingApplications: vi.fn().mockResolvedValue([application]),
@@ -130,6 +132,9 @@ describe("review queue route", () => {
     expect(decide).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    fireEvent.change(screen.getByLabelText("Notes for the record (optional)"), {
+      target: { value: "Badge confirmed by phone." },
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "Approve and grant access" }),
     );
@@ -137,7 +142,13 @@ describe("review queue route", () => {
     await waitFor(() => {
       expect(decide).toHaveBeenCalledTimes(1);
     });
-    expect(decide.mock.calls[0][0].reviewerId).toBe("resident-1");
+    expect(decide.mock.calls[0][0]).toMatchObject({
+      approve: true,
+      notes: "Badge confirmed by phone.",
+    });
+    expect(
+      await screen.findByText(/Decision recorded for Maria Santos/),
+    ).toBeInTheDocument();
   });
 
   it("keeps the application listed when the decision fails", async () => {

@@ -1,5 +1,5 @@
 import { Suspense, useMemo } from "react";
-import { Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
 import LoadingState from "../components/feedback/LoadingState.jsx";
 import SkipLink from "../components/navigation/SkipLink.jsx";
@@ -11,6 +11,7 @@ import { PageHeading } from "../components/ui/Primitives.jsx";
 const baseItems = [
   { to: "/responder", label: "Dashboard" },
   { to: "/responder/incidents", label: "Incidents" },
+  { to: "/responder/advisories", label: "Advisories" },
   { to: "/responder/hotlines", label: "Hotlines" },
   { to: "/responder/account", label: "Account" },
 ];
@@ -30,7 +31,7 @@ export default function ResponderLayout() {
   const items = useMemo(
     () =>
       isReviewer
-        ? [baseItems[0], baseItems[1], reviewerItem, ...baseItems.slice(2)]
+        ? [...baseItems.slice(0, 3), reviewerItem, ...baseItems.slice(3)]
         : baseItems,
     [isReviewer],
   );
@@ -41,6 +42,13 @@ export default function ResponderLayout() {
       <AppHeader />
       <main className="shell__content shell__content--with-nav" id="main">
         <PageHeading key={location.pathname}>{pageTitle}</PageHeading>
+        {/* Responders are residents too: they may need to report their own
+            flooding or ask for help. */}
+        <nav aria-label="Other workspaces" className="workspace-switch">
+          <Link to="/app">
+            Resident features: report, request help, my reports
+          </Link>
+        </nav>
         <Suspense
           fallback={
             <LoadingState

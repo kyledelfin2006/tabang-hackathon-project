@@ -10,9 +10,7 @@ import {
   toIncident,
 } from "../services/incidents/incidentLifecycle.js";
 import {
-  AlreadyClaimedError,
   INCIDENT_PAGE_SIZE,
-  TransitionError,
   buildIncidentQuerySpec,
   createIncidentRepository,
   rowToIncident,
@@ -196,22 +194,80 @@ function clientAnswering(message) {
 }
 
 describe("incident actions", () => {
-  it("reports a lost claim race as AlreadyClaimedError", async () => {
-    const repository = createIncidentRepository({ client: clientAnswering("already_claimed") });
-
-    await expect(repository.claimIncident({ incidentId: "report-1" })).rejects.toBeInstanceOf(
-      AlreadyClaimedError,
-    );
-  });
-
-  it("reports a refused or missing step as TransitionError", async () => {
-    for (const message of ["invalid_transition", "not_found"]) {
-      const repository = createIncidentRepository({ client: clientAnswering(message) });
+  it("passes the database function's code through", async () => {
+    for (const code of ["already_claimed", "invalid_transition", "not_found"]) {
+      const repository = createIncidentRepository({ client: clientAnswering(code) });
 
       await expect(
         repository.transitionIncident({ incidentId: "report-1", toStatus: "resolved" }),
-      ).rejects.toBeInstanceOf(TransitionError);
+      ).rejects.toMatchObject({ code });
     }
+  });
+
+  it("verifies through the database function", async () => {
+    const calls = [];
+    const repository = createIncidentRepository({
+      client: { rpc: async (name, args) => (calls.push([name, args]), { error: null }) },
+    });
+
+    await repository.verifyIncident({ incidentId: "report-1", verificationStatus: "verified" });
+
+    expect(calls).toEqual([
+      ["verify_incident", { report_id: "report-1", verification_status: "verified" }],
+    ]);
+  });
+
+  it("maps exact counts from the database", async () => {
+    const repository = createIncidentRepository({
+      client: {
+        rpc: async () => ({
+          data: [
+            {
+              open_incidents: 30,
+              unclaimed: 4,
+              overdue: 2,
+              verified: 11,
+              awaiting_verification: 19,
+              counted_at: "2026-10-18T00:00:00+00:00",
+            },
+          ],
+          error: null,
+        }),
+      },
+    });
+
+    expect(await repository.countIncidents()).toEqual({
+      openIncidents: 30,
+      unclaimed: 4,
+      overdue: 2,
+      verified: 11,
+      awaitingVerification: 19,
+      countedAtMillis: Date.parse("2026-10-18T00:00:00+00:00"),
+    });
+  });
+
+  it("returns signed photo links in order and null for one that failed", async () => {
+    const repository = createIncidentRepository({
+      client: {
+        storage: {
+          from: () => ({
+            createSignedUrls: async (paths) => ({
+              data: [
+                { path: paths[1], signedUrl: "https://signed/b", error: null },
+                { path: paths[0], signedUrl: null, error: "Object not found" },
+              ],
+              error: null,
+            }),
+          }),
+        },
+      },
+    });
+
+    expect(await repository.getPhotoUrls(["r/p/a.jpg", "r/p/b.jpg"])).toEqual([
+      null,
+      "https://signed/b",
+    ]);
+    expect(await repository.getPhotoUrls([])).toEqual([]);
   });
 
   it("passes the incident, status, and note to the database function", async () => {

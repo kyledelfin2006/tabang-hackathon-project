@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "../../app/providers/useAuth.js";
 import EmptyState from "../../components/feedback/EmptyState.jsx";
 import ErrorState from "../../components/feedback/ErrorState.jsx";
 import { FormStatus } from "../../components/forms/FormField.jsx";
 import IncidentCard from "../../components/incidents/IncidentCard.jsx";
 import { Section, Skeleton } from "../../components/ui/Primitives.jsx";
+import { describeActionError } from "../../services/errors/describeActionError.js";
 import { createIncidentRepository } from "../../services/incidents/incidentRepository.js";
 
 const STATUS_FILTERS = [
@@ -23,14 +23,15 @@ const KIND_FILTERS = [
 ];
 
 export default function IncidentQueuePage({ incidentRepository }) {
-  const { user, role } = useAuth();
-  const responderId = user?.uid;
   const repository = useMemo(
     () => incidentRepository ?? createIncidentRepository(),
     [incidentRepository],
   );
 
   const [incidents, setIncidents] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loadState, setLoadState] = useState("loading");
   const [status, setStatus] = useState("open");
   const [kind, setKind] = useState("all");
@@ -41,13 +42,15 @@ export default function IncidentQueuePage({ incidentRepository }) {
   const load = useCallback(
     async (requestId) => {
       try {
-        const results = await repository.listIncidents({ status, kind });
+        const page = await repository.listIncidents({ status, kind });
 
         if (activeRef.current !== requestId) {
           return;
         }
 
-        setIncidents(results);
+        setIncidents(page.incidents);
+        setCursor(page.cursor);
+        setHasMore(page.hasMore);
         setLoadState("ready");
       } catch {
         if (activeRef.current === requestId) {
@@ -73,24 +76,35 @@ export default function IncidentQueuePage({ incidentRepository }) {
     load(activeRef.current);
   }, [load]);
 
+  // Every open incident is reachable: the queue pages instead of stopping at
+  // the first 25.
+  async function loadMore() {
+    setLoadingMore(true);
+    setActionError(null);
+
+    try {
+      const page = await repository.listIncidents({ status, kind, cursor });
+
+      setIncidents((current) => [...current, ...page.incidents]);
+      setCursor(page.cursor);
+      setHasMore(page.hasMore);
+    } catch (error) {
+      setActionError(describeActionError(error));
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   async function claim(incident) {
     setClaimingId(incident.id);
     setActionError(null);
 
     try {
-      await repository.claimIncident({
-        incidentId: incident.id,
-        responderId,
-        actorRole: role,
-      });
+      await repository.claimIncident({ incidentId: incident.id });
       refresh();
     } catch (error) {
-      // A losing race is expected, not exceptional: say who holds it now.
-      setActionError(
-        error?.constructor?.name === "AlreadyClaimedError"
-          ? "Another responder has already claimed this incident."
-          : "The incident could not be claimed. Refresh and retry.",
-      );
+      // A losing race is expected, not exceptional: say someone holds it now.
+      setActionError(describeActionError(error));
       refresh();
     } finally {
       setClaimingId(null);
@@ -185,16 +199,31 @@ export default function IncidentQueuePage({ incidentRepository }) {
       ) : null}
 
       {loadState === "ready" && incidents.length > 0 ? (
-        <ul className="report-list">
-          {incidents.map((incident) => (
-            <IncidentCard
-              claiming={claimingId === incident.id}
-              incident={incident}
-              key={incident.id}
-              onClaim={claim}
-            />
-          ))}
-        </ul>
+        <>
+          <ul className="report-list">
+            {incidents.map((incident) => (
+              <IncidentCard
+                claiming={claimingId === incident.id}
+                incident={incident}
+                key={incident.id}
+                onClaim={claim}
+              />
+            ))}
+          </ul>
+
+          {hasMore ? (
+            <div className="button-row">
+              <button
+                className="action-button action-button--secondary"
+                disabled={loadingMore}
+                onClick={loadMore}
+                type="button"
+              >
+                {loadingMore ? "Loading…" : "Load more incidents"}
+              </button>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </Section>
   );

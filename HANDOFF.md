@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-18T00:50:53+08:00
-State: Revision 2 approved; plan phases 1 to 4 complete (barangay lists blocked), phase 5 next; execution mode `auto`, one Claude Code agent
+Updated: 2026-10-18T01:05:43+08:00
+State: Revision 2 approved; plan phases 1 to 5 complete (barangay lists blocked), phase 6 next; execution mode `auto`, one Claude Code agent
 Feature: FEAT-001
 
 ## Read first
@@ -63,11 +63,13 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - Phase 3 is complete with checkpoint `feat(data): move auth, data, and uploads to supabase`: the app runs on Supabase, Firebase and Cloudinary are gone from code and dependencies, and a `/update-password` page keeps emailed reset links working.
 - Phase 4 is complete with checkpoint `feat(resident): barangay picker, offline replay, and honest failures`: municipality picker, optional GPS, error summary, send without photos, 911 on failure, pending reports with send now and discard, automatic replay, cancel only when allowed, and account details editing.
 - Phase 4 gap: barangay lists are empty because the PSA PSGC download was refused (HTTP 403); the form takes the barangay as text until Len supplies the file.
-- Phases 5 to 8: not started.
+- Phase 5 is complete with checkpoint `feat(responder): paged queue, evidence review, and advisory publishing`: paged queue, exact dashboard counts, incident photos, map link, verify and reject, advisory publishing, reviewer evidence links and notes, reapply after rejection, workspace links, modal focus trap, bottom-navigation clearance, and the copy scan.
+- The privacy page in `src/routes/auth/PrivacyPage.jsx` is a draft pending Len's review; it is not legal advice.
+- Phases 6 to 8: not started.
 
 ## Checks and evidence
 
-Phase 1 to 4 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
+Phase 1 to 5 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
 `npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities since Phase 3 removed `firebase`.
 `README.md` and `docs/operations.md` still describe Firebase until Phase 8 rewrites them.
 The CI `policies` job has not run, because nothing is pushed.
@@ -87,6 +89,6 @@ Do not reset a count on a new session or silently reinterpret a failed check as 
 
 ## Next action
 
-Execute plan phase 5 (responder and reviewer flows, accessibility, and privacy copy) in this worktree, then continue through phase 8 in `auto` mode.
+Execute plan phase 6 (API v1 foundation and integration clients) in this worktree, then continue through phase 8 in `auto` mode.
 Docker Desktop must be running; start the stack with `npm run db:start`.
 A new session resumes with the prompt in plan section 5.

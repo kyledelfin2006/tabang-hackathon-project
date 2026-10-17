@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-18T00:50:53+08:00
+Updated: 2026-10-18T01:05:43+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -270,31 +270,31 @@ Checkpoint message: `feat(resident): barangay picker, offline replay, and honest
 
 Requirements: REQ-018, REQ-019 (verify), REQ-022, REQ-023, REQ-024, REQ-025, REQ-026, REQ-027, REQ-028 (scan test), REQ-031, REQ-037 (services part), REQ-038 (privacy draft)
 Depends on: Phase 4
-State: Draft, not started
+State: Complete; checkpoint commit `feat(responder): paged queue, evidence review, and advisory publishing`
 
 #### Tasks
 
-- [ ] Incident repository: cursor paging, `countIncidents` from `incident_counts`, claim on acknowledge, `verifyIncident`, `getPhotoUrls`, and the new `toIncident` fields.
-- [ ] Advisory repository: `publishAdvisory`, `unpublishAdvisory`, expiry filtering, `source`.
-- [ ] Review repository: applicant name and email from `profiles`, `getEvidenceUrl`, storage deletion with a checked result, and the `{ evidenceDeleted }` outcome.
-- [ ] Application repository: reapply after rejection; load failures reject.
-- [ ] A new migration with indexes for any new client query.
-- [ ] Replace `TransitionError` and `AlreadyClaimedError` with `Error`; share the whitespace and phone helpers from `profile.js`.
-- [ ] Incident queue "Load more" with `{ incidents, cursor, hasMore }`; dashboard from `countIncidents` with the counted time.
-- [ ] Incident detail: photo grid from `getPhotoUrls(imagePaths)`, a map link `https://www.google.com/maps/search/?api=1&query=<lat>,<lng>` when coordinates exist, labels from `SEVERITY_LABELS`, `NEED_LABELS`, and `STATUS_LABELS`, "Verify" and "Reject" buttons; acknowledge performs a claim.
-- [ ] `/responder/advisories` page to publish and unpublish advisories.
-- [ ] Review queue: applicant name and email, "View ID" and "View selfie" through `getEvidenceUrl`, a notes field, and outcome messages including "evidence deletion pending".
-- [ ] Application page: error with retry on load failure; reapply form after rejection.
-- [ ] Cross-navigation: responder shell link to resident features; resident drawer link to `/responder` for responders.
-- [ ] `scroll-padding-bottom` equal to the bottom navigation height, `env(safe-area-inset-bottom)` on the navigation, and a focus trap in `Modal`.
-- [ ] Privacy page draft covering ID and selfie collection and deletion, Supabase as the data and file processor, the on-phone queue, partner sharing under D-5, the Data Privacy Act of 2012, and a contact; mark it "Draft, pending Len's review" in `HANDOFF.md` and do not present it as legal advice.
-- [ ] `src/test/copyScan.test.jsx` rendering every route and failing on the review section 5.1 strings.
+- [x] Incident repository: cursor paging, `countIncidents` from `incident_counts`, claim on acknowledge, `verifyIncident`, `getPhotoUrls`, and the new `toIncident` fields.
+- [x] Advisory repository: `publishAdvisory`, `unpublishAdvisory`, expiry filtering, `source`.
+- [x] Review repository: applicant name and email from `profiles`, `getEvidenceUrl`, storage deletion with a checked result, and the `{ evidenceDeleted }` outcome.
+- [x] Application repository: reapply after rejection; load failures reject.
+- [x] A new migration with indexes for any new client query.
+- [x] Replace `TransitionError` and `AlreadyClaimedError` with `Error`; share the whitespace and phone helpers from `profile.js`.
+- [x] Incident queue "Load more" with `{ incidents, cursor, hasMore }`; dashboard from `countIncidents` with the counted time.
+- [x] Incident detail: photo grid from `getPhotoUrls(imagePaths)`, a map link `https://www.google.com/maps/search/?api=1&query=<lat>,<lng>` when coordinates exist, labels from `SEVERITY_LABELS`, `NEED_LABELS`, and `STATUS_LABELS`, "Verify" and "Reject" buttons; acknowledge performs a claim.
+- [x] `/responder/advisories` page to publish and unpublish advisories.
+- [x] Review queue: applicant name and email, "View ID" and "View selfie" through `getEvidenceUrl`, a notes field, and outcome messages including "evidence deletion pending".
+- [x] Application page: error with retry on load failure; reapply form after rejection.
+- [x] Cross-navigation: responder shell link to resident features; resident drawer link to `/responder` for responders.
+- [x] `scroll-padding-bottom` equal to the bottom navigation height, `env(safe-area-inset-bottom)` on the navigation, and a focus trap in `Modal`.
+- [x] Privacy page draft covering ID and selfie collection and deletion, Supabase as the data and file processor, the on-phone queue, partner sharing under D-5, the Data Privacy Act of 2012, and a contact; mark it "Draft, pending Len's review" in `HANDOFF.md` and do not present it as legal advice.
+- [x] `src/test/copyScan.test.jsx` rendering every route and failing on the review section 5.1 strings.
 
 #### Verification
 
-- [ ] `npm run test:unit` passes three consecutive times, with tests for paging, counts, claim on acknowledge, verify, publish and unpublish, evidence URL, deletion failure outcome, and reapply.
-- [ ] `npm run db:reset` and `npm run test:policies` pass with tests for counts over 30 incidents, publish and unpublish, signed photo and evidence links, and reapply; `npm run db:stop` recorded.
-- [ ] `npm run lint`, `npm run check:contrast`, and `npm run build` pass.
+- [x] `npm run test:unit` passes three consecutive times, with tests for paging, counts, claim on acknowledge, verify, publish and unpublish, evidence URL, deletion failure outcome, and reapply.
+- [x] `npm run db:reset` and `npm run test:policies` pass with tests for counts over 30 incidents, publish and unpublish, signed photo and evidence links, and reapply; `npm run db:stop` recorded.
+- [x] `npm run lint`, `npm run check:contrast`, and `npm run build` pass.
 
 Checkpoint message: `feat(responder): paged queue, evidence review, and advisory publishing`
 

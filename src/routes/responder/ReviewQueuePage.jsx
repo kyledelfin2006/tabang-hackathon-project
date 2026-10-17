@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "../../app/providers/useAuth.js";
 import EmptyState from "../../components/feedback/EmptyState.jsx";
 import ErrorState from "../../components/feedback/ErrorState.jsx";
 import Modal from "../../components/feedback/Modal.jsx";
 import { FormStatus } from "../../components/forms/FormField.jsx";
 import { Badge, Section, Skeleton } from "../../components/ui/Primitives.jsx";
+import { describeActionError } from "../../services/errors/describeActionError.js";
 import { createReviewRepository } from "../../services/responders/reviewRepository.js";
 
 function formatWhen(millis) {
@@ -12,8 +12,6 @@ function formatWhen(millis) {
 }
 
 export default function ReviewQueuePage({ reviewRepository }) {
-  const { user } = useAuth();
-  const reviewerId = user?.uid;
   const repository = useMemo(
     () => reviewRepository ?? createReviewRepository(),
     [reviewRepository],
@@ -23,7 +21,8 @@ export default function ReviewQueuePage({ reviewRepository }) {
   const [loadState, setLoadState] = useState("loading");
   const [pendingDecision, setPendingDecision] = useState(null);
   const [notes, setNotes] = useState("");
-  const [actionError, setActionError] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [evidenceLinks, setEvidenceLinks] = useState({});
   const activeRef = useRef(0);
 
   const load = useCallback(
@@ -61,32 +60,57 @@ export default function ReviewQueuePage({ reviewRepository }) {
     load(activeRef.current);
   }, [load]);
 
+  // Fetches a link that expires in minutes; the reviewer opens it from the
+  // card, so no pop-up blocker or lost tab is involved.
+  async function fetchEvidenceLink(path) {
+    setStatus(null);
+
+    try {
+      const url = await repository.getEvidenceUrl(path);
+
+      setEvidenceLinks((current) => ({ ...current, [path]: url }));
+    } catch (error) {
+      setStatus({ tone: "error", message: describeActionError(error) });
+    }
+  }
+
   async function confirmDecision() {
     const decision = pendingDecision;
 
     setPendingDecision(null);
-    setActionError(null);
+    setStatus(null);
 
     if (!decision) {
       return;
     }
 
     try {
-      await repository.decide({
+      const { evidenceDeleted } = await repository.decide({
         application: decision.application,
         approve: decision.approve,
         notes,
-        reviewerId,
       });
 
       setApplications((current) =>
         current.filter((item) => item.id !== decision.application.id),
       );
       setNotes("");
-    } catch {
-      setActionError(
-        "The decision could not be recorded. Nothing was changed; try again.",
+      setStatus(
+        evidenceDeleted
+          ? {
+              tone: "success",
+              message: `Decision recorded for ${decision.application.applicantName || "the applicant"}. Their identity documents were deleted.`,
+            }
+          : {
+              tone: "error",
+              message: `Decision recorded for ${decision.application.applicantName || "the applicant"}, but evidence deletion is pending: the identity documents could not be deleted. Ask an administrator to remove them.`,
+            },
       );
+    } catch (error) {
+      setStatus({
+        tone: "error",
+        message: `The decision could not be recorded. Nothing was changed. ${describeActionError(error)}`,
+      });
     }
   }
 
@@ -96,7 +120,7 @@ export default function ReviewQueuePage({ reviewRepository }) {
       title="Responder applications"
       description="Approving grants responder access immediately. Identity documents are deleted once you record a decision."
     >
-      <FormStatus message={actionError} />
+      <FormStatus message={status?.message} tone={status?.tone} />
 
       {loadState === "loading" ? (
         <Skeleton label="Loading applications" lines={4} />
@@ -127,9 +151,19 @@ export default function ReviewQueuePage({ reviewRepository }) {
                 <span>{formatWhen(application.submittedAtMillis)}</span>
               </div>
 
-              <h3 className="report-card__title">{application.organization}</h3>
+              <h3 className="report-card__title">
+                {application.applicantName || "Name not provided"}
+              </h3>
 
               <div className="detail-list">
+                <span>
+                  <strong>Email</strong>
+                  {application.applicantEmail || "Not provided"}
+                </span>
+                <span>
+                  <strong>Organization</strong>
+                  {application.organization}
+                </span>
                 <span>
                   <strong>Badge number</strong>
                   {application.badgeNumber}
@@ -142,6 +176,36 @@ export default function ReviewQueuePage({ reviewRepository }) {
                   <strong>Consent version</strong>
                   {application.consentVersion}
                 </span>
+              </div>
+
+              <div className="button-row">
+                {[
+                  ["ID", application.identityDocumentPath],
+                  ["selfie", application.selfiePath],
+                ]
+                  .filter(([, path]) => path)
+                  .map(([label, path]) =>
+                    evidenceLinks[path] ? (
+                      <a
+                        className="action-button action-button--secondary"
+                        href={evidenceLinks[path]}
+                        key={path}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        Open the {label} (link expires in 5 minutes)
+                      </a>
+                    ) : (
+                      <button
+                        className="action-button action-button--secondary"
+                        key={path}
+                        onClick={() => fetchEvidenceLink(path)}
+                        type="button"
+                      >
+                        View {label}
+                      </button>
+                    ),
+                  )}
               </div>
 
               <div className="button-row">
@@ -177,8 +241,8 @@ export default function ReviewQueuePage({ reviewRepository }) {
         }
         description={
           pendingDecision?.approve
-            ? "This grants responder access immediately and deletes the identity documents. Only the decision, your account, and the timestamp are kept."
-            : "This records a rejection and deletes the identity documents. Only the decision, your account, and the timestamp are kept."
+            ? "This grants responder access immediately and deletes the identity documents. Only the decision, your notes, your account, and the timestamp are kept."
+            : "This records a rejection and deletes the identity documents. The applicant sees your notes and may apply again."
         }
         onClose={() => setPendingDecision(null)}
         onConfirm={confirmDecision}
@@ -188,7 +252,21 @@ export default function ReviewQueuePage({ reviewRepository }) {
             ? "Approve this application?"
             : "Reject this application?"
         }
-      />
+      >
+        <div className="form-field">
+          <label className="form-field__label" htmlFor="review-notes">
+            Notes for the record (optional)
+          </label>
+          <textarea
+            className="form-field__input"
+            id="review-notes"
+            maxLength={1000}
+            onChange={(event) => setNotes(event.target.value)}
+            rows={3}
+            value={notes}
+          />
+        </div>
+      </Modal>
     </Section>
   );
 }

@@ -6,23 +6,18 @@ import ResponderDashboardPage from "../routes/responder/ResponderDashboardPage.j
 import {
   METRIC_DEFINITIONS,
   METRIC_STALE_AFTER_MS,
-  computeMetrics,
-  describeCoverage,
   isMetricSetStale,
 } from "../services/metrics/dashboardMetrics.js";
 import { createFakeAuthGateway, responderSession } from "./fakeAuthGateway.js";
 
-function incident(overrides = {}) {
-  return {
-    id: "report-1",
-    incidentStatus: "new",
-    verificationStatus: "pending",
-    isClaimed: false,
-    isOverdue: false,
-    createdAtMillis: Date.parse("2026-08-14T02:00:00Z"),
-    ...overrides,
-  };
-}
+const counts = Object.freeze({
+  openIncidents: 30,
+  unclaimed: 4,
+  overdue: 2,
+  verified: 11,
+  awaitingVerification: 19,
+  countedAtMillis: Date.now(),
+});
 
 function renderDashboard(repository) {
   return render(
@@ -54,62 +49,6 @@ describe("metric definitions", () => {
   });
 });
 
-describe("metric computation", () => {
-  it("counts only open incidents", () => {
-    const { values } = computeMetrics([
-      incident({ id: "a" }),
-      incident({ id: "b", incidentStatus: "resolved" }),
-      incident({ id: "c", incidentStatus: "cancelled" }),
-    ]);
-
-    expect(values.openIncidents).toBe(1);
-  });
-
-  it("separates verified from unverified incidents", () => {
-    const { values } = computeMetrics([
-      incident({ id: "a", verificationStatus: "verified" }),
-      incident({ id: "b", verificationStatus: "pending" }),
-    ]);
-
-    expect(values.verified).toBe(1);
-    expect(values.awaitingVerification).toBe(1);
-  });
-
-  it("counts unclaimed and overdue separately", () => {
-    const { values } = computeMetrics([
-      incident({ id: "a", isClaimed: true }),
-      incident({ id: "b", isOverdue: true }),
-    ]);
-
-    expect(values.unclaimed).toBe(1);
-    expect(values.overdue).toBe(1);
-  });
-
-  it("marks the set truncated when the page was filled", () => {
-    const incidents = Array.from({ length: 5 }, (_, index) =>
-      incident({ id: `report-${index}` }),
-    );
-
-    expect(computeMetrics(incidents, { pageLimit: 5 }).truncated).toBe(true);
-    expect(computeMetrics(incidents, { pageLimit: 10 }).truncated).toBe(false);
-  });
-
-  it("says plainly when the numbers are not totals", () => {
-    expect(describeCoverage({ truncated: true, pageLimit: 25 })).toMatch(
-      /not totals/,
-    );
-    expect(describeCoverage({ truncated: false })).toMatch(
-      /every open incident/,
-    );
-  });
-
-  it("records when it counted", () => {
-    const now = Date.parse("2026-08-14T03:00:00Z");
-
-    expect(computeMetrics([], { now }).generatedAtMillis).toBe(now);
-  });
-});
-
 describe("staleness", () => {
   it("treats an old count as stale", () => {
     const generated = Date.parse("2026-08-14T02:00:00Z");
@@ -127,27 +66,28 @@ describe("staleness", () => {
 
 describe("responder dashboard route", () => {
   it("states that nothing is estimated or sampled", async () => {
-    renderDashboard({ listIncidents: vi.fn().mockResolvedValue([]) });
+    renderDashboard({ countIncidents: vi.fn().mockResolvedValue(counts) });
 
     expect(
       await screen.findByText(/Nothing is estimated, projected, or sampled/),
     ).toBeInTheDocument();
   });
 
-  it("shows counts with the time they were taken", async () => {
-    renderDashboard({
-      listIncidents: vi
-        .fn()
-        .mockResolvedValue([incident({ id: "a" }), incident({ id: "b" })]),
-    });
+  it("REQ-023: shows the exact database counts with the time they were taken", async () => {
+    const countIncidents = vi.fn().mockResolvedValue(counts);
+
+    renderDashboard({ countIncidents });
 
     await screen.findByText("Open incidents");
+    expect(screen.getByText("30")).toBeInTheDocument();
+    expect(screen.getByText("19")).toBeInTheDocument();
     expect(screen.getByText("Counted at")).toBeInTheDocument();
-    expect(screen.getByText("Coverage")).toBeInTheDocument();
+    expect(screen.getByText(/Counted from every open incident/)).toBeInTheDocument();
+    expect(countIncidents).toHaveBeenCalledTimes(1);
   });
 
   it("keeps the dashboard focused on current response data", async () => {
-    renderDashboard({ listIncidents: vi.fn().mockResolvedValue([]) });
+    renderDashboard({ countIncidents: vi.fn().mockResolvedValue(counts) });
 
     expect(
       await screen.findByRole("heading", {
@@ -163,7 +103,7 @@ describe("responder dashboard route", () => {
 
   it("shows no figures at all when the source fails", async () => {
     renderDashboard({
-      listIncidents: vi.fn().mockRejectedValue(new Error("offline")),
+      countIncidents: vi.fn().mockRejectedValue(new Error("offline")),
     });
 
     expect(

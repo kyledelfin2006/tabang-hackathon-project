@@ -33,10 +33,13 @@ describe("provider isolation", () => {
   });
 
   it("leaves no Firebase or Cloudinary import behind", () => {
-    const offenders = [...sourceFiles("src"), ...sourceFiles("server")].filter((file) =>
-      /from\s+["'](?:firebase|@firebase)[/"']|cloudinary/i.test(readFileSync(file, "utf8")),
+    // Tests are skipped: some name these providers on purpose, to scan for them.
+    const offenders = [...sourceFiles("src"), ...sourceFiles("server")].filter(
+      (file) =>
+        !file.startsWith("src/test/") &&
+        /from\s+["'](?:firebase|@firebase)[/"']|cloudinary/i.test(readFileSync(file, "utf8")),
     );
 
-    expect(offenders.filter((file) => file !== "src/test/providerIsolation.test.js")).toEqual([]);
+    expect(offenders).toEqual([]);
   });
 });

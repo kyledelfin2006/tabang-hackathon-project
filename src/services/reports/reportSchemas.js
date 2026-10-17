@@ -1,7 +1,10 @@
-import { normalizePhone } from "../auth/profile.js";
+import {
+  PHONE_PATTERN,
+  collapseWhitespace as collapse,
+  normalizePhone,
+} from "../auth/profile.js";
 import { barangaysFor, isKnownPlace } from "../places/aklanPlaces.js";
 
-const PHONE_PATTERN = /^(?:\+63|0)9\d{9}$/;
 const MAX_DESCRIPTION = 1000;
 const MAX_PLACE = 80;
 const MAX_LANDMARK = 120;
@@ -48,10 +51,6 @@ export const NEED_LABELS = Object.freeze({
   shelter: "Shelter",
   other: "Something else",
 });
-
-function collapse(value) {
-  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
-}
 
 function readCoordinates(input, errors) {
   const rawLatitude = input.latitude ?? "";

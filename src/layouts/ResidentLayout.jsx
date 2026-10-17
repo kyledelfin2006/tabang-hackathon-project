@@ -33,7 +33,7 @@ export default function ResidentLayout({ submissionQueue, reportRepository }) {
   const pageTitle = usePageTitle();
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { signOut, user } = useAuth();
+  const { isResponder, signOut, user } = useAuth();
   const navigate = useNavigate();
   const reporterId = user?.uid;
 
@@ -55,7 +55,9 @@ export default function ResidentLayout({ submissionQueue, reportRepository }) {
         // the entry chunk that every visitor downloads.
         const repository =
           reportRepository ??
-          (await import("../services/reports/reportRepository.js")).createReportRepository();
+          (
+            await import("../services/reports/reportRepository.js")
+          ).createReportRepository();
 
         await replayQueuedReports({ queue, repository, reporterId });
       } catch {
@@ -98,7 +100,14 @@ export default function ResidentLayout({ submissionQueue, reportRepository }) {
           </button>
         }
         id="resident-drawer"
-        items={drawerItems}
+        items={
+          isResponder
+            ? [
+                ...drawerItems,
+                { to: "/responder", label: "Responder workspace" },
+              ]
+            : drawerItems
+        }
         labelledBy="resident-drawer-title"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}

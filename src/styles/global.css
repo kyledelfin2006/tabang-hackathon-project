@@ -16,9 +16,14 @@
 }
 
 html {
+  /* Room the fixed bottom navigation covers, including a phone's home
+     indicator. Scrolling a focused field into view keeps it above the bar. */
+  --bottom-nav-clearance: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+
   font-family: var(--font-body);
   color: var(--color-ink);
   background: var(--color-shell);
+  scroll-padding-bottom: var(--bottom-nav-clearance);
 }
 
 body {
@@ -190,7 +195,7 @@ button {
 }
 
 .shell__content--with-nav {
-  padding-bottom: 5.5rem;
+  padding-bottom: var(--bottom-nav-clearance);
 }
 
 .landing-grid,
@@ -309,7 +314,7 @@ button {
 .bottom-nav-shell {
   position: fixed;
   left: 50%;
-  bottom: var(--space-4);
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
   z-index: 10;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
@@ -339,6 +344,32 @@ button {
 .bottom-nav-shell__item.is-active {
   background: var(--color-surface-raised);
   color: var(--color-ink);
+}
+
+/* ── Workspace switch ────────────────────────────────────────────────── */
+.workspace-switch a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: inherit;
+}
+
+/* ── Report photos ───────────────────────────────────────────────────── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+  gap: var(--space-2);
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.photo-grid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-input);
 }
 
 /* ── Overlays ────────────────────────────────────────────────────────── */

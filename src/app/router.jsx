@@ -42,6 +42,9 @@ const MyReportsPage = lazy(() => import("../routes/reports/MyReportsPage.jsx"));
 const ResponderApplicationPage = lazy(
   () => import("../routes/responder/ResponderApplicationPage.jsx"),
 );
+const ResponderAdvisoriesPage = lazy(
+  () => import("../routes/responder/ResponderAdvisoriesPage.jsx"),
+);
 const ReviewQueuePage = lazy(
   () => import("../routes/responder/ReviewQueuePage.jsx"),
 );
@@ -196,6 +199,11 @@ export const appRoutes = [
         path: "incidents/:id",
         element: <IncidentDetailPage />,
         handle: { title: "Incident details" },
+      },
+      {
+        path: "advisories",
+        element: <ResponderAdvisoriesPage />,
+        handle: { title: "Public advisories" },
       },
       {
         path: "applications",
