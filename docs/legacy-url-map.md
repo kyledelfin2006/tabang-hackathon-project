@@ -25,6 +25,10 @@ still reaches the right place instead of a 404.
 | `/AccountInformation.html` | `/responder/account` | Responder account. |
 | `/Privacypolicy.html` | `/privacy` | Policy content migrated in Phase 3. |
 
+## Retired app routes
+
+- `/app/community` now redirects to `/app` inside the app, because advisories have one home, the resident home page (FEAT-001 plan phase 4). It is an app route, not a server redirect, so it is not in the table above.
+
 ## Kept deliberately
 
 - `/index.html` — the application entry.

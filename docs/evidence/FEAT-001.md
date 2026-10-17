@@ -3,7 +3,7 @@
 Earlier results for A1, A2, and C1 are in [FEAT-001-track-a.md](FEAT-001-track-a.md) and [FEAT-001-track-c.md](FEAT-001-track-c.md); Revision 1's B1 results are on `archive/feat-001-b1-firestore-rules`.
 
 Created: 2026-10-17T22:33:38+08:00
-Updated: 2026-10-18T01:18:37+08:00
+Updated: 2026-10-18T01:23:47+08:00
 
 Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, Docker 29.7.2, Supabase CLI 2.121.0 from the dev dependency, worktree `../Project_Tabang-integration` on `feat-001/integration`, local untracked `.env` never staged.
 Local Supabase key values are development defaults printed by `npx supabase status`; they are not recorded here.
@@ -73,6 +73,67 @@ Local Supabase key values are development defaults printed by `npx supabase stat
 | Phase 7 | `npm run check`, then `npm run test:unit` twice more | Local `.env` | Passed: 240 of 240 unit tests in each of three runs, 33 of 33 server tests, build. | 2026-10-18T01:18:07+08:00 to 01:18:37+08:00 | - |
 | Phase 7 | `npm run db:stop` | - | Passed. | 2026-10-18T01:17:48+08:00 | - |
 | Phase 7 | Behavior notes | Recorded per plan section 2 | List responses are `{ data, nextCursor }` and single items `{ data }`. Cursors are base64url of the last item's timestamp and id, held to exact shapes on the way in because they end up inside a database filter. The server reads public advisories with the secret key, so it filters expiry itself. A signal naming several municipalities produces an advisory with no single municipality. A signal's `source` is taken from the body as validated; it is not yet tied to the partner key that sent it. `docs/hotline-seed.json` no longer carries stored rating totals and now points at `npm run seed:hotlines`. | 2026-10-18T01:18+08:00 | Tying `source` to the client is a candidate for a later change with Len. |
+| Phase 8, REQ-002 | `npm ci` | Integration worktree after all phases | Passed. | 2026-10-18T01:20:35+08:00 | npm reported dev-only audit findings; see the audit row. |
+| Phase 8 | `npm run lint` | - | Passed: exit 0. | 2026-10-18T01:20+08:00 | - |
+| Phase 8, REQ-004 | `npm run test:unit` three consecutive runs | jsdom | Passed: 240 of 240 in each run. | 2026-10-18T01:20+08:00 to 01:21:09+08:00 | Three runs on one machine; not proof of determinism under other load. |
+| Phase 8, REQ-011, REQ-038 | `npm run test:server` | - | Failed once: the redirect test parses every table row in `docs/legacy-url-map.md`, and the new `/app/community` row is an app route, not a server redirect. Moved that note out of the table; then passed 33 of 33. | 2026-10-18T01:21+08:00 | Fix attempt 1; resolved. |
+| Phase 8, REQ-043 | `npm run db:start`, `npm run db:reset`, `npm run test:policies` | Local stack rebuilt from all six migrations | Passed: 55 of 55. | 2026-10-18T01:22:02+08:00 to 01:22:55+08:00 | - |
+| Phase 8, REQ-003 | `npm run build`, `npm run check` | Local `.env` | Passed: build; check with secret scan, contrast ("All pairs clear 4.5:1"), 240 of 240 unit tests, 33 of 33 server tests, build. | 2026-10-18T01:22:55+08:00 to 01:23:14+08:00 | - |
+| Phase 8, REQ-001, REQ-010, REQ-011, REQ-032, REQ-033 | Server smoke: `PORT=18123 npm start`, then `curl` | Built `dist/`, local `.env`, local stack running | Passed: `/` 200, `/app/reports` 200, `/assets/AccountPage-*.js` 200, `/Homepage.html` 301 to `/app`, `/.env` 404, `/api/v1/health` 200, `/api/v1/incidents` without a key 401 with the error envelope, `/api/v1/advisories` 200; the Content Security Policy allowed `'self'` and the local Supabase origin only. | 2026-10-18T01:23:22+08:00 | Stopping the npm wrapper left its node child running; that process (PID 36116, started 01:23:21) was stopped by PID and port 18123 confirmed clear. |
+| Phase 8 | `npm audit` (all dependencies) | After `npm ci` | 5 findings in development tools only (`vitest`, `@vitest/mocker`, `brace-expansion`, `source-map-js`, `undici`); `npm audit --omit=dev --audit-level=high` still reports 0. | 2026-10-18T01:21+08:00 | Not fixed here: they do not ship in the app or server, and upgrading the test runner is outside FEAT-001. Reported for Len. |
+| Phase 8, REQ-039 | `git grep -i -E "firebase|cloudinary"` excluding `docs/archive`, `docs/evidence`, and `package-lock.json` | After the documentation rewrite | No code, dependency, or setup step uses either provider. Remaining hits are explained: `.gitignore` debris entries; specs, plan, handoff, and index describing the migration; `docs/operations.md` on rotating the exposed Cloudinary secret and retiring the Firebase project; `docs/legacy-url-map.md` on the retired legacy scripts; the secret scan patterns; tests that scan for these names on purpose; and a commented template block in `supabase/config.toml`. | 2026-10-18T01:23+08:00 | - |
+| Phase 8 | `npm run db:stop` | - | Passed. | 2026-10-18T01:23:47+08:00 | - |
+| Phase 8 | Browser scenarios with screenshots | - | Not run: no browser tool was connected in this session. Pending for Len: signed-out `/hotlines`; sign-up and sign-in; a report with barangay only; send without photos with storage unavailable; an offline report then replay; a responder claim and advance; a reviewer opening evidence and deciding; keyboard-only report submission. | - | Hosted-project and physical-device checks also remain pending for Len. |
+
+## Requirement coverage after plan phase 8
+
+Status words: Passed means the listed checks passed under the stated conditions; Partial means some of the criterion is unmet or unverified; Not run means no check exists yet.
+
+| Requirement | Status | Where the evidence is |
+| --- | --- | --- |
+| REQ-001 | Passed | A2 rows in `FEAT-001-track-a.md`; `tests/server/static.test.mjs`; Phase 8 smoke (`/.env` 404). |
+| REQ-002 | Passed | A1 fresh-clone rows in `FEAT-001-track-a.md`; Phase 1 and Phase 8 `npm ci` and unit runs. |
+| REQ-003 | Passed | Phase 1 and Phase 8 `npm run check`; Phase 1 secret scan probe for `.env` and Supabase secret keys. |
+| REQ-004 | Passed | Three-run rows in Phases 1, 5, 6, 7, and 8; two timing races found and fixed (Phases 1 and 5). |
+| REQ-005 | Passed | Phase 3 and Phase 5 `repositories` policy tests. |
+| REQ-006 | Passed | Phase 2 `accounts` policy tests. |
+| REQ-007 | Passed | Phase 2 `accounts` policy test. |
+| REQ-008 | Passed | Phase 2 `hotlines` policy tests; Phase 3 repository test. |
+| REQ-009 | Passed | Phase 2 `reports` and `publicFeed` policy tests; Phase 4 municipality constraint. |
+| REQ-010 | Passed | A2 rows; `tests/server/securityHeaders.test.mjs`; Phase 8 smoke. |
+| REQ-011 | Passed | `tests/server/redirects.test.mjs` against `docs/legacy-url-map.md`; Phase 8 smoke (`/Homepage.html` 301). |
+| REQ-012 | Passed in C1, not rerun | C1 rows in `FEAT-001-track-c.md` (built manifest icon and theme colour). |
+| REQ-013 | Passed | C1 rows; `hotlines.test.jsx`; Phase 7 `npm run seed:hotlines`. |
+| REQ-014 | Partial | Municipality picker, optional GPS, no coordinate inputs, and database constraints passed (Phase 4); the barangay list is blocked because the PSA PSGC download was refused, so the barangay is typed. |
+| REQ-015 | Passed in jsdom | Phase 4 `residentFlows` tests; browser run pending. |
+| REQ-016 | Passed in jsdom | Phase 4 `residentFlows` tests; browser offline run pending. |
+| REQ-017 | Passed in jsdom | Phase 4 `residentFlows` and `offline` tests. |
+| REQ-018 | Passed | Phase 2 and Phase 5 policy tests; Phase 5 `responderFlows`; Phase 4 home view and redirect. |
+| REQ-019 | Passed | Phase 2 policy tests; Phase 4 cancel visibility; Phase 5 verify and reject. |
+| REQ-020 | Partial | A sign-out during a session build leaves the user signed out (Phase 3 policy test); the deep-link return without a second login form relies on the loading state and existing guard tests, and is not yet checked in a browser. |
+| REQ-021 | Passed | Phase 4 `residentFlows`; Phase 3 policy test of the profile update. |
+| REQ-022 | Passed | Phase 2 and Phase 3 policy tests; Phase 5 "Acknowledge and claim". |
+| REQ-023 | Passed | Phase 5 policy test with 30 incidents and exact counts; Phase 5 queue and dashboard tests. |
+| REQ-024 | Passed | Phase 5 detail tests and signed photo link policy test. |
+| REQ-025 | Passed | Phase 5 `responderFlows` workspace tests. |
+| REQ-026 | Passed | Phase 2 and Phase 5 policy tests; Phase 3 and Phase 5 review tests. |
+| REQ-027 | Passed | Phase 2 and Phase 5 policy tests; Phase 5 application page tests. |
+| REQ-028 | Passed | Phase 5 `copyScan`; `describeActionError` tests. |
+| REQ-029 | Passed | C1 rows; `router.test.jsx` titles, single `h1`, and focus. |
+| REQ-030 | Partial | The report forms have the focused error summary with linked, described fields (Phase 4); the sign-in, sign-up, account, and application forms keep inline described errors without a summary. |
+| REQ-031 | Partial | The modal focus trap passed in jsdom (Phase 5); the bottom navigation clearance and safe-area inset are CSS that only a browser or device check can confirm. |
+| REQ-032 | Passed | Phase 6 and Phase 7 server tests, including the OpenAPI consistency test. |
+| REQ-033 | Passed | Phase 6 server tests, store policy test, and `npm run api-clients`. |
+| REQ-034 | Passed | Phase 7 server tests and end-to-end `partnerApi` policy test. |
+| REQ-035 | Passed | Phase 7 server tests and end-to-end `partnerApi` policy test. |
+| REQ-036 | Passed | Phase 7 DOST seam tests with the synthetic fixture. |
+| REQ-037 | Passed | Firebase, Cloudinary, the upload routes, the community page, and the unused metric code were removed with lint, tests, and build passing. |
+| REQ-038 | Passed, privacy page pending review | README, operations, architecture, API guide, legacy URL map, and index updated in Phase 8; superseded documents archived; the privacy page is a draft for Len. |
+| REQ-039 | Passed | Phase 3 and Phase 8 searches. |
+| REQ-040 | Passed | `providerIsolation.test.js` and `domainPurity.test.js`. |
+| REQ-041 | Passed against the local stack | Phase 3 policy test; delivery of the reset email was not checked. |
+| REQ-042 | Passed | Phase 2 `storage` policy tests; Phase 5 signed link checks. |
+| REQ-043 | Passed | Every `npm run db:reset` from Phase 1 to Phase 8. |
 
 Use Not run, Passed under stated conditions, Failed, or Blocked.
 Record actual commands or repeatable scenarios, not just conclusions.

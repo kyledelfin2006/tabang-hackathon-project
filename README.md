@@ -1,84 +1,74 @@
 # Tabang
 
-A flood reporting and response application for Aklan. Residents report
-flooding and request help; responders claim and resolve incidents; reviewers
-approve who becomes a responder.
+A flood reporting and response application for Aklan.
+Residents report flooding and request help; responders claim and resolve incidents; reviewers approve who becomes a responder.
+Partner systems such as DOST Signal can send hazard signals and read incidents through a versioned API.
 
-Originally built for UPV KomsaiHack 2026 (7th of 25+ teams) and since migrated
-from a set of standalone HTML pages to a single React application.
+Originally built for UPV KomsaiHack 2026 (7th of 25+ teams), then rebuilt as one React application on a Node host backed by Supabase.
 
 ## Quick start
 
+You need Node 22.9 or later and Docker Desktop running.
+
 ```bash
-npm install
-cp .env.example .env      # fill in the VITE_FIREBASE_* values
-npm run dev
+npm ci
+npm run db:start          # local Supabase in Docker; prints its URL and keys
+cp .env.example .env      # fill in the four SUPABASE values from db:start
+npm run dev               # the app at http://127.0.0.1:5173
 ```
 
-`npm run dev` serves the app. Without Firebase values the app loads but shows
-that sign-in is unavailable rather than failing silently.
+Without the Supabase values the app still loads, and says that sign-in is unavailable instead of failing silently.
+`npm run db:stop` stops the local stack.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Development server |
-| `npm run build` | Production build into `dist/` |
-| `npm run check` | Lint, secret scan, unit tests, redirect tests, build |
-| `npm run test:unit` | Component and service tests |
-| `npm run test:rules` | Security rules against the Firebase emulator (needs Java) |
-| `npm run test:redirects` | Every retired URL still reaches its replacement |
-| `npm run scan:secrets` | Looks for committed credentials |
+| `npm run dev` | Development server for the app |
+| `npm run build` | Production build into `dist/`; refuses to build without the Supabase settings |
+| `npm start` | The Node host: serves `dist/` and the `/api/v1` API on one port |
+| `npm run check` | Lint, secret scan, colour contrast, unit tests, server tests, build |
+| `npm run test:unit` | Component and service tests (no database) |
+| `npm run test:server` | Server, redirect, and API tests (no database) |
+| `npm run test:policies` | Database policy and adapter tests against the local stack |
+| `npm run db:start`, `db:stop`, `db:reset` | Start, stop, or rebuild the local database from `supabase/migrations` |
+| `npm run api-clients -- create/list/revoke` | Provision partner API keys |
+| `npm run seed:hotlines` | Load `docs/hotline-seed.json` as unverified hotlines |
+| `npm run scan:secrets` | Look for committed credentials |
 | `npm run audit:deps` | Production dependency audit |
-| `npm run firebase:emulators` | Local Auth, Firestore, and Storage emulators |
-| `npm run deploy:rules` | Deploys Firestore rules and indexes only |
-| `npm start` | Runs `server.mjs`: static serving plus upload signing |
 
-## Architecture
+## How it fits together
 
-See `docs/final-architecture.md` for the full picture and the known
-limitations. In short: routes in `src/routes/`, all Firebase access behind
-repositories in `src/services/`, and `firebase/firestore.rules` as the
-authorization boundary. Components never call Firestore directly.
+- The browser talks to Supabase directly for sign-in, data, and files.
+  Row-level security policies, column grants, and database functions in `supabase/migrations/` are the security boundary.
+- `server/index.mjs` serves the built app and the partner API from one origin, and redirects every retired page URL.
+- Routes are in `src/routes/`; all data access goes through repositories in `src/services/`.
+  Only `src/config/supabase.js` and `server/supabaseAdmin.mjs` may import the Supabase SDK, and a test enforces it.
+
+The full design is in `docs/product/ARCHITECTURE.md`; current work is in `HANDOFF.md`; the partner API is in `docs/api/`.
 
 ## Roles
 
 | Role | Can do |
 |---|---|
-| Resident | Report flooding, request help, see and cancel their own reports, rate hotlines |
-| Responder | Everything a resident can, plus claim and progress incidents |
-| Reviewer | Everything a responder can, plus approve responder applications and manage hotlines |
-| Admin | Everything, plus delete role assignments |
+| Resident | Report flooding, request help, see and cancel their own reports, rate hotlines, apply to be a responder |
+| Responder | Everything a resident can, plus claim, advance, and verify incidents and publish advisories |
+| Reviewer | Everything a responder can, plus decide responder applications and maintain hotlines |
+| Admin | Everything, plus grant the reviewer and admin roles |
 
-Roles live in `roleAssignments/{uid}`, which **no client can write**. See
-`docs/operations.md` for granting the first one.
+Roles live in the `role_assignments` table, which no client can write directly.
+`docs/operations.md` explains how to grant the first admin.
 
 ## Privacy
 
-Precise coordinates, contact numbers, and report descriptions are protected
-fields, readable only by the reporter and responders handling the incident.
-The public feed reads a separate `publicFeed` collection through a projection
-that structurally cannot emit those fields. Report photos have their metadata
-stripped before upload, because phone photos carry GPS coordinates.
-
-Government ID and selfie evidence is deleted as soon as an application is
-decided. Only the decision, the reviewer, and the timestamp are kept.
-
-## Deployment
-
-The SPA deploys to Firebase Hosting. `server.mjs` must run somewhere with
-Node, because it holds the Cloudinary signing secret; without it, image upload
-fails closed and text reports still work. Rules and indexes deploy separately
-with `npm run deploy:rules`. See `docs/operations.md`.
+Contact numbers, descriptions, landmarks, exact locations, and photos are readable only by the reporter and by responders.
+Photos and identity documents are in private storage and are opened only through links that expire within minutes; photos have their location metadata stripped before upload.
+An ID and selfie are deleted as soon as an application is decided.
+Partners receive incident type, status, place, and times only.
 
 ## Troubleshooting
 
-- **`firebase deploy` fails asking for Storage** — use `npm run deploy:rules`.
-  Storage is not used and needs a paid plan to provision.
-- **`/app/reports` errors in production** — the composite indexes are still
-  building. Check the Firestore console.
-- **The responder application screen does nothing after approval** — sign out
-  and back in; the role is read when the session is established.
-- **Image upload says uploads are unavailable** — `server.mjs` is not running
-  or its Cloudinary environment values are missing. It fails closed on
-  purpose rather than falling back to an unsigned upload.
+- **Sign-in is unavailable on a deployed site**: the build had no `VITE_SUPABASE_*` values. See "Sign-in fails for everyone" in `docs/operations.md`.
+- **`npm run db:start` fails**: Docker Desktop is not running.
+- **A new responder still sees the resident app**: the role is read when the session is built; signing out and back in picks it up at once.
+- **Every request fails after a quiet week**: a free Supabase project pauses when idle. Resume it in the Supabase dashboard; see "Keeping the project awake" in `docs/operations.md`.

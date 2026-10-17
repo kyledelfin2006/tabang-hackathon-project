@@ -6,7 +6,7 @@ Revision: 2
 Status: Approved
 Len's chat approval: Approved by Len in chat on 2026-10-17 at about 22:21 +08:00: "alright i approve of the revisions, you may also execute the ingtegration yourself after dinng phase 1"
 Previous revision: Revision 1, approved 2026-09-26, in Git at `d928c56` on `feat-001/integration`
-Replaces on approval: `../final-architecture.md`, `../firebase-migration-note.md`
+Replaces: [../archive/final-architecture.md](../archive/final-architecture.md), [../archive/firebase-migration-note.md](../archive/firebase-migration-note.md), archived 2026-10-18
 
 ## What changed in Revision 2
 

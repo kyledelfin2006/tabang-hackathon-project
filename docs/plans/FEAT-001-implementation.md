@@ -1,9 +1,9 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-18T01:18:37+08:00
+Updated: 2026-10-18T01:23:47+08:00
 Revision: 2
-Status: Approved, in progress
+Status: Approved; phases 1 to 8 complete, with the gaps listed in HANDOFF.md
 **Execution mode:** auto
 Feature spec and revision: [FEAT-001 Revision 2](../features/FEAT-001-stabilization-and-integration-api.md), approved
 Approved baseline and architecture revisions: [Architecture Revision 2](../product/ARCHITECTURE.md), approved
@@ -353,28 +353,28 @@ Checkpoint message: `feat(api): add partner incidents, signals, and the dost sea
 
 Requirements: REQ-037, REQ-038, and final verification of REQ-001 to REQ-043
 Depends on: Phase 7
-State: Draft, not started
+State: Complete; checkpoint commit `docs: document the supabase deployment and partner api`
 
 #### Tasks
 
-- [ ] Rewrite `README.md`.
-- [ ] Rewrite `docs/operations.md` for the Node host and Supabase: local stack, build, start, environment keys by name, creating the hosted project, applying migrations, the first admin, hotline seeding, API client provisioning and revocation, the uptime check that prevents pausing, the email sender, and secret rotation including the S-01 exposure.
-- [ ] Add `docs/api/README.md` for partners; update `docs/legacy-url-map.md`.
-- [ ] Move `docs/final-architecture.md` and `docs/firebase-migration-note.md` to `docs/archive/` with a first line linking `docs/product/ARCHITECTURE.md`.
-- [ ] Update `docs/SPEC_INDEX.md` and `HANDOFF.md`.
+- [x] Rewrite `README.md`.
+- [x] Rewrite `docs/operations.md` for the Node host and Supabase: local stack, build, start, environment keys by name, creating the hosted project, applying migrations, the first admin, hotline seeding, API client provisioning and revocation, the uptime check that prevents pausing, the email sender, and secret rotation including the S-01 exposure.
+- [x] Add `docs/api/README.md` for partners; update `docs/legacy-url-map.md`.
+- [x] Move `docs/final-architecture.md` and `docs/firebase-migration-note.md` to `docs/archive/` with a first line linking `docs/product/ARCHITECTURE.md`.
+- [x] Update `docs/SPEC_INDEX.md` and `HANDOFF.md`.
 
 #### Verification
 
-- [ ] `npm ci`, `npm run lint`, `npm run test:unit` three times, `npm run test:server`, `npm run db:start`, `npm run db:reset`, `npm run test:policies`, `npm run build`, and `npm run check` all pass; then `npm run db:stop`.
-- [ ] Server smoke: `npm run build`, start with `PORT=18123`, then `/`, `/app/reports`, one `/assets/*` file, `/Homepage.html` (301), `/.env` (404), `/api/v1/health` (200), and `/api/v1/incidents` without a key (401); stop the server.
+- [x] `npm ci`, `npm run lint`, `npm run test:unit` three times, `npm run test:server`, `npm run db:start`, `npm run db:reset`, `npm run test:policies`, `npm run build`, and `npm run check` all pass; then `npm run db:stop`.
+- [x] Server smoke: `npm run build`, start with `PORT=18123`, then `/`, `/app/reports`, one `/assets/*` file, `/Homepage.html` (301), `/.env` (404), `/api/v1/health` (200), and `/api/v1/incidents` without a key (401); stop the server.
 - [ ] Browser scenarios against the local stack, if a browser tool is available, each with a screenshot in `docs/evidence/screenshots/`: signed-out `/hotlines`; sign-up and sign-in; resident report with barangay only; send without photos with storage unavailable; offline report then replay; responder claim and advance; reviewer opens evidence and decides; keyboard-only report submission.
-- [ ] Browser scenarios not run are listed as "Not run" for Len; hosted project and physical-device checks stay pending for Len.
-- [ ] Every REQ has a row in `docs/evidence/FEAT-001.md` or an earlier track evidence file with an actual result or an explicit "Not run".
+- [x] Browser scenarios not run are listed as "Not run" for Len; hosted project and physical-device checks stay pending for Len.
+- [x] Every REQ has a row in `docs/evidence/FEAT-001.md` or an earlier track evidence file with an actual result or an explicit "Not run".
 
 #### Review and checkpoint
 
-- [ ] Review the full `feat-001/integration` diff against `main` for scope and unrelated changes, then follow section 1.4.
-- [ ] Stop and report to Len; FEAT-001 is complete only after this commit succeeds.
+- [x] Review the full `feat-001/integration` diff against `main` for scope and unrelated changes, then follow section 1.4.
+- [x] Stop and report to Len; FEAT-001 is complete only after this commit succeeds.
 
 Checkpoint message: `docs: document the supabase deployment and partner api`
 

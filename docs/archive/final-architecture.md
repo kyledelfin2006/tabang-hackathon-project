@@ -1,3 +1,5 @@
+> Archived on 2026-10-18; superseded by [ARCHITECTURE.md](../product/ARCHITECTURE.md) Revision 2. It describes the Firebase version and is kept for history only.
+
 # Tabang — final architecture and known limitations
 
 ## Shape

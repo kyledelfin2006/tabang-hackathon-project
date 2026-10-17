@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-18T01:18:37+08:00
-State: Revision 2 approved; plan phases 1 to 7 complete (barangay lists blocked), phase 8 next; execution mode `auto`, one Claude Code agent
+Updated: 2026-10-18T01:23:47+08:00
+State: FEAT-001 plan phases 1 to 8 complete on `feat-001/integration`; stopped for Len (gaps and Len actions below)
 Feature: FEAT-001
 
 ## Read first
@@ -67,13 +67,15 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - The privacy page in `src/routes/auth/PrivacyPage.jsx` is a draft pending Len's review; it is not legal advice.
 - Phase 6 is complete with checkpoint `feat(api): add the versioned api foundation and client keys`: `/api/v1` router with the error envelope, request ids, partner key checks, scopes, rate limits, redacted request logs, `GET /api/v1/health`, the OpenAPI document, and `npm run api-clients`.
 - Phase 7 is complete with checkpoint `feat(api): add partner incidents, signals, and the dost seam`: `GET /api/v1/incidents` and `/{id}` in the D-5 projection with cursor paging and `since`, public `GET /api/v1/advisories`, idempotent `POST /api/v1/signals`, the DOST route answering 501, and `npm run seed:hotlines`.
-- Phase 8: not started.
+- Phase 8 is complete with checkpoint `docs: document the supabase deployment and partner api`: README, operations guide, partner API guide, legacy URL map, archived superseded architecture notes, full checks, and a server smoke test.
+- Nothing is pushed or merged into `main`; merging `feat-001/integration` into `main` is Len's action.
 
 ## Checks and evidence
 
-Phase 1 to 7 results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md): lint, 195 unit tests, 8 server tests, `db:reset`, 48 policy tests, build, and full `npm run check` runs passed on 2026-10-17 and 2026-10-18.
-`npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities since Phase 3 removed `firebase`.
-`README.md` and `docs/operations.md` still describe Firebase until Phase 8 rewrites them.
+All results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md), which ends with a coverage table for REQ-001 to REQ-043.
+Final run on 2026-10-18: `npm ci`, lint, 240 of 240 unit tests three times, 33 of 33 server tests, 55 of 55 policy tests on a database rebuilt from all migrations, build, `npm run check`, and a server smoke test on port 18123.
+`npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities; the full audit reports 5 findings in development tools only (vitest and its dependencies), not fixed here.
+No browser, hosted-project, or physical-device check has been run; those are listed for Len below.
 The CI `policies` job has not run, because nothing is pushed.
 The Supabase free plan limits and email sender restrictions in the architecture are remembered, not verified.
 Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md), [docs/evidence/FEAT-001-track-c.md](docs/evidence/FEAT-001-track-c.md), and on the archive branch.
@@ -84,13 +86,26 @@ Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-00
 | --- | --- | --- | --- |
 | Revision 1 B1: Firestore rules exceed the emulator's 1000-expression limit on denied report writes. | 3 of 3 | Recorded by Agent B in the track B status file: three restructurings; the last run reported 32 of 32 passing but logged expression-limit errors, so it was not accepted. | Closed: Firestore rules were removed in Phase 1. |
 | `MyReportsPage` queried with `reporterId: undefined` before the session arrived, failing `feeds.test.jsx` under load (REQ-004). | 1, resolved | The page now skips loading until a reporter id exists, and the test asserts one call; three unit runs and two full checks passed. | None. |
+| `ResponderApplicationPage` looked up an application before the session named the applicant, failing a unit test intermittently (REQ-004). | 1, resolved | The page now waits for the applicant id; five targeted and three full runs passed. | None. |
+| The DOST seam declared unused parameters and failed lint. | 1, resolved | Documented the future arguments instead of declaring them; lint passed. | None. |
+| The redirect test parsed a new app-route note in `docs/legacy-url-map.md` as a server redirect. | 1, resolved | Moved the note out of the table; server tests passed. | None. |
 | Aklan barangay lists for REQ-014 cannot be built from the PSA PSGC publication. | - | `psa.gov.ph` returned HTTP 403 to every download attempt on 2026-10-18; municipalities are listed and the barangay is typed. | Len supplies the PSGC publication file (or another approved PSA source). |
 | The Firebase project cannot be administered. | - | Len cannot access the owning account. | Account recovery so it can be deleted (Q-6); no longer blocks work. |
 
 Do not reset a count on a new session or silently reinterpret a failed check as passing.
 
+## Known gaps
+
+- REQ-014: barangay lists are empty until the PSA PSGC file is supplied; residents type their barangay.
+- REQ-020: the deep-link return after sign-in has not been checked in a browser.
+- REQ-030: only the report forms have the focused error summary; other forms keep inline errors.
+- REQ-031: the bottom-navigation clearance and safe-area inset need a browser or device check.
+- The privacy page is a draft pending Len's review.
+- A signal's `source` is not yet tied to the partner key that sent it.
+- `npm audit` reports 5 dev-only findings in the test tooling.
+
 ## Next action
 
-Execute plan phase 8 (documentation and release readiness) in this worktree, in `auto` mode.
-Docker Desktop must be running; start the stack with `npm run db:start`.
-A new session resumes with the prompt in plan section 5.
+FEAT-001 is complete as far as this agent can take it; Len decides what happens next.
+Len actions, from plan section 4: review the gaps above and the privacy draft; supply the PSGC file; run the browser scenarios listed in the evidence file; create the hosted Supabase project and follow `docs/operations.md`; choose the host, domain, and SMTP provider; obtain the DOST contract; and merge `feat-001/integration` into `main` when satisfied.
+Any further change to behavior needs a new or revised feature spec and approval.
