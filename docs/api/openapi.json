@@ -1,0 +1,86 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Tabang API",
+    "version": "1.0.0",
+    "description": "Versioned API for partner systems such as DOST Signal. Every error uses the same envelope, and every response carries an X-Request-Id header."
+  },
+  "servers": [{ "url": "/" }],
+  "components": {
+    "securitySchemes": {
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Partner key of the form tbk_<client id>_<secret>, issued by a Tabang operator. Only its hash is stored."
+      }
+    },
+    "headers": {
+      "X-Request-Id": {
+        "description": "Identifies this request in Tabang's logs; quote it when reporting a problem.",
+        "schema": { "type": "string", "format": "uuid" }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": ["code", "message", "requestId"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "enum": [
+                  "invalid_request",
+                  "unauthorized",
+                  "forbidden",
+                  "not_found",
+                  "method_not_allowed",
+                  "rate_limited",
+                  "not_implemented",
+                  "unavailable",
+                  "internal"
+                ]
+              },
+              "message": { "type": "string" },
+              "requestId": { "type": "string", "format": "uuid" }
+            }
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "required": ["status", "time"],
+        "properties": {
+          "status": { "type": "string", "const": "ok" },
+          "time": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "An error in the standard envelope.",
+        "headers": { "X-Request-Id": { "$ref": "#/components/headers/X-Request-Id" } },
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "Liveness check. Does not touch the database.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "The server is running.",
+            "headers": { "X-Request-Id": { "$ref": "#/components/headers/X-Request-Id" } },
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Health" } } }
+          },
+          "429": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  }
+}

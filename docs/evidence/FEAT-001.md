@@ -3,7 +3,7 @@
 Earlier results for A1, A2, and C1 are in [FEAT-001-track-a.md](FEAT-001-track-a.md) and [FEAT-001-track-c.md](FEAT-001-track-c.md); Revision 1's B1 results are on `archive/feat-001-b1-firestore-rules`.
 
 Created: 2026-10-17T22:33:38+08:00
-Updated: 2026-10-18T01:05:43+08:00
+Updated: 2026-10-18T01:11:36+08:00
 
 Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, Docker 29.7.2, Supabase CLI 2.121.0 from the dev dependency, worktree `../Project_Tabang-integration` on `feat-001/integration`, local untracked `.env` never staged.
 Local Supabase key values are development defaults printed by `npx supabase status`; they are not recorded here.
@@ -60,6 +60,12 @@ Local Supabase key values are development defaults printed by `npx supabase stat
 | Phase 5 | `npm run check` | Local `.env` | Passed: 240 of 240 unit tests, 8 of 8 server tests, build. | 2026-10-18T01:05:43+08:00 | - |
 | Phase 5 | `npm run db:stop` | - | Passed. | 2026-10-18T01:04:35+08:00 | - |
 | Phase 5 | Behavior notes | Recorded per plan section 2 | `TransitionError` and `AlreadyClaimedError` are gone: repositories throw errors carrying the database code and screens use `describeActionError`. `computeMetrics` and `describeCoverage` were removed because the dashboard now reads exact counts. The review queue shows evidence links in the card rather than opening a pop-up, so a blocker cannot lose them. Reviewer notes are entered in the confirmation dialog. The advisory repository gained `listOwnAdvisories` for the responder page. Responders get an Advisories tab and a "Resident features" link; responders see "Responder workspace" in the resident menu. `index.html` now sets `viewport-fit=cover` so the safe-area inset applies. The privacy page is a draft for Len's review and is not legal advice. | 2026-10-18T01:05+08:00 | Keyboard and screen reader checks in a real browser are pending for Phase 8. |
+| Phase 6, REQ-032, REQ-033 | `npm run test:server` | Ephemeral ports; in-memory store (`tests/server/memoryStore.mjs`); test-only scoped routes stand in for partner endpoints | Passed: 23 of 23, including health with request id, 404 and 405 envelopes, 401 for missing, malformed, unknown, forged, and revoked keys, 403 for a wrong scope, stored hash only, 429 per client with refill after a minute, 429 per address on public routes, 413 for an oversized body, 400 for invalid or non-JSON bodies, one redacted log line per request with no key, 503 without database settings, and the OpenAPI document matching the router. | 2026-10-18T01:11+08:00 | The first oversized-body run reset the connection instead of answering; the reader now discards up to eight times the limit so the client receives the 413, then cuts the connection. |
+| Phase 6, REQ-033 | `npm run test:policies` | Local stack after `npm run db:reset` | Passed: 53 of 53, including the new `store` test: create, authenticate with the real key, list, revoke, then the key is refused. | 2026-10-18T01:09:45+08:00 to 01:10:40+08:00 | - |
+| Phase 6, REQ-033 | `npm run api-clients -- create`, `list`, `revoke`, and a create with an invalid scope | Local stack, `.env` with local values | Passed: created a client and printed its key once (the secret is not recorded here), listed it as active, revoked it and listed it as revoked; an unknown scope printed the usage and created nothing. | 2026-10-18T01:10:40+08:00 to 01:10:48+08:00 | Run against the local database only. |
+| Phase 6 | `npm run test:unit` three consecutive runs, `npm run check`, `npm audit --omit=dev --audit-level=high` | - | Passed: 240 of 240 three times; check passed; "found 0 vulnerabilities". | 2026-10-18T01:10:48+08:00 to 01:11:36+08:00 | - |
+| Phase 6 | `npm run db:stop` | - | Passed. | 2026-10-18T01:10:48+08:00 | - |
+| Phase 6 | Behavior notes | Recorded per plan section 2 | `test:server` now runs every `tests/server/*.test.mjs`. Non-API paths are unchanged; `/api` and `/api/*` go to the JSON API, so an unknown API path now answers with the error envelope instead of plain "Not found". A POST must be `application/json`. Health reports liveness only and does not read the database. | 2026-10-18T01:11+08:00 | - |
 
 Use Not run, Passed under stated conditions, Failed, or Blocked.
 Record actual commands or repeatable scenarios, not just conclusions.

@@ -14,13 +14,14 @@
     "scan:secrets": "node scripts/security/scan-secrets.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "check": "npm run lint && npm run scan:secrets && npm run check:contrast && npm run test:unit && npm run test:server && npm run build",
-    "test:server": "node --test tests/server/static.test.mjs tests/server/redirects.test.mjs tests/server/securityHeaders.test.mjs",
+    "test:server": "node --test \"tests/server/**/*.test.mjs\"",
     "test:policies": "node --test --test-concurrency=1 \"tests/policies/**/*.test.mjs\"",
     "check:contrast": "node ./scripts/a11y/check-contrast.mjs",
     "check:env": "node ./scripts/build/check-env.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "api-clients": "node --env-file-if-exists=.env scripts/api-clients.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

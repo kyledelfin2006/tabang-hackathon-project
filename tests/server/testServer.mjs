@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { createAppServer } from "../../server/index.mjs";
 
-export async function startTestServer(t, files = {}) {
+export async function startTestServer(t, files = {}, options = {}) {
   const distRoot = mkdtempSync(join(tmpdir(), "tabang-server-"));
 
   for (const [path, body] of Object.entries(files)) {
@@ -13,7 +13,7 @@ export async function startTestServer(t, files = {}) {
     writeFileSync(filePath, body);
   }
 
-  const server = createAppServer({ distRoot, env: {} });
+  const server = createAppServer({ distRoot, env: {}, log: () => {}, ...options });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(0, "127.0.0.1", resolve);
@@ -29,10 +29,10 @@ export async function startTestServer(t, files = {}) {
   const { port } = server.address();
 
   return {
-    request(path, { method = "GET" } = {}) {
+    request(path, { method = "GET", headers = {}, body } = {}) {
       return new Promise((resolve, reject) => {
         const req = httpRequest(
-          { hostname: "127.0.0.1", port, path, method, agent: false },
+          { hostname: "127.0.0.1", port, path, method, headers, agent: false },
           (res) => {
             let body = "";
             res.setEncoding("utf8");
@@ -42,7 +42,7 @@ export async function startTestServer(t, files = {}) {
         );
 
         req.on("error", reject);
-        req.end();
+        req.end(body);
       });
     },
   };

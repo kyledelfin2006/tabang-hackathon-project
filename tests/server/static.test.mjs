@@ -53,7 +53,7 @@ test("returns 400 for malformed URI encoding and does not SPA-fallback API paths
 
   const api = await request("/api/v1/unknown");
   assert.equal(api.status, 404);
-  assert.equal(api.body, "Not found");
+  assert.equal(JSON.parse(api.body).error.code, "not_found");
 });
 
 test("allows HEAD without returning a body", async (t) => {

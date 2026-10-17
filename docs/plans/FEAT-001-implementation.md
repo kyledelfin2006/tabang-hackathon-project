@@ -1,7 +1,7 @@
 # Implementation Plan: FEAT-001 Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:25:09+08:00
-Updated: 2026-10-18T01:05:43+08:00
+Updated: 2026-10-18T01:11:36+08:00
 Revision: 2
 Status: Approved, in progress
 **Execution mode:** auto
@@ -302,26 +302,26 @@ Checkpoint message: `feat(responder): paged queue, evidence review, and advisory
 
 Requirements: REQ-032, REQ-033, REQ-040 (server part)
 Depends on: Phase 5
-State: Draft, not started
+State: Complete; checkpoint commit `feat(api): add the versioned api foundation and client keys`
 
 #### Tasks
 
-- [ ] Add `server/http.mjs`: route table, JSON bodies with size limits, the error envelope, `X-Request-Id`, 404 and 405 for `/api`.
-- [ ] Add `server/auth.mjs`: `authenticateClient` for keys shaped `tbk_<clientId>_<secret>`, comparing SHA-256 hashes with `crypto.timingSafeEqual` and checking `status` and `scopes`.
-- [ ] Add `server/rateLimit.mjs` (in-memory token bucket per client id and per IP) and `server/log.mjs` (one JSON line per request, passed through `redactValue`).
-- [ ] Add `server/supabaseAdmin.mjs`, the only server file that imports `@supabase/supabase-js`, reading `SUPABASE_URL` and `SUPABASE_SECRET_KEY` and keeping no session.
-- [ ] Add `server/store.mjs` (the functions the routes need) and `tests/server/memoryStore.mjs` implementing the same functions for tests.
-- [ ] Add `GET /api/v1/health`.
-- [ ] Add `scripts/api-clients.mjs` with `create --name --scopes`, `list`, and `revoke --id`; `create` prints the key once and stores only the hash in `api_clients`.
-- [ ] Write `docs/api/openapi.json` for the routes that exist and `tests/server/openapi.test.mjs` that fails when the router and the document disagree.
-- [ ] Add `.env.example` key name `API_RATE_LIMIT_PER_MINUTE`.
+- [x] Add `server/http.mjs`: route table, JSON bodies with size limits, the error envelope, `X-Request-Id`, 404 and 405 for `/api`.
+- [x] Add `server/auth.mjs`: `authenticateClient` for keys shaped `tbk_<clientId>_<secret>`, comparing SHA-256 hashes with `crypto.timingSafeEqual` and checking `status` and `scopes`.
+- [x] Add `server/rateLimit.mjs` (in-memory token bucket per client id and per IP) and `server/log.mjs` (one JSON line per request, passed through `redactValue`).
+- [x] Add `server/supabaseAdmin.mjs`, the only server file that imports `@supabase/supabase-js`, reading `SUPABASE_URL` and `SUPABASE_SECRET_KEY` and keeping no session.
+- [x] Add `server/store.mjs` (the functions the routes need) and `tests/server/memoryStore.mjs` implementing the same functions for tests.
+- [x] Add `GET /api/v1/health`.
+- [x] Add `scripts/api-clients.mjs` with `create --name --scopes`, `list`, and `revoke --id`; `create` prints the key once and stores only the hash in `api_clients`.
+- [x] Write `docs/api/openapi.json` for the routes that exist and `tests/server/openapi.test.mjs` that fails when the router and the document disagree.
+- [x] Add `.env.example` key name `API_RATE_LIMIT_PER_MINUTE`.
 
 #### Verification
 
-- [ ] `npm run test:server` covers: missing key 401, revoked key 401, wrong scope 403, rate limit 429, oversized body 413, unknown route 404 envelope, request id present.
-- [ ] With the local stack running, `scripts/api-clients.mjs` creates, lists, and revokes a client against the real `server/store.mjs`; `npm run db:stop` recorded.
-- [ ] `npm run lint`, `npm run test:unit`, and `npm run build` pass.
-- [ ] `npm audit --omit=dev --audit-level=high` result recorded.
+- [x] `npm run test:server` covers: missing key 401, revoked key 401, wrong scope 403, rate limit 429, oversized body 413, unknown route 404 envelope, request id present.
+- [x] With the local stack running, `scripts/api-clients.mjs` creates, lists, and revokes a client against the real `server/store.mjs`; `npm run db:stop` recorded.
+- [x] `npm run lint`, `npm run test:unit`, and `npm run build` pass.
+- [x] `npm audit --omit=dev --audit-level=high` result recorded.
 
 Checkpoint message: `feat(api): add the versioned api foundation and client keys`
 
