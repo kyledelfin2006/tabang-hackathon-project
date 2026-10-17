@@ -78,7 +78,6 @@ export default function PrivacyPage() {
   return (
     <section className="surface-card surface-card--wide">
       <span className="section-tag">Legal</span>
-      <h2>Privacy policy and terms</h2>
       <p>Last updated: April 2026</p>
       <p>
         Tabang is committed to protecting your privacy while providing a
@@ -87,7 +86,7 @@ export default function PrivacyPage() {
 
       {SECTIONS.map((section) => (
         <div key={section.heading}>
-          <h3>{section.heading}</h3>
+          <h2>{section.heading}</h2>
           {section.intro ? <p>{section.intro}</p> : null}
           <ul className="checklist">
             {section.items.map((item) => (
@@ -97,9 +96,10 @@ export default function PrivacyPage() {
         </div>
       ))}
 
-      <h3>Contact us</h3>
+      <h2>Contact us</h2>
       <p>
-        Email: <a href="mailto:tabangdreamteam@gmail.com">tabangdreamteam@gmail.com</a>
+        Email:{" "}
+        <a href="mailto:tabangdreamteam@gmail.com">tabangdreamteam@gmail.com</a>
         <br />
         Location: Aklan, Philippines
       </p>

@@ -68,9 +68,9 @@ export default function ReportCard({ report, variant = "personal", onCancel }) {
         {isStale ? <Badge tone="warning">No update in 24h</Badge> : null}
       </div>
 
-      <h4 className="report-card__title">
+      <h3 className="report-card__title">
         {isPersonal ? report.publicLocationLabel : report.barangay}
-      </h4>
+      </h3>
 
       <p className="report-card__body">
         {isPersonal ? report.description : report.summary}

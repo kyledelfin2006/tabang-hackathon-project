@@ -61,8 +61,8 @@ export default function CommunityFeedPage({ advisoryRepository }) {
   return (
     <Section
       id="community"
-      title="Community advisories"
-      description="Advisories published by responders. Barangay level only — no exact locations, contact numbers, or resident photos."
+      title="Latest advisories"
+      description="Advisories published by responders. Barangay level only, with no exact locations, contact numbers, or resident photos."
     >
       {loadState === "loading" ? (
         <Skeleton label="Loading community advisories" lines={4} />

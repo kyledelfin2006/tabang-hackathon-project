@@ -1,51 +1,58 @@
-import { Link, useRouteError } from "react-router-dom";
+import { Link } from "react-router-dom";
+import EmergencyCallCard from "../components/feedback/EmergencyCallCard.jsx";
 import ErrorState from "../components/feedback/ErrorState.jsx";
+import { PageHeading } from "../components/ui/Primitives.jsx";
+import usePageTitle from "../components/navigation/usePageTitle.js";
 
 export function LandingRoute() {
   return (
-    <div className="landing-grid">
-      <section className="landing-panel">
-        <span className="section-tag">Tabang</span>
-        <h2>Report flooding and request help in Aklan</h2>
-        <p>
-          Sign in to report flooding, request assistance, and see the hotlines
-          serving your barangay. Responder access is reviewed separately.
-        </p>
-        <div className="button-row">
-          <Link className="action-button" to="/login">
-            Sign in
-          </Link>
-          <Link className="action-button action-button--secondary" to="/signup">
-            Create an account
-          </Link>
-        </div>
-      </section>
+    <>
+      <EmergencyCallCard />
+      <div className="landing-grid">
+        <section className="landing-panel">
+          <p>
+            Sign in to report flooding, request assistance, and see the hotlines
+            serving your barangay. Responder access is reviewed separately.
+          </p>
+          <div className="button-row">
+            <Link className="action-button" to="/login">
+              Sign in
+            </Link>
+            <Link
+              className="action-button action-button--secondary"
+              to="/signup"
+            >
+              Create an account
+            </Link>
+          </div>
+        </section>
 
-      <section className="surface-card">
-        <h3>More</h3>
-        <ul className="link-list">
-          <li>
-            <Link to="/reset-password">Reset your password</Link>
-          </li>
-          <li>
-            <Link to="/privacy">Privacy policy and terms</Link>
-          </li>
-        </ul>
-      </section>
-    </div>
+        <section className="surface-card">
+          <h2>More</h2>
+          <ul className="link-list">
+            <li>
+              <Link to="/reset-password">Reset your password</Link>
+            </li>
+            <li>
+              <Link to="/privacy">Privacy policy and terms</Link>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </>
   );
 }
 
 export function RouteErrorPage() {
-  const error = useRouteError();
-  const detail = error instanceof Error ? error.message : "The route failed before it could render.";
+  usePageTitle("Page error");
 
   return (
     <div className="shell shell--public">
       <main className="shell__content">
+        <PageHeading>This page could not load</PageHeading>
         <ErrorState
-          title="Route error boundary"
-          message={detail}
+          title="Please try again"
+          message="Something went wrong while opening this page. Return home and try again."
           actionLabel="Return home"
           onAction={() => {
             window.location.assign("/");
@@ -57,19 +64,24 @@ export function RouteErrorPage() {
 }
 
 export function NotFoundRoute() {
+  usePageTitle("Page not found");
+
   return (
     <div className="shell shell--public">
       <main className="shell__content">
         <section className="surface-card surface-card--wide">
           <span className="section-tag">Not found</span>
-          <h2>That page does not exist</h2>
-          <p>
-            That address does not match any page. If you followed an old link,
-            the pages that moved are listed in the project documentation.
-          </p>
+          <PageHeading>That page does not exist</PageHeading>
+          <p>Try the home page or open the emergency hotline directory.</p>
           <div className="button-row">
             <Link className="action-button" to="/">
               Back to the home page
+            </Link>
+            <Link
+              className="action-button action-button--secondary"
+              to="/hotlines"
+            >
+              Emergency hotlines
             </Link>
           </div>
         </section>

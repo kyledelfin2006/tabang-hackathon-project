@@ -87,7 +87,9 @@ export default function IncidentQueuePage({ incidentRepository }) {
     } catch (error) {
       // A losing race is expected, not exceptional: say who holds it now.
       setActionError(
-        error?.message ?? "The incident could not be claimed. Refresh and retry.",
+        error?.constructor?.name === "AlreadyClaimedError"
+          ? "Another responder has already claimed this incident."
+          : "The incident could not be claimed. Refresh and retry.",
       );
       refresh();
     } finally {
@@ -95,12 +97,14 @@ export default function IncidentQueuePage({ incidentRepository }) {
     }
   }
 
-  const overdueCount = incidents.filter((incident) => incident.isOverdue).length;
+  const overdueCount = incidents.filter(
+    (incident) => incident.isOverdue,
+  ).length;
 
   return (
     <Section
       id="incident-queue"
-      title="Incident queue"
+      title="Open incidents"
       description="Oldest first, so the longest wait is handled first. Nothing escalates on its own; this queue has to be watched."
       action={
         <button
@@ -154,8 +158,8 @@ export default function IncidentQueuePage({ incidentRepository }) {
 
       {overdueCount > 0 && loadState === "ready" ? (
         <p className="stale-notice" role="status">
-          {overdueCount} incident{overdueCount === 1 ? "" : "s"} passed the
-          15 minute acknowledgement target and {overdueCount === 1 ? "is" : "are"}{" "}
+          {overdueCount} incident{overdueCount === 1 ? "" : "s"} passed the 15
+          minute acknowledgement target and {overdueCount === 1 ? "is" : "are"}{" "}
           still unclaimed.
         </p>
       ) : null}

@@ -1,19 +1,21 @@
 import { Suspense } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
 import LoadingState from "../components/feedback/LoadingState.jsx";
 import SkipLink from "../components/navigation/SkipLink.jsx";
+import usePageTitle from "../components/navigation/usePageTitle.js";
+import { PageHeading } from "../components/ui/Primitives.jsx";
 
 export default function PublicLayout() {
+  const pageTitle = usePageTitle();
+  const location = useLocation();
+
   return (
     <div className="shell shell--public">
       <SkipLink />
-      <AppHeader
-        eyebrow="Phase 1 shell"
-        title="Tabang"
-        subtitle="Report flooding, request help, and reach emergency hotlines in Aklan."
-      />
+      <AppHeader />
       <main className="shell__content" id="main">
+        <PageHeading key={location.pathname}>{pageTitle}</PageHeading>
         <Suspense
           fallback={
             <LoadingState

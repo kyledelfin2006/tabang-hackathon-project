@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../app/providers/useAuth.js";
 import { FormStatus } from "../../components/forms/FormField.jsx";
 
-export default function AccountPage({ area = "Resident route" }) {
+export default function AccountPage() {
   const { user, profile, role, signOut } = useAuth();
   const navigate = useNavigate();
   const [signOutError, setSignOutError] = useState(null);
@@ -25,13 +25,6 @@ export default function AccountPage({ area = "Resident route" }) {
 
   return (
     <section className="surface-card surface-card--wide">
-      <span className="section-tag">{area}</span>
-      <h2>Account</h2>
-      <p>
-        Your session is resolved once, centrally, and the role below comes from
-        a record only a reviewer can write.
-      </p>
-
       <div className="detail-list">
         <span>
           <strong>Name</strong>

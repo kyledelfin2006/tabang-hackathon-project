@@ -178,15 +178,11 @@ export default function ResidentHomePage({ advisoryRepository }) {
         </div>
       </section>
 
-      <Section
-        id="quick-actions"
-        title="Quick actions"
-        description="Every action here is a real route, so links, bookmarks, and the back button all work."
-      >
+      <Section id="quick-actions" title="Quick actions">
         <div className="card-grid">
           {QUICK_ACTIONS.map((action) => (
             <Card key={action.to}>
-              <h4>{action.label}</h4>
+              <h3>{action.label}</h3>
               <p>{action.description}</p>
               <div className="button-row">
                 <ActionLink to={action.to}>{action.label}</ActionLink>
@@ -199,7 +195,7 @@ export default function ResidentHomePage({ advisoryRepository }) {
       <Section
         id="advisories"
         title="Latest advisories"
-        description="Published, sanitized advisories only — at most six, and never private report photos or exact locations."
+        description="Current advisories for Aklan. Personal details and exact report locations stay private."
         action={
           <button
             className="action-button action-button--secondary"
@@ -243,7 +239,7 @@ export default function ResidentHomePage({ advisoryRepository }) {
         <div className="card-grid">
           {RESOURCES.map((resource) => (
             <Card key={resource.id}>
-              <h4>{resource.title}</h4>
+              <h3>{resource.title}</h3>
               <p>{resource.teaser}</p>
               <div className="button-row">
                 <button

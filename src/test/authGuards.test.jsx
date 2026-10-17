@@ -9,8 +9,11 @@ import {
   responderSession,
 } from "./fakeAuthGateway.js";
 
-function renderRoute(path, session = null) {
-  const gateway = createFakeAuthGateway({ session });
+function renderRoute(
+  path,
+  session = null,
+  gateway = createFakeAuthGateway({ session }),
+) {
   const router = createTestRouter([path]);
 
   render(
@@ -40,7 +43,31 @@ describe("route guards", () => {
     expect(
       screen.queryByRole("heading", { name: "What do you need right now?" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Checking your session")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Checking your session",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps one main heading while a public route checks the session", () => {
+    const gateway = createFakeAuthGateway();
+    gateway.observeSession = () => () => {};
+
+    renderRoute("/login", null, gateway);
+
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Sign in to Tabang" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(screen.getAllByRole("main")).toHaveLength(1);
+    expect(
+      screen.getByRole("heading", {
+        level: 2,
+        name: "Checking your session",
+      }),
+    ).toBeInTheDocument();
   });
 
   it("keeps a resident out of responder routes", async () => {

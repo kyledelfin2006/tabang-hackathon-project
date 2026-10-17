@@ -4,7 +4,11 @@ import EmptyState from "../../components/feedback/EmptyState.jsx";
 import ErrorState from "../../components/feedback/ErrorState.jsx";
 import Modal from "../../components/feedback/Modal.jsx";
 import ReportCard from "../../components/reports/ReportCard.jsx";
-import { ActionLink, Section, Skeleton } from "../../components/ui/Primitives.jsx";
+import {
+  ActionLink,
+  Section,
+  Skeleton,
+} from "../../components/ui/Primitives.jsx";
 import { createReportRepository } from "../../services/reports/reportRepository.js";
 
 export default function MyReportsPage({ reportRepository }) {
@@ -100,7 +104,7 @@ export default function MyReportsPage({ reportRepository }) {
   return (
     <Section
       id="my-reports"
-      title="My reports"
+      title="Submitted reports"
       description="Only your own reports appear here. Responders handling them can also see them."
       action={<ActionLink to="/app/reports/new">New report</ActionLink>}
     >

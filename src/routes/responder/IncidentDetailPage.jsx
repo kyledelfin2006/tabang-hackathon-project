@@ -83,10 +83,8 @@ export default function IncidentDetailPage({ incidentRepository }) {
       });
       setNote("");
       refresh();
-    } catch (error) {
-      setActionError(
-        error?.message ?? "That change could not be recorded. Refresh and retry.",
-      );
+    } catch {
+      setActionError("That change could not be recorded. Refresh and retry.");
       refresh();
     } finally {
       setWorking(false);
@@ -123,7 +121,7 @@ export default function IncidentDetailPage({ incidentRepository }) {
     <>
       <Section
         id="incident"
-        title={incident.publicLocationLabel || "Incident"}
+        title="Report details"
         description="Contact details and the exact location are shown because you are handling this incident. They are not public."
       >
         <div className="surface-card">
@@ -222,7 +220,7 @@ export default function IncidentDetailPage({ incidentRepository }) {
       <Section
         id="history"
         title="Response history"
-        description="Append-only. Entries carry server time and the account that made them."
+        description="Updates are kept as a history and show who recorded them."
       >
         {events.length === 0 ? (
           <EmptyState

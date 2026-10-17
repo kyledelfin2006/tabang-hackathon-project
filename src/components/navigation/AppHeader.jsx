@@ -1,11 +1,6 @@
-export default function AppHeader({
-  eyebrow,
-  title,
-  subtitle,
-  actionLabel,
-  actionHref,
-  menu,
-}) {
+import { Link } from "react-router-dom";
+
+export default function AppHeader({ menu }) {
   return (
     <header className="app-header">
       {menu ? (
@@ -20,16 +15,10 @@ export default function AppHeader({
           <span className="visually-hidden">{menu.label}</span>
         </button>
       ) : null}
-      <div className="app-header__copy">
-        <span className="app-header__eyebrow">{eyebrow}</span>
-        <h1>{title}</h1>
-        <p>{subtitle}</p>
-      </div>
-      {actionLabel && actionHref ? (
-        <a className="ghost-link" href={actionHref}>
-          {actionLabel}
-        </a>
-      ) : null}
+      <Link aria-label="Tabang home" className="app-header__brand" to="/">
+        <img alt="Tabang logo" src="/images/tabang-logo.png" />
+        <span>Tabang</span>
+      </Link>
     </header>
   );
 }

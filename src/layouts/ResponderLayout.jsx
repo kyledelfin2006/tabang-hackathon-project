@@ -1,10 +1,12 @@
 import { Suspense, useMemo } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
 import LoadingState from "../components/feedback/LoadingState.jsx";
 import SkipLink from "../components/navigation/SkipLink.jsx";
 import BottomNav from "../components/navigation/BottomNav.jsx";
 import { useAuth } from "../app/providers/useAuth.js";
+import usePageTitle from "../components/navigation/usePageTitle.js";
+import { PageHeading } from "../components/ui/Primitives.jsx";
 
 const baseItems = [
   { to: "/responder", label: "Dashboard" },
@@ -19,6 +21,8 @@ const reviewerItem = {
 };
 
 export default function ResponderLayout() {
+  const pageTitle = usePageTitle();
+  const location = useLocation();
   const { isReviewer } = useAuth();
 
   // Responders who are not reviewers would only be redirected away, so the
@@ -34,12 +38,9 @@ export default function ResponderLayout() {
   return (
     <div className="shell shell--responder">
       <SkipLink />
-      <AppHeader
-        eyebrow="Responder shell"
-        title="Responder Workspace"
-        subtitle="Incident queue, response history, and the hotline directory."
-      />
+      <AppHeader />
       <main className="shell__content shell__content--with-nav" id="main">
+        <PageHeading key={location.pathname}>{pageTitle}</PageHeading>
         <Suspense
           fallback={
             <LoadingState

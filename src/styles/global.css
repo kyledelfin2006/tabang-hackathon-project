@@ -86,9 +86,11 @@ button {
   border-bottom: 1px solid var(--color-border);
 }
 
-.app-header__copy h1,
-.page-hero h2,
-.landing-panel h2,
+.page-title,
+.section-label h2,
+.page-hero .page-title,
+.landing-panel .page-title,
+.surface-card h2,
 .surface-card h3,
 .feedback-card h2 {
   margin: 0;
@@ -98,11 +100,10 @@ button {
   color: var(--color-ink);
 }
 
-.app-header__copy h1 {
+.page-title {
   font-size: clamp(1.5rem, 4vw, 2.4rem);
 }
 
-.app-header__copy p,
 .landing-panel p,
 .page-hero p,
 .surface-card p,
@@ -114,7 +115,6 @@ button {
 }
 
 /* ── Pills and tags ──────────────────────────────────────────────────── */
-.app-header__eyebrow,
 .section-tag,
 .feedback-card__badge,
 .hero-pill {
@@ -139,7 +139,6 @@ button {
 }
 
 /* ── Buttons ─────────────────────────────────────────────────────────── */
-.ghost-link,
 .action-button {
   display: inline-flex;
   justify-content: center;
@@ -169,7 +168,6 @@ button {
   transform: scale(0.97);
 }
 
-.ghost-link,
 .action-button--secondary {
   background: var(--color-surface-raised);
   border-color: var(--color-border);
@@ -177,7 +175,6 @@ button {
   box-shadow: none;
 }
 
-.ghost-link:hover,
 .action-button--secondary:hover {
   background: rgba(255, 255, 255, 0.25);
 }
@@ -232,8 +229,8 @@ button {
   align-items: flex-start;
 }
 
-.page-hero h2,
-.landing-panel h2 {
+.page-hero .page-title,
+.landing-panel .page-title {
   margin-top: var(--space-3);
   font-size: clamp(1.4rem, 3.5vw, 2rem);
 }
@@ -360,27 +357,6 @@ button {
   background: #0e2a63;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  box-shadow: var(--shadow-panel);
-}
-
-.toast-stack {
-  position: fixed;
-  top: var(--space-4);
-  right: var(--space-4);
-  display: grid;
-  gap: var(--space-2);
-  z-index: 12;
-}
-
-.toast-chip {
-  min-width: 14rem;
-  max-width: 22rem;
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--radius-pill);
-  background: rgba(4, 14, 44, 0.95);
-  border: 1px solid var(--color-border);
-  color: var(--color-ink);
-  font-size: 0.875rem;
   box-shadow: var(--shadow-panel);
 }
 
@@ -585,6 +561,22 @@ select.form-field__input option {
 
 .app-header__menu:hover {
   background: rgba(255, 255, 255, 0.25);
+}
+
+.app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-ink);
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.app-header__brand img {
+  width: 2.75rem;
+  height: 2.75rem;
+  object-fit: contain;
 }
 
 .drawer-overlay {
@@ -893,7 +885,6 @@ input:focus-visible,
 
 /* Touch targets stay reachable with imprecise taps on a wet phone screen. */
 .action-button,
-.ghost-link,
 .bottom-nav-shell__item,
 .drawer-link,
 .form-field__toggle,

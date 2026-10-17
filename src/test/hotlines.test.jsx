@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  RouterProvider,
+} from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import AppProviders from "../app/providers/AppProviders.jsx";
+import { appRoutes } from "../app/router.jsx";
 import HotlineDirectoryPage from "../routes/hotlines/HotlineDirectoryPage.jsx";
 import {
   MAX_COMMENT_LENGTH,
@@ -46,7 +51,9 @@ describe("hotline projection", () => {
   });
 
   it("reports no average when nobody has rated", () => {
-    expect(toHotline("a", { ratingCount: 0, ratingTotal: 0 }).averageRating).toBeNull();
+    expect(
+      toHotline("a", { ratingCount: 0, ratingTotal: 0 }).averageRating,
+    ).toBeNull();
   });
 
   it("refuses to call a hotline verified without a verification time", () => {
@@ -178,7 +185,9 @@ describe("hotline directory route", () => {
     renderDirectory({
       listHotlines: vi
         .fn()
-        .mockResolvedValue([toHotline("a", { ...verifiedRaw, verified: false })]),
+        .mockResolvedValue([
+          toHotline("a", { ...verifiedRaw, verified: false }),
+        ]),
       submitReview: vi.fn(),
     });
 
@@ -200,7 +209,13 @@ describe("hotline directory route", () => {
     expect(
       await screen.findByRole("link", { name: "(036) 262-4979" }),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Did this number help?")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Did this number help?"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
   });
 
   it("submits a rating for the signed-in account", async () => {
@@ -211,6 +226,7 @@ describe("hotline directory route", () => {
       submitReview,
     });
 
+    fireEvent.click(await screen.findByText("Rate this number"));
     fireEvent.change(await screen.findByLabelText("Did this number help?"), {
       target: { value: "5" },
     });
@@ -233,7 +249,81 @@ describe("hotline directory route", () => {
     });
 
     expect(
-      await screen.findByText(/call your barangay hall or the national emergency line/),
+      await screen.findByText(
+        /you can still call 911 or contact your barangay hall/i,
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
+  });
+
+  it("keeps the 911 card when the directory is empty", async () => {
+    renderDirectory(
+      {
+        listHotlines: vi.fn().mockResolvedValue([]),
+        submitReview: vi.fn(),
+      },
+      { signedIn: false },
+    );
+
+    expect(
+      await screen.findByText("No hotlines listed yet"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
+  });
+
+  it("serves /hotlines publicly with one focused page heading", async () => {
+    const publicRoot = appRoutes.find((route) => route.path === "/");
+    const routes = appRoutes.map((route) =>
+      route === publicRoot
+        ? {
+            ...route,
+            children: route.children.map((child) =>
+              child.path === "hotlines"
+                ? {
+                    ...child,
+                    element: (
+                      <HotlineDirectoryPage
+                        hotlineRepository={{
+                          listHotlines: vi.fn().mockResolvedValue([]),
+                          submitReview: vi.fn(),
+                        }}
+                      />
+                    ),
+                  }
+                : child,
+            ),
+          }
+        : route,
+    );
+    const router = createMemoryRouter(routes, {
+      initialEntries: ["/hotlines"],
+    });
+
+    render(
+      <AppProviders authGateway={createFakeAuthGateway()}>
+        <RouterProvider router={router} />
+      </AppProviders>,
+    );
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Emergency hotlines",
+    });
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(heading).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
+    await waitFor(() =>
+      expect(document.title).toBe("Emergency hotlines | Tabang"),
+    );
   });
 });
