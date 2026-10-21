@@ -59,26 +59,26 @@ These prohibitions are not stops, and they still apply: never push, merge, rebas
 ### Phase 1: Local Postgres and the migration runner
 
 Requirements: FEAT-002/REQ-001, REQ-002 (runner part)
-State: Not started
+State: Complete
 
 Tasks:
 
-- [ ] `npm install pg@^8.23.1`; add `compose.yaml` with `postgres:17` on `127.0.0.1:54329`, a named volume, and a health check.
-- [ ] `server/db.mjs`: one pool from `DATABASE_URL`, a `withTransaction(fn)` helper, and nothing else imports `pg`.
-- [ ] `server/db/migrate.mjs`: applies `db/migrations/*.sql` in filename order, each in its own transaction, recording `schema_migrations`; stops with a non-zero exit naming the failed file.
-- [ ] `db/migrations/`: port the six Supabase migrations into plain Postgres:
+- [x] `npm install pg@^8.23.1`; add `compose.yaml` with `postgres:17` on `127.0.0.1:54329`, a named volume, and a health check.
+- [x] `server/db.mjs`: one pool from `DATABASE_URL`, a `withTransaction(fn)` helper, and nothing else imports `pg`.
+- [x] `server/db/migrate.mjs`: applies `db/migrations/*.sql` in filename order, each in its own transaction, recording `schema_migrations`; stops with a non-zero exit naming the failed file.
+- [x] `db/migrations/`: port the six Supabase migrations into plain Postgres:
   - add `users`, `sessions`, and `password_resets`;
   - point foreign keys at `users`;
   - remove row-level security, grants to `anon` and `authenticated`, the `handle_new_user` trigger, and the `storage` migration;
   - give each function a leading `p_actor uuid` and read the role from `role_assignments`.
-- [ ] Scripts: `db:start` (`docker compose up -d --wait`), `db:stop`, `db:migrate`, `db:reset` (drop and recreate the `public` schema, then migrate), `test:integration` (`node --test "tests/integration/**/*.test.mjs"`).
-- [ ] `tests/integration/migrations.test.mjs`: a fresh database migrates; a second run applies nothing; a broken migration in a temporary folder fails and records nothing.
-- [ ] Port `transitionParity` and the function-level checks of `reports`, `applications`, and `hotlines` to call the functions directly with `p_actor`.
+- [x] Scripts: `db:start` (`docker compose up -d --wait`), `db:stop`, `db:migrate`, `db:reset` (drop and recreate the `public` schema, then migrate), `test:integration` (`node --test "tests/integration/**/*.test.mjs"`).
+- [x] `tests/integration/migrations.test.mjs`: a fresh database migrates; a second run applies nothing; a broken migration in a temporary folder fails and records nothing.
+- [x] Port `transitionParity` and the function-level checks of `reports`, `applications`, and `hotlines` to call the functions directly with `p_actor`.
 
 Verification:
 
-- [ ] `npm run db:start`, `npm run db:reset`, `npm run test:integration`: all pass.
-- [ ] `npm run lint`, `npm run test:unit`, `npm run test:server`: pass, unchanged.
+- [x] `npm run db:start`, `npm run db:reset`, `npm run test:integration`: all pass.
+- [x] `npm run lint`, `npm run test:unit`, `npm run test:server`: pass, unchanged.
 
 Checkpoint message: `feat(db): port the schema to plain postgres with a migration runner`
 

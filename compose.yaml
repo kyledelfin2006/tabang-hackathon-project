@@ -1,0 +1,22 @@
+name: project_tabang
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tabang
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - tabang_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tabang"]
+      interval: 2s
+      timeout: 2s
+      retries: 10
+
+volumes:
+  tabang_pg_data:

@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T10:49:23+08:00
-State: FEAT-002 (move to Render) approved; ready for another AI coding agent to execute plan Phases 1 to 6 on `feat-002/render`, auto mode without hard stops; no phase started
+Updated: 2026-10-21T11:18:00+08:00
+State: Phase 1 complete; ready for Phase 2 (Sign-in, sessions, and password reset)
 Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
@@ -57,7 +57,7 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 
 | Phase | State | Checkpoint commit |
 | --- | --- | --- |
-| 1 Local Postgres and the migration runner | Not started | - |
+| 1 Local Postgres and the migration runner | Complete | Pending commit |
 | 2 Sign-in, sessions, and password reset | Not started | - |
 | 3 App data routes and the Postgres store | Not started | - |
 | 4 Files on disk | Not started | - |
@@ -68,11 +68,14 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 
 | Problem | Attempts | Changes tried and observed result | State |
 | --- | --- | --- | --- |
-| None yet. | - | - | - |
+| Concurrent integration tests collided on dropping public schema | 1, resolved | Added `--test-concurrency=1` to `test:integration` and added before/after hooks for migrations and pool closure. | Resolved |
 
 ## Decisions made by the agent
 
-None yet; the executing agent appends each decision it makes with the date, the options, and the reason, for Len to review.
+| Date | Decision | Alternatives considered | Reason |
+| --- | --- | --- | --- |
+| 2026-10-21 | Added `--test-concurrency=1` to `test:integration` | Concurrency vs sequential file execution | Sequential execution avoids race conditions between migration reset and function tests against the single local database. |
+| 2026-10-21 | Added `idleTimeoutMillis: 1000` to pg pool and `after(closePool)` in integration tests | Rely on default 30s timeout vs explicit pool teardown | Allows Node test runner process to exit promptly upon test completion (~1s instead of 30s). |
 
 ## FEAT-001 approval record
 
