@@ -1,7 +1,7 @@
 # Verification: FEAT-002
 
 Created: 2026-10-21T11:18:00+08:00
-Updated: 2026-10-21T15:36:00+08:00
+Updated: 2026-10-21T15:48:00+08:00
 
 Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, Docker 29.7.2, Docker Compose 5.4.0, worktree `../Project_Tabang-integration` on `feat-002/render`, local untracked `.env` never staged.
 
@@ -36,3 +36,7 @@ Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, D
 | Phase 5, REQ-016 | Search `dist/` and codebase for Supabase | `git grep -i supabase` and filesystem search | Passed under stated conditions: 0 occurrences in `dist/`, 0 in `src/`, 0 in `server/`, 0 in `public/`. | 2026-10-21T15:35:14+08:00 | Only historical docs and secret scanners retain pattern. |
 | Phase 5 | `npm ci` | Clean package install from package-lock.json | Passed under stated conditions: 234 packages installed cleanly. | 2026-10-21T15:36:07+08:00 | Lockfile consistent with package.json. |
 | Phase 5 | `npm audit --omit=dev --audit-level=high` | Production dependency audit | Passed under stated conditions: 0 vulnerabilities found. | 2026-10-21T15:36:16+08:00 | Production tree clean. |
+| Phase 6, REQ-018 | `npm run check` | Full project verification suite (lint, scan:secrets, check:contrast, test:unit, test:server, build) | Passed under stated conditions: exit 0 across all checks (0 lint errors, 0 secret pattern matches, 17/17 contrast pairs clear 4.5:1, 238/238 unit tests pass, 43/43 server tests pass, clean Vite production build). | 2026-10-21T15:43:31+08:00 | Complete codebase verified before deployment. |
+| Phase 6, REQ-002, REQ-018 | Server smoke: `PORT=18123 npm start`, then HTTP checks | Empty database schema, built `dist/`, local `.env` | Passed under stated conditions: `npm start` applied all 5 migrations to empty database then listened on port 18123. HTTP checks: `/` 200, `/app/reports` 200, `/assets/AccountPage-BP0oUzDq.js` 200, `/Homepage.html` 301 to `/app`, `/.env` 404, `/api/v1/health` 200, `/api/v1/incidents` without key 401 with error envelope, `/api/v1/advisories` 200, CSP restricted to 'self', and `/api/app/session` 200 returning null. Server cleanly terminated and port 18123 released. | 2026-10-21T15:47:22+08:00 | Identical contract to FEAT-001 phase 8 with Render internal API. |
+| Phase 6, REQ-013 | Render deploy via Blueprint `render.yaml` | Render cloud infrastructure | Pending for Len: connect repository, apply Blueprint, provide APP_ORIGIN, EMAIL_API_KEY, and EMAIL_FROM, and deploy. | Pending | Out of agent scope (Len action Q-7). |
+| Phase 6 | Browser scenarios with screenshots | Browser automation | Not run: no browser tool was connected in this session. Pending for Len: interactive browser validation. | Pending | Physical device and hosted browser checks remain with Len. |

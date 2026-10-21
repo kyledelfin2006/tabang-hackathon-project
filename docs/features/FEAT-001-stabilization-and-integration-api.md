@@ -1,11 +1,22 @@
 # FEAT-001: Stabilize core flows, move to Supabase, and open an integration API
 
 Created: 2026-09-26T16:22:29+08:00
-Updated: 2026-10-17T22:21:39+08:00
+Updated: 2026-10-21T15:42:00+08:00
 Revision: 2
 Status: Approved
 Len's chat approval: Approved by Len in chat on 2026-10-17 at about 22:21 +08:00: "alright i approve of the revisions, you may also execute the ingtegration yourself after dinng phase 1"
 Previous revision: Revision 1, approved 2026-09-26, in Git at `d928c56` on `feat-001/integration`
+
+> [!NOTE]
+> **Superseded by FEAT-002**: On 2026-10-21, Len decided to move Tabang to Render (own sign-in, PostgreSQL via `pg`, disk file storage, and internal Node API).
+> Requirements replaced by [FEAT-002](FEAT-002-render-migration.md):
+> - `REQ-005`: data policies through database are replaced by server API checks (FEAT-002/REQ-007).
+> - `REQ-010`: Content Security Policy allowing Supabase is replaced by origin-only CSP (FEAT-002/REQ-012).
+> - `REQ-038`: Supabase operations are replaced by Render operations (FEAT-002/REQ-017).
+> - `REQ-040`: Supabase provider isolation is replaced by `pg` isolation to `server/db.mjs` (FEAT-002/REQ-011).
+> - `REQ-041`: Supabase Auth is replaced by Tabang's own sign-in and sessions (FEAT-002/REQ-003, REQ-004).
+> - `REQ-042`: Supabase Storage is replaced by authorized disk storage (FEAT-002/REQ-009).
+> - `REQ-043`: local Supabase CLI is replaced by local PostgreSQL in Docker with a custom migration runner (FEAT-002/REQ-001).
 
 ## Purpose and success
 

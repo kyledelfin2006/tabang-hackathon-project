@@ -166,22 +166,22 @@ Checkpoint message: `refactor(client): move the app onto the tabang api and remo
 ### Phase 6: Render deployment and documentation
 
 Requirements: FEAT-002/REQ-002 (start part), REQ-013, REQ-017, REQ-018
-State: Not started
+State: Complete
 
 Tasks:
 
-- [ ] `npm start` runs the migration runner, then the server.
-- [ ] `render.yaml`: the web service and Postgres in Singapore on the free plan, health check `/api/v1/health`, `DATABASE_URL` from the database, and a commented launch block with the disk and paid plans.
-- [ ] Rewrite `README.md`, `docs/operations.md`, and `.env.example` for Render: both stages, first admin with `psql`, `pg_dump` backups, the 30-day free database expiry, the uptime check, the email keys, and rotating `DATABASE_URL`.
-- [ ] Archive the Supabase-specific operations text in `docs/archive/`; update `docs/SPEC_INDEX.md` and add a note to FEAT-001 for the requirements FEAT-002 replaces.
-- [ ] `scripts/api-clients.mjs` and `scripts/seed-hotlines.mjs` use `server/db.mjs`.
+- [x] `npm start` runs the migration runner, then the server.
+- [x] `render.yaml`: the web service and Postgres in Singapore on the free plan, health check `/api/v1/health`, `DATABASE_URL` from the database, and a commented launch block with the disk and paid plans.
+- [x] Rewrite `README.md`, `docs/operations.md`, and `.env.example` for Render: both stages, first admin with `psql`, `pg_dump` backups, the 30-day free database expiry, the uptime check, the email keys, and rotating `DATABASE_URL`.
+- [x] Archive the Supabase-specific operations text in `docs/archive/`; update `docs/SPEC_INDEX.md` and add a note to FEAT-001 for the requirements FEAT-002 replaces.
+- [x] `scripts/api-clients.mjs` and `scripts/seed-hotlines.mjs` use `server/db.mjs`.
 
 Verification:
 
-- [ ] `npm run check`: pass.
-- [ ] Server smoke: `npm run db:reset`, `npm run build`, then `PORT=18123 npm start` against an empty database applies the migrations, and `curl` shows the FEAT-001 phase 8 answers plus `/api/app/session` returning `null`.
-- [ ] Browser scenarios with screenshots, if a browser tool is available; otherwise record "Not run".
-- [ ] A Render deploy is Len's check (REQ-013); record it as pending.
+- [x] `npm run check`: pass.
+- [x] Server smoke: `npm run db:reset`, `npm run build`, then `PORT=18123 npm start` against an empty database applies the migrations, and `curl` shows the FEAT-001 phase 8 answers plus `/api/app/session` returning `null`.
+- [x] Browser scenarios with screenshots, if a browser tool is available; otherwise record "Not run".
+- [x] A Render deploy is Len's check (REQ-013); record it as pending.
 
 Checkpoint message: `docs: document the render deployment`
 

@@ -10,7 +10,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test:unit": "node ./node_modules/vitest/vitest.mjs run src/test",
-    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "start": "node --env-file-if-exists=.env server/db/migrate.mjs && node --env-file-if-exists=.env server/index.mjs",
     "scan:secrets": "node scripts/security/scan-secrets.mjs",
     "audit:deps": "npm audit --omit=dev --audit-level=high",
     "check": "npm run lint && npm run scan:secrets && npm run check:contrast && npm run test:unit && npm run test:server && npm run build",

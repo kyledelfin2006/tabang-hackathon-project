@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T15:37:00+08:00
-State: Phase 5 complete; ready for Phase 6 (Render deployment and documentation)
+Updated: 2026-10-21T15:49:00+08:00
+State: Phase 6 complete; FEAT-002 implementation complete, pending Len's hosted deploy
 Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
@@ -61,8 +61,8 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | 2 Sign-in, sessions, and password reset | Complete | `20c2812b2b1d86197e6c5987aa118932b13fe387` |
 | 3 App data routes and the Postgres store | Complete | `bd71093f36769baa687c09b32ecf2d19b324fe40` |
 | 4 Files on disk | Complete | `855d045fe0dd6ac98103516a264bb90d74d95746` |
-| 5 Switch the client and remove Supabase | Complete | `refactor(client): move the app onto the tabang api and remove supabase` |
-| 6 Render deployment and documentation | Not started | - |
+| 5 Switch the client and remove Supabase | Complete | `d00c70329b1bce022d48f82be41a76f6f378fbf7` |
+| 6 Render deployment and documentation | Complete | `docs: document the render deployment` |
 
 ## FEAT-002 problems and attempts
 
@@ -70,6 +70,7 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | --- | --- | --- | --- |
 | Concurrent integration tests collided on dropping public schema | 1, resolved | Added `--test-concurrency=1` to `test:integration` and added before/after hooks for migrations and pool closure. | Resolved |
 | Docker backend process was stopped | 1, resolved | Launched `com.docker.backend.exe` as background daemon. Docker daemon and compose containers operational. | Resolved |
+| Local .env lacked DATABASE_URL during initial server smoke check | 1, resolved | Copied updated .env.example with local PostgreSQL credentials into local untracked .env file. | Resolved |
 
 ## Decisions made by the agent
 

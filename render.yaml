@@ -1,0 +1,83 @@
+# Render Blueprint for Project Tabang
+# https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: tabang-app
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: tabang-db
+          property: connectionString
+      - key: UPLOAD_DIR
+        value: ./uploads
+      - key: APP_ORIGIN
+        sync: false
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: API_RATE_LIMIT_PER_MINUTE
+        value: "60"
+
+databases:
+  - name: tabang-db
+    databaseName: tabang
+    user: tabang
+    plan: free
+    region: singapore
+
+# ==============================================================================
+# Launch Configuration (Paid Plan with Persistent Disk and Database Backups)
+#
+# When ready for real deployment, uncomment and update the settings below:
+# - Paid web service plan (e.g. starter) removes sleep delays and supports disks.
+# - Persistent disk preserves report photos and evidence across deploys/restarts.
+# - Paid database plan removes the 30-day inactivity limit and includes backups.
+#
+# services:
+#   - type: web
+#     name: tabang-app
+#     runtime: node
+#     plan: starter
+#     region: singapore
+#     buildCommand: npm ci && npm run build
+#     startCommand: npm start
+#     healthCheckPath: /api/v1/health
+#     disk:
+#       name: tabang-uploads
+#       mountPath: /var/data/uploads
+#       sizeGB: 10
+#     envVars:
+#       - key: NODE_ENV
+#         value: production
+#       - key: DATABASE_URL
+#         fromDatabase:
+#           name: tabang-db
+#           property: connectionString
+#       - key: UPLOAD_DIR
+#         value: /var/data/uploads
+#       - key: APP_ORIGIN
+#         sync: false
+#       - key: EMAIL_API_KEY
+#         sync: false
+#       - key: EMAIL_FROM
+#         sync: false
+#       - key: API_RATE_LIMIT_PER_MINUTE
+#         value: "60"
+#
+# databases:
+#   - name: tabang-db
+#     databaseName: tabang
+#     user: tabang
+#     plan: starter
+#     region: singapore
+# ==============================================================================
