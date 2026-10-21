@@ -7,10 +7,12 @@ services:
     runtime: node
     plan: free
     region: singapore
-    buildCommand: npm ci && npm run build
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/v1/health
     envVars:
+      - key: NODE_VERSION
+        value: "24.14.0"
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
@@ -49,7 +51,7 @@ databases:
 #     runtime: node
 #     plan: starter
 #     region: singapore
-#     buildCommand: npm ci && npm run build
+#     buildCommand: npm ci --include=dev && npm run build
 #     startCommand: npm start
 #     healthCheckPath: /api/v1/health
 #     disk:
@@ -57,6 +59,8 @@ databases:
 #       mountPath: /var/data/uploads
 #       sizeGB: 10
 #     envVars:
+#       - key: NODE_VERSION
+#         value: "24.14.0"
 #       - key: NODE_ENV
 #         value: production
 #       - key: DATABASE_URL

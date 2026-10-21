@@ -58,7 +58,7 @@ Tabang runs on Render in two distinct operational stages:
 5. For the web service, set `APP_ORIGIN` to your generated service URL (e.g. `https://tabang-app.onrender.com`).
 6. If configuring email delivery, provide `EMAIL_API_KEY` and `EMAIL_FROM`.
 7. Click **Apply**.
-8. Render provisions PostgreSQL, runs `npm ci && npm run build`, runs `npm start` (which automatically applies database migrations), and verifies health at `/api/v1/health`.
+8. Render provisions PostgreSQL, runs `npm ci --include=dev && npm run build`, runs `npm start` (which automatically applies database migrations), and verifies health at `/api/v1/health`.
 
 ## Granting the first admin
 

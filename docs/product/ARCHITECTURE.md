@@ -195,7 +195,7 @@ Unchanged from Revision 2: base path `/api/v1`, the endpoints, the error codes, 
 ### Hosting on Render
 
 - `render.yaml` (a Render Blueprint) declares one Node web service and one Postgres database in the Singapore region.
-- The web service builds with `npm ci && npm run build`, starts with `npm start`, and uses `/api/v1/health` as its health check.
+- The web service builds with `npm ci --include=dev && npm run build`, starts with `npm start`, and uses `/api/v1/health` as its health check.
 - `DATABASE_URL` comes from the database's internal connection string.
 - Launch adds a persistent disk mounted at the path in `UPLOAD_DIR` and switches both plans to paid.
 - The app needs no build-time variables any more, because it calls its own origin.
