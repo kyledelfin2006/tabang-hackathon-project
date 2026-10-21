@@ -1,11 +1,6 @@
-export const STATUS_LABEL = Object.freeze({
-  new: "Unclaimed",
-  acknowledged: "Acknowledged",
-  dispatched: "Dispatched",
-  on_scene: "On scene",
-  resolved: "Resolved",
-  cancelled: "Cancelled",
-});
+import { STATUS_LABELS } from "../../services/incidents/incidentLifecycle.js";
+
+export const STATUS_LABEL = STATUS_LABELS;
 
 export const STATUS_TONE = Object.freeze({
   new: "warning",

@@ -1,27 +1,30 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 
 /**
- * Collects coordinates without embedding a map yet.
+ * Optionally attaches the phone's location to a report.
  *
  * Geolocation is offered but never required: it fails indoors, during power
  * cuts, and on older handsets, which is exactly when a flood report matters.
- * Manual entry is always available.
+ * The municipality and barangay are what responders always get; typed
+ * coordinates are not offered, because nobody can read them off a phone.
  */
 export default function LocationPicker({
+  id,
   latitude,
   longitude,
   onChange,
   error,
 }) {
-  const latitudeId = useId();
-  const longitudeId = useId();
-  const errorId = `${latitudeId}-error`;
   const [locating, setLocating] = useState(false);
   const [locateError, setLocateError] = useState(null);
+  const errorId = `${id}-error`;
+  const attached = latitude !== "" && longitude !== "";
 
   function locate() {
     if (!navigator.geolocation) {
-      setLocateError("This device cannot share its location. Enter it below.");
+      setLocateError(
+        "This device cannot share its location. The barangay is enough.",
+      );
 
       return;
     }
@@ -40,7 +43,7 @@ export default function LocationPicker({
       () => {
         setLocating(false);
         setLocateError(
-          "Location access was refused or timed out. Enter the coordinates below.",
+          "Location access was refused or timed out. The barangay is enough to send the report.",
         );
       },
       { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 },
@@ -49,60 +52,40 @@ export default function LocationPicker({
 
   return (
     <fieldset className="form-fieldset">
-      <legend>Location</legend>
+      <legend>Exact location (optional)</legend>
       <p className="form-field__hint">
-        Your exact coordinates are shared only with responders handling your
-        report. They are never shown publicly.
+        Shared only with responders handling your report. It is never shown
+        publicly.
+      </p>
+
+      <p aria-live="polite" className="form-field__hint">
+        {attached ? "Your current location is attached." : (locateError ?? "")}
       </p>
 
       <div className="button-row">
         <button
+          aria-describedby={error ? errorId : undefined}
           className="action-button action-button--secondary"
           disabled={locating}
+          id={id}
           onClick={locate}
           type="button"
         >
-          {locating ? "Locating…" : "Use my current location"}
+          {locating
+            ? "Locating…"
+            : attached
+              ? "Update my location"
+              : "Use my current location"}
         </button>
-      </div>
-
-      <p aria-live="polite" className="form-field__hint">
-        {locateError ?? ""}
-      </p>
-
-      <div className="form-grid">
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={latitudeId}>
-            Latitude
-          </label>
-          <input
-            aria-describedby={error ? errorId : undefined}
-            aria-invalid={error ? "true" : undefined}
-            className="form-field__input"
-            id={latitudeId}
-            inputMode="decimal"
-            onChange={(event) =>
-              onChange({ latitude: event.target.value, longitude })
-            }
-            value={latitude}
-          />
-        </div>
-
-        <div className="form-field">
-          <label className="form-field__label" htmlFor={longitudeId}>
-            Longitude
-          </label>
-          <input
-            aria-invalid={error ? "true" : undefined}
-            className="form-field__input"
-            id={longitudeId}
-            inputMode="decimal"
-            onChange={(event) =>
-              onChange({ latitude, longitude: event.target.value })
-            }
-            value={longitude}
-          />
-        </div>
+        {attached ? (
+          <button
+            className="action-button action-button--secondary"
+            onClick={() => onChange({ latitude: "", longitude: "" })}
+            type="button"
+          >
+            Remove location
+          </button>
+        ) : null}
       </div>
 
       {error ? (

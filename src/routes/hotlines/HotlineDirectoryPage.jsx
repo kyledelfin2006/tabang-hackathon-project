@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../app/providers/useAuth.js";
 import EmptyState from "../../components/feedback/EmptyState.jsx";
 import ErrorState from "../../components/feedback/ErrorState.jsx";
+import EmergencyCallCard from "../../components/feedback/EmergencyCallCard.jsx";
 import { FormStatus } from "../../components/forms/FormField.jsx";
 import { Badge, Section, Skeleton } from "../../components/ui/Primitives.jsx";
 import {
@@ -54,7 +55,7 @@ function HotlineCard({ hotline, canReview, onReview, submitting }) {
         )}
       </div>
 
-      <h4 className="report-card__title">{hotline.organization}</h4>
+      <h3 className="report-card__title">{hotline.organization}</h3>
       {hotline.coverageArea ? <p>Covers {hotline.coverageArea}</p> : null}
 
       <ul className="link-list">
@@ -75,56 +76,66 @@ function HotlineCard({ hotline, canReview, onReview, submitting }) {
       </p>
 
       {canReview ? (
-        <form className="auth-form" noValidate onSubmit={submit}>
-          <div className="form-field">
-            <label className="form-field__label" htmlFor={`rating-${hotline.id}`}>
-              Did this number help?
-            </label>
-            <select
-              className="form-field__input"
-              id={`rating-${hotline.id}`}
-              onChange={(event) => setRating(event.target.value)}
-              value={rating}
-            >
-              <option value="">Choose a rating</option>
-              {Array.from(
-                { length: MAX_RATING - MIN_RATING + 1 },
-                (_, index) => MIN_RATING + index,
-              ).map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            {errors.rating ? (
-              <p className="form-field__error">{errors.rating}</p>
-            ) : null}
-          </div>
+        <details>
+          <summary>Rate this number</summary>
+          <form className="auth-form" noValidate onSubmit={submit}>
+            <div className="form-field">
+              <label
+                className="form-field__label"
+                htmlFor={`rating-${hotline.id}`}
+              >
+                Did this number help?
+              </label>
+              <select
+                className="form-field__input"
+                id={`rating-${hotline.id}`}
+                onChange={(event) => setRating(event.target.value)}
+                value={rating}
+              >
+                <option value="">Choose a rating</option>
+                {Array.from(
+                  { length: MAX_RATING - MIN_RATING + 1 },
+                  (_, index) => MIN_RATING + index,
+                ).map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+              {errors.rating ? (
+                <p className="form-field__error">{errors.rating}</p>
+              ) : null}
+            </div>
 
-          <div className="form-field">
-            <label
-              className="form-field__label"
-              htmlFor={`comment-${hotline.id}`}
-            >
-              Comment (optional)
-            </label>
-            <textarea
-              className="form-field__input"
-              id={`comment-${hotline.id}`}
-              maxLength={MAX_COMMENT_LENGTH}
-              onChange={(event) => setComment(event.target.value)}
-              rows={2}
-              value={comment}
-            />
-            {errors.comment ? (
-              <p className="form-field__error">{errors.comment}</p>
-            ) : null}
-          </div>
+            <div className="form-field">
+              <label
+                className="form-field__label"
+                htmlFor={`comment-${hotline.id}`}
+              >
+                Comment (optional)
+              </label>
+              <textarea
+                className="form-field__input"
+                id={`comment-${hotline.id}`}
+                maxLength={MAX_COMMENT_LENGTH}
+                onChange={(event) => setComment(event.target.value)}
+                rows={2}
+                value={comment}
+              />
+              {errors.comment ? (
+                <p className="form-field__error">{errors.comment}</p>
+              ) : null}
+            </div>
 
-          <button className="action-button" disabled={submitting} type="submit">
-            {submitting ? "Saving…" : "Save my rating"}
-          </button>
-        </form>
+            <button
+              className="action-button"
+              disabled={submitting}
+              type="submit"
+            >
+              {submitting ? "Saving…" : "Save my rating"}
+            </button>
+          </form>
+        </details>
       ) : null}
     </li>
   );
@@ -202,66 +213,67 @@ export default function HotlineDirectoryPage({ hotlineRepository }) {
         "Your rating was saved. Rating again replaces it rather than adding another.",
       );
       refresh();
-    } catch (error) {
-      setActionError(
-        error?.message ?? "That rating could not be saved. Try again.",
-      );
+    } catch {
+      setActionError("That rating could not be saved. Try again.");
     } finally {
       setSubmittingId(null);
     }
   }
 
   return (
-    <Section
-      id="hotlines"
-      title="Emergency hotlines"
-      description="Numbers are shown to everyone, signed in or not. Ratings come from accounts, one per person per hotline."
-      action={
-        <button
-          className="action-button action-button--secondary"
-          onClick={refresh}
-          type="button"
-        >
-          Refresh
-        </button>
-      }
-    >
-      <FormStatus message={actionError} />
-      <FormStatus message={actionNotice} tone="success" />
+    <>
+      <EmergencyCallCard />
+      <Section
+        id="hotlines"
+        title="Available numbers"
+        description="The directory is public. Signed-in visitors can rate each number once."
+        action={
+          <button
+            className="action-button action-button--secondary"
+            onClick={refresh}
+            type="button"
+          >
+            Refresh
+          </button>
+        }
+      >
+        <FormStatus message={actionError} />
+        <FormStatus message={actionNotice} tone="success" />
 
-      {loadState === "loading" ? (
-        <Skeleton label="Loading hotlines" lines={4} />
-      ) : null}
+        {loadState === "loading" ? (
+          <Skeleton label="Loading hotlines" lines={4} />
+        ) : null}
 
-      {loadState === "error" ? (
-        <ErrorState
-          title="The hotline directory could not be loaded"
-          message="If this is an emergency, call your barangay hall or the national emergency line directly."
-          actionLabel="Try again"
-          onAction={refresh}
-        />
-      ) : null}
+        {loadState === "error" ? (
+          <ErrorState
+            title="The hotline directory could not be loaded"
+            message="The listed numbers are unavailable. You can still call 911 or contact your barangay hall."
+            actionLabel="Try again"
+            onAction={refresh}
+          />
+        ) : null}
 
-      {loadState === "ready" && hotlines.length === 0 ? (
-        <EmptyState
-          title="No hotlines listed yet"
-          message="A reviewer adds hotline numbers centrally so residents and responders always see the same list. Contact your barangay hall in the meantime."
-        />
-      ) : null}
+        {loadState === "ready" && hotlines.length === 0 ? (
+          <EmptyState
+            title="No hotlines listed yet"
+            message="A reviewer adds hotline numbers centrally so residents and responders always see the same list. Contact your barangay hall in the meantime."
+          />
+        ) : null}
 
-      {loadState === "ready" && hotlines.length > 0 ? (
-        <ul className="report-list">
-          {hotlines.map((hotline) => (
-            <HotlineCard
-              canReview={status === "authenticated"}
-              hotline={hotline}
-              key={hotline.id}
-              onReview={review}
-              submitting={submittingId === hotline.id}
-            />
-          ))}
-        </ul>
-      ) : null}
-    </Section>
+        {loadState === "ready" && hotlines.length > 0 ? (
+          <ul className="report-list">
+            {hotlines.map((hotline) => (
+              <HotlineCard
+                canReview={status === "authenticated"}
+                hotline={hotline}
+                key={hotline.id}
+                onReview={review}
+                submitting={submittingId === hotline.id}
+              />
+            ))}
+          </ul>
+        ) : null}
+      </Section>
+    </>
   );
 }

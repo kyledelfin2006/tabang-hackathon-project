@@ -8,10 +8,12 @@ export default function Modal({
   onClose,
   onConfirm,
   dismissLabel = "Go back",
+  children,
 }) {
   const titleId = useId();
   const descriptionId = useId();
   const closeButtonRef = useRef(null);
+  const dialogRef = useRef(null);
   const previousFocusRef = useRef(null);
 
   useEffect(() => {
@@ -41,6 +43,28 @@ export default function Modal({
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           onClose();
+
+          return;
+        }
+
+        // Keep Tab inside the dialog, so focus never lands on the page
+        // behind it while it is open.
+        if (event.key === "Tab") {
+          const focusable = [
+            ...dialogRef.current.querySelectorAll(
+              "button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])",
+            ),
+          ].filter((element) => !element.disabled);
+          const first = focusable[0];
+          const last = focusable[focusable.length - 1];
+
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+          }
         }
       }}
       role="presentation"
@@ -50,10 +74,12 @@ export default function Modal({
         aria-labelledby={titleId}
         aria-modal="true"
         className="modal-shell__dialog"
+        ref={dialogRef}
         role="dialog"
       >
         <h2 id={titleId}>{title}</h2>
         <p id={descriptionId}>{description}</p>
+        {children}
         <div className="button-row">
           {/* When a confirm action exists, dismissing must never perform it. */}
           {onConfirm ? (

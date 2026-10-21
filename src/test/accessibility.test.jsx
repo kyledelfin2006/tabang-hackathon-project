@@ -24,26 +24,13 @@ function renderRoute(path, session) {
 }
 
 describe("zoom", () => {
-  it("does not disable pinch zoom on any page", () => {
+  it("does not disable pinch zoom in the app shell", () => {
     // Blocking zoom stops somebody with low vision enlarging an emergency
     // number, which is exactly when they most need to read it.
-    const pages = [
-      "index.html",
-      "legacy-index.html",
-      "Homepage.html",
-      "Login.html",
-      "signup.html",
-      "AccountInfo.html",
-      "AccountInformation.html",
-      "Loginresponder.html",
-    ];
+    const html = readFileSync("index.html", "utf8");
 
-    for (const page of pages) {
-      const html = readFileSync(page, "utf8");
-
-      expect(html).not.toMatch(/maximum-scale/i);
-      expect(html).not.toMatch(/user-scalable\s*=\s*no/i);
-    }
+    expect(html).not.toMatch(/maximum-scale/i);
+    expect(html).not.toMatch(/user-scalable\s*=\s*no/i);
   });
 });
 

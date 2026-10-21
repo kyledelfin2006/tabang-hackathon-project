@@ -1,10 +1,10 @@
 /*
  * Caches the application shell and public assets only.
  *
- * Nothing from Firestore is cached here. Incident details carry precise
+ * Nothing from the database is cached here. Incident details carry precise
  * coordinates and contact numbers, and a cache is readable by anyone who
- * later picks up the device, so protected data must never enter it. Requests
- * to Firebase and to the upload endpoints are passed straight through.
+ * later picks up the device, so protected data must never enter it. All
+ * API and app requests under /api/ are passed straight through.
  */
 /*
  * Bump this on every release that changes the shell.
@@ -48,7 +48,7 @@ function isCacheable(request) {
 
   const url = new URL(request.url);
 
-  // Same-origin only, and never the signing or data endpoints.
+  // Same-origin only, and never the API.
   return (
     url.origin === self.location.origin && !url.pathname.startsWith("/api/")
   );

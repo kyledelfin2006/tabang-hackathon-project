@@ -75,7 +75,7 @@ export default function SignupPage() {
   /*
    * A form that cannot possibly work should not be offered.
    *
-   * When Firebase has no configuration every submission fails identically,
+   * When auth has an initialization error every submission fails identically,
    * and the person is left retyping a password that was never wrong. Saying
    * so up front is more honest than letting them find out one attempt at a
    * time.
@@ -84,8 +84,8 @@ export default function SignupPage() {
     return (
       <section className="auth-panel">
         <ErrorState
-          title="Sign-in is unavailable"
-          message="This site is not configured to create an account right now. This is a fault on our side, not a problem with your details or your connection. In an emergency, call the hotline numbers directly rather than waiting for this."
+          title="Account creation is unavailable"
+          message="We cannot create an account right now. If you need emergency help, call 911 or contact your barangay hall."
         />
       </section>
     );
@@ -94,7 +94,6 @@ export default function SignupPage() {
   return (
     <section className="auth-panel">
       <span className="section-tag">Resident registration</span>
-      <h2>Create a resident account</h2>
       <p>
         Residents can report flooding and request help. Responder access is
         reviewed separately after you sign in.

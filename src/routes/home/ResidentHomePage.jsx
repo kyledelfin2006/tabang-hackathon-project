@@ -10,7 +10,9 @@ import {
   Section,
   Skeleton,
 } from "../../components/ui/Primitives.jsx";
+import usePendingReports from "../../components/reports/usePendingReports.js";
 import { createAdvisoryRepository } from "../../services/advisories/advisoryRepository.js";
+import { createSubmissionQueue } from "../../services/offline/submissionQueue.js";
 
 const QUICK_ACTIONS = [
   {
@@ -94,11 +96,19 @@ function AdvisoryList({ advisories }) {
   );
 }
 
-export default function ResidentHomePage({ advisoryRepository }) {
+export default function ResidentHomePage({
+  advisoryRepository,
+  submissionQueue,
+}) {
   const repository = useMemo(
     () => advisoryRepository ?? createAdvisoryRepository(),
     [advisoryRepository],
   );
+  const queue = useMemo(
+    () => submissionQueue ?? createSubmissionQueue(),
+    [submissionQueue],
+  );
+  const pendingReports = usePendingReports(queue);
 
   const [advisories, setAdvisories] = useState([]);
   const [loadState, setLoadState] = useState("loading");
@@ -167,6 +177,23 @@ export default function ResidentHomePage({ advisoryRepository }) {
 
   return (
     <>
+      {pendingReports.length > 0 ? (
+        <section className="feedback-card" role="status">
+          <h2>
+            {pendingReports.length === 1
+              ? "1 report is saved on this phone and not sent yet"
+              : `${pendingReports.length} reports are saved on this phone and not sent yet`}
+          </h2>
+          <p>
+            Nobody has seen {pendingReports.length === 1 ? "it" : "them"} yet.
+            They are resent when your connection returns.
+          </p>
+          <div className="button-row">
+            <ActionLink to="/app/reports">Send now or discard</ActionLink>
+          </div>
+        </section>
+      ) : null}
+
       <section className="page-hero">
         <div>
           <span className="section-tag">Resident home</span>
@@ -178,15 +205,11 @@ export default function ResidentHomePage({ advisoryRepository }) {
         </div>
       </section>
 
-      <Section
-        id="quick-actions"
-        title="Quick actions"
-        description="Every action here is a real route, so links, bookmarks, and the back button all work."
-      >
+      <Section id="quick-actions" title="Quick actions">
         <div className="card-grid">
           {QUICK_ACTIONS.map((action) => (
             <Card key={action.to}>
-              <h4>{action.label}</h4>
+              <h3>{action.label}</h3>
               <p>{action.description}</p>
               <div className="button-row">
                 <ActionLink to={action.to}>{action.label}</ActionLink>
@@ -199,7 +222,7 @@ export default function ResidentHomePage({ advisoryRepository }) {
       <Section
         id="advisories"
         title="Latest advisories"
-        description="Published, sanitized advisories only — at most six, and never private report photos or exact locations."
+        description="Current advisories for Aklan. Personal details and exact report locations stay private."
         action={
           <button
             className="action-button action-button--secondary"
@@ -243,7 +266,7 @@ export default function ResidentHomePage({ advisoryRepository }) {
         <div className="card-grid">
           {RESOURCES.map((resource) => (
             <Card key={resource.id}>
-              <h4>{resource.title}</h4>
+              <h3>{resource.title}</h3>
               <p>{resource.teaser}</p>
               <div className="button-row">
                 <button
@@ -263,9 +286,6 @@ export default function ResidentHomePage({ advisoryRepository }) {
         <ul className="link-list">
           <li>
             <Link to="/app/reports">See the reports you have submitted</Link>
-          </li>
-          <li>
-            <Link to="/app/community">Browse community advisories</Link>
           </li>
           <li>
             <Link to="/app/responder-application">Apply to be a responder</Link>

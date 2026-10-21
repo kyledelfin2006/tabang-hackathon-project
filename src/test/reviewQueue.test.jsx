@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from "vitest";
 import AppProviders from "../app/providers/AppProviders.jsx";
 import ReviewQueuePage from "../routes/responder/ReviewQueuePage.jsx";
 import { createReviewRepository } from "../services/responders/reviewRepository.js";
-import { buildDestroyParams } from "../../scripts/uploads/cloudinarySignature.mjs";
 import {
   createFakeAuthGateway,
   responderSession,
@@ -16,9 +15,11 @@ const application = {
   organization: "Aklan MDRRMO",
   badgeNumber: "MD-2291",
   municipality: "Kalibo",
+  applicantName: "Maria Santos",
+  applicantEmail: "maria@example.test",
   consentVersion: "2026-04-privacy-and-terms",
-  identityDocumentPath: "tabang/responder-applications/resident-9/id",
-  selfiePath: "tabang/responder-applications/resident-9/selfie",
+  identityDocumentPath: "resident-9/id.jpg",
+  selfiePath: "resident-9/selfie.jpg",
   submittedAtMillis: Date.parse("2026-08-14T02:00:00Z"),
 };
 
@@ -36,117 +37,60 @@ function renderQueue(repository) {
   );
 }
 
-describe("evidence destruction parameters", () => {
-  it("refuses to destroy anything outside the identity folder", () => {
-    expect(() =>
-      buildDestroyParams({
-        publicId: "tabang/reports/resident-1/photo",
-        timestampSeconds: 1,
-      }),
-    ).toThrow(/identity evidence/);
-  });
-
-  it("targets the authenticated delivery type", () => {
-    const params = buildDestroyParams({
-      publicId: "tabang/responder-applications/resident-9/id",
-      timestampSeconds: 1,
-    });
-
-    expect(params.type).toBe("authenticated");
-  });
-});
-
-describe("decision transaction", () => {
-  function repositoryWithStores() {
-    const applications = new Map([["responderApplications/resident-9", {}]]);
-    const roles = new Map();
-    const deleted = [];
-
-    const transaction = {
-      update: (reference, data) =>
-        applications.set(reference.path, {
-          ...applications.get(reference.path),
-          ...data,
-        }),
-      set: (reference, data) => roles.set(reference.path, data),
+// The decision, role grant, and file deletion happen on the server;
+// tests/integration/appApplications.test.mjs covers them. These tests cover
+// what the repository does around that call.
+describe("decision and evidence deletion", () => {
+  function repositoryWith({ decisionError = null, evidenceDeleted = true } = {}) {
+    const calls = [];
+    const client = {
+      post: async (path, body) => {
+        calls.push(["post", path, body]);
+        if (decisionError) {
+          const err = new Error(decisionError.message || "forbidden");
+          err.code = decisionError.code || "forbidden";
+          throw err;
+        }
+        return { ok: true, evidenceDeleted };
+      },
     };
 
-    return {
-      applications,
-      roles,
-      deleted,
-      repository: createReviewRepository({
-        db: {},
-        auth: { currentUser: { getIdToken: async () => "token" } },
-        documentRef: (_db, collectionName, id) => ({
-          path: `${collectionName}/${id}`,
-        }),
-        transactionRunner: (_db, work) => work(transaction),
-        deleteEvidence: async (publicId) => {
-          if (publicId) {
-            deleted.push(publicId);
-          }
-        },
-      }),
-    };
+    return { calls, repository: createReviewRepository({ client }) };
   }
 
-  it("grants the role and records who decided, in one transaction", async () => {
-    const { applications, roles, repository } = repositoryWithStores();
+  it("records the decision first, then returns evidenceDeleted", async () => {
+    const { calls, repository } = repositoryWith();
 
-    await repository.decide({
+    const outcome = await repository.decide({
       application,
       approve: true,
       notes: "Badge verified with the office.",
-      reviewerId: "reviewer-1",
     });
 
-    const stored = applications.get("responderApplications/resident-9");
-
-    expect(stored.status).toBe("approved");
-    expect(stored.reviewedBy).toBe("reviewer-1");
-    expect(stored.reviewNotes).toBe("Badge verified with the office.");
-
-    const grant = roles.get("roleAssignments/resident-9");
-
-    expect(grant.role).toBe("responder");
-    expect(grant.assignedBy).toBe("reviewer-1");
-  });
-
-  it("grants nothing when an application is rejected", async () => {
-    const { applications, roles, repository } = repositoryWithStores();
-
-    await repository.decide({
-      application,
-      approve: false,
-      notes: "Could not confirm the badge number.",
-      reviewerId: "reviewer-1",
-    });
-
-    expect(applications.get("responderApplications/resident-9").status).toBe(
-      "rejected",
-    );
-    expect(roles.size).toBe(0);
-  });
-
-  it("deletes both documents and clears their stored paths", async () => {
-    const { applications, deleted, repository } = repositoryWithStores();
-
-    await repository.decide({
-      application,
-      approve: true,
-      reviewerId: "reviewer-1",
-    });
-
-    expect(deleted).toEqual([
-      "tabang/responder-applications/resident-9/id",
-      "tabang/responder-applications/resident-9/selfie",
+    expect(outcome).toEqual({ evidenceDeleted: true });
+    expect(calls).toEqual([
+      [
+        "post",
+        "/api/app/applications/resident-9/decision",
+        { approve: true, notes: "Badge verified with the office." },
+      ],
     ]);
+  });
 
-    const stored = applications.get("responderApplications/resident-9");
+  it("deletes nothing when the decision is refused", async () => {
+    const { repository } = repositoryWith({ decisionError: { message: "forbidden", code: "forbidden" } });
 
-    expect(stored.identityDocumentPath).toBeNull();
-    expect(stored.selfiePath).toBeNull();
+    await expect(repository.decide({ application, approve: true })).rejects.toMatchObject({
+      code: "forbidden",
+    });
+  });
+
+  it("reports a failed deletion without undoing the decision", async () => {
+    const failed = repositoryWith({ evidenceDeleted: false });
+
+    await expect(failed.repository.decide({ application, approve: false })).resolves.toEqual({
+      evidenceDeleted: false,
+    });
   });
 });
 
@@ -165,7 +109,7 @@ describe("review queue route", () => {
   });
 
   it("decides only after confirmation", async () => {
-    const decide = vi.fn().mockResolvedValue(undefined);
+    const decide = vi.fn().mockResolvedValue({ evidenceDeleted: true });
 
     renderQueue({
       listPendingApplications: vi.fn().mockResolvedValue([application]),
@@ -177,6 +121,9 @@ describe("review queue route", () => {
     expect(decide).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    fireEvent.change(screen.getByLabelText("Notes for the record (optional)"), {
+      target: { value: "Badge confirmed by phone." },
+    });
     fireEvent.click(
       screen.getByRole("button", { name: "Approve and grant access" }),
     );
@@ -184,7 +131,13 @@ describe("review queue route", () => {
     await waitFor(() => {
       expect(decide).toHaveBeenCalledTimes(1);
     });
-    expect(decide.mock.calls[0][0].reviewerId).toBe("resident-1");
+    expect(decide.mock.calls[0][0]).toMatchObject({
+      approve: true,
+      notes: "Badge confirmed by phone.",
+    });
+    expect(
+      await screen.findByText(/Decision recorded for Maria Santos/),
+    ).toBeInTheDocument();
   });
 
   it("keeps the application listed when the decision fails", async () => {

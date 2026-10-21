@@ -21,6 +21,7 @@ export const defaultAuthValue = Object.freeze({
   sendPasswordReset: async () => {},
   signOut: async () => {},
   updateOwnProfile: async () => {},
+  updatePassword: async () => {},
 });
 
 export const AuthContext = createContext(defaultAuthValue);

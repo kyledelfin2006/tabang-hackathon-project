@@ -1,4 +1,3 @@
-handa360/
 node_modules/
 dist/
 coverage/
@@ -29,6 +28,6 @@ temp/
 *.bak
 *.tmp
 *.coverage
-uploads/
+/uploads/
 identity-documents/
 selfies/

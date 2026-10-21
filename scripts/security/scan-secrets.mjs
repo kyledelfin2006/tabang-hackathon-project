@@ -1,5 +1,6 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
-import { extname, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { extname } from "node:path";
 
 /*
  * A deliberately small secret scanner.
@@ -9,6 +10,9 @@ import { extname, join } from "node:path";
  * committed .env. It is not a general-purpose scanner and does not pretend to
  * be one; it exists so an obvious mistake fails a check instead of reaching a
  * public repository.
+ *
+ * It scans only files Git tracks or has staged, so a local untracked .env is
+ * allowed and a committed one fails.
  */
 const PATTERNS = [
   {
@@ -27,14 +31,13 @@ const PATTERNS = [
     name: "Google API key literal",
     pattern: /\bAIza[0-9A-Za-z_-]{35}\b/,
   },
+  {
+    // Bypasses row-level security, so it must only live in the server's
+    // environment.
+    name: "Supabase secret key literal",
+    pattern: /\bsb_secret_[0-9A-Za-z_-]{20,}/,
+  },
 ];
-
-const SKIP_DIRECTORIES = new Set([
-  ".git",
-  "node_modules",
-  "dist",
-  ".firebase",
-]);
 
 const SCANNED_EXTENSIONS = new Set([
   ".js",
@@ -47,20 +50,10 @@ const SCANNED_EXTENSIONS = new Set([
   "",
 ]);
 
-function* walk(directory) {
-  for (const entry of readdirSync(directory)) {
-    const full = join(directory, entry);
-
-    if (statSync(full).isDirectory()) {
-      if (!SKIP_DIRECTORIES.has(entry)) {
-        yield* walk(full);
-      }
-
-      continue;
-    }
-
-    yield full;
-  }
+function trackedFiles() {
+  return execFileSync("git", ["ls-files", "-z"], { encoding: "utf8" })
+    .split("\0")
+    .filter(Boolean);
 }
 
 /*
@@ -75,7 +68,7 @@ const REVIEWED_EXCEPTIONS = new Map();
 const findings = [];
 const skipped = [];
 
-for (const file of walk(".")) {
+for (const file of trackedFiles()) {
   // .env.example holds placeholders by design; a real .env must never be here.
   if (file.endsWith(".env")) {
     findings.push({ file, name: "Committed .env file" });

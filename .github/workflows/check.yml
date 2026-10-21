@@ -5,7 +5,7 @@ on:
     branches: ["**"]
   pull_request:
 
-# No deployment happens here. Releasing rules or hosting stays a deliberate
+# No deployment happens here. Releasing migrations or hosting stays a deliberate
 # human action, because both change what real residents and responders see.
 permissions:
   contents: read
@@ -29,17 +29,34 @@ jobs:
       - name: Scan for committed secrets
         run: npm run scan:secrets
 
+      - name: Colour contrast
+        run: npm run check:contrast
+
       - name: Unit tests
         run: npm run test:unit
 
-      - name: Retired URL redirects
-        run: npm run test:redirects
+      - name: Server tests
+        run: npm run test:server
 
       - name: Build
         run: npm run build
 
-  rules:
+  integration:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: tabang
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -48,14 +65,14 @@ jobs:
           node-version: "22"
           cache: npm
 
-      # The emulator needs a JVM. This job is separate so a JVM problem cannot
-      # mask a failure in the fast checks above.
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
       - run: npm ci
 
-      - name: Security rules tests
-        run: npm run test:rules
+      - name: Apply migrations
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/tabang
+        run: npm run db:migrate
+
+      - name: Integration tests
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/tabang
+        run: npm run test:integration

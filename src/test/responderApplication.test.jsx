@@ -6,13 +6,9 @@ import ResponderApplicationPage from "../routes/responder/ResponderApplicationPa
 import {
   APPLICATION_STATUS,
   CONSENT_VERSION,
+  createApplicationRepository,
   validateApplication,
 } from "../services/responders/applicationRepository.js";
-import {
-  buildIdentityUploadParams,
-  buildSignedDeliveryUrl,
-  isReviewerRole,
-} from "../../scripts/uploads/cloudinarySignature.mjs";
 import { createFakeAuthGateway, residentSession } from "./fakeAuthGateway.js";
 
 function renderPage(repository) {
@@ -63,54 +59,46 @@ describe("application validation", () => {
   });
 });
 
-describe("identity upload parameters", () => {
-  it("uses authenticated delivery and scopes the folder to the applicant", () => {
-    const params = buildIdentityUploadParams({
-      uid: "resident-1",
-      timestampSeconds: 1_755_000_000,
-    });
+// The files API confines the files; see
+// tests/integration/files.test.mjs.
+describe("identity evidence upload", () => {
+  function repositoryFor(session) {
+    const uploads = [];
+    const client = {
+      post: async (path, file, options) => {
+        if (!session) {
+          const err = new Error("Sign in to continue.");
+          err.code = "unauthorized";
+          err.status = 401;
+          throw err;
+        }
+        const returnedPath = `${session.user.id}/${crypto.randomUUID()}.png`;
+        uploads.push({ path, file, options, returnedPath });
+        return { path: returnedPath };
+      },
+    };
 
-    expect(params.type).toBe("authenticated");
-    expect(params.access_mode).toBe("authenticated");
-    expect(params.folder).toBe("tabang/responder-applications/resident-1");
+    return { uploads, repository: createApplicationRepository({ client }) };
+  }
+
+  it("stores evidence in the private bucket under the applicant's own folder", async () => {
+    const { uploads, repository } = repositoryFor({ user: { id: "resident-1" } });
+    const file = new File(["x"], "id.png", { type: "image/png" });
+
+    const result = await repository.uploadEvidence(file);
+
+    expect(uploads).toHaveLength(1);
+    expect(uploads[0].path).toBe("/api/app/files/identity-evidence");
+    expect(result.path).toMatch(/^resident-1\/[0-9a-f-]+\.png$/);
   });
 
-  it("keeps identity evidence out of the public report folder", () => {
-    const params = buildIdentityUploadParams({
-      uid: "resident-1",
-      timestampSeconds: 1,
-    });
+  it("refuses to upload without a signed-in account", async () => {
+    const { uploads, repository } = repositoryFor(null);
 
-    expect(params.folder).not.toContain("tabang/reports");
-  });
-
-  it("refuses to sign without a verified uid", () => {
-    expect(() => buildIdentityUploadParams({ timestampSeconds: 1 })).toThrow(
-      /verified uid/,
+    await expect(repository.uploadEvidence(new File(["x"], "id.png"))).rejects.toThrow(
+      /Sign in/,
     );
-  });
-
-  it("signs delivery URLs so they cannot be forged", () => {
-    const first = buildSignedDeliveryUrl({
-      cloudName: "demo",
-      publicId: "tabang/responder-applications/resident-1/id",
-      apiSecret: "secret-one",
-    });
-    const second = buildSignedDeliveryUrl({
-      cloudName: "demo",
-      publicId: "tabang/responder-applications/resident-1/id",
-      apiSecret: "secret-two",
-    });
-
-    expect(first).toContain("/image/authenticated/");
-    expect(first).not.toBe(second);
-  });
-
-  it("treats only reviewers and admins as able to open evidence", () => {
-    expect(isReviewerRole("reviewer")).toBe(true);
-    expect(isReviewerRole("admin")).toBe(true);
-    expect(isReviewerRole("responder")).toBe(false);
-    expect(isReviewerRole("resident")).toBe(false);
+    expect(uploads).toEqual([]);
   });
 });
 
@@ -135,7 +123,7 @@ describe("responder application route", () => {
     renderPage({
       getMyApplication: vi.fn().mockResolvedValue(null),
       submitApplication,
-      uploadEvidence: vi.fn().mockResolvedValue({ publicId: "x" }),
+      uploadEvidence: vi.fn().mockResolvedValue({ path: "resident-1/x.jpg" }),
     });
 
     await screen.findByLabelText("Organization");

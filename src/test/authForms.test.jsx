@@ -66,7 +66,7 @@ describe("authentication forms", () => {
   });
 
   it("reports one generic message for any failed credential", async () => {
-    const signIn = vi.fn().mockRejectedValue({ code: "auth/user-not-found" });
+    const signIn = vi.fn().mockRejectedValue({ code: "invalid_credentials" });
     renderRoute("/login", { signIn });
 
     await screen.findByLabelText("Email address");
@@ -140,7 +140,7 @@ describe("authentication forms", () => {
   it("acknowledges a password reset identically whether or not it succeeded", async () => {
     const sendPasswordReset = vi
       .fn()
-      .mockRejectedValue({ code: "auth/user-not-found" });
+      .mockRejectedValue({ code: "invalid_credentials" });
     renderRoute("/reset-password", { sendPasswordReset });
 
     await screen.findByLabelText("Email address");
@@ -160,23 +160,23 @@ describe("authentication forms", () => {
  */
 describe("auth error messages", () => {
   it("does not blame the network for an unrecognised failure", () => {
-    const message = describeAuthError({ code: "auth/something-new" });
+    const message = describeAuthError({ code: "something_new" });
 
     expect(message).not.toMatch(/connection|internet|offline|wifi/i);
     expect(message).toMatch(/on our side/i);
   });
 
   it("still blames the network when the network is genuinely at fault", () => {
-    expect(describeAuthError({ code: "auth/network-request-failed" })).toMatch(
+    expect(describeAuthError({ name: "AuthRetryableFetchError" })).toMatch(
       /connection/i,
     );
   });
 
   it("names a setup fault as ours rather than asking the user to retry", () => {
     for (const code of [
-      "auth/operation-not-allowed",
-      "auth/configuration-not-found",
-      "auth/unauthorized-domain",
+      "signup_disabled",
+      "email_provider_disabled",
+      "app/auth-unavailable",
     ]) {
       const message = describeAuthError({ code });
 
@@ -187,9 +187,9 @@ describe("auth error messages", () => {
 
   it("keeps every credential failure indistinguishable", () => {
     const messages = [
-      "auth/user-not-found",
-      "auth/wrong-password",
-      "auth/invalid-credential",
+      "invalid_credentials",
+      "user_not_found",
+      "email_address_invalid",
     ].map((code) => describeAuthError({ code }));
 
     expect(new Set(messages).size).toBe(1);

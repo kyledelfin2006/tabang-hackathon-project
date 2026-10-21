@@ -5,7 +5,11 @@
  * apply usefully here.
  */
 import { lazy } from "react";
-import { createBrowserRouter, createMemoryRouter } from "react-router-dom";
+import {
+  Navigate,
+  createBrowserRouter,
+  createMemoryRouter,
+} from "react-router-dom";
 import PublicLayout from "../layouts/PublicLayout.jsx";
 import ResidentLayout from "../layouts/ResidentLayout.jsx";
 import ResponderLayout from "../layouts/ResponderLayout.jsx";
@@ -19,6 +23,7 @@ import LoginPage from "../routes/auth/LoginPage.jsx";
 import PrivacyPage from "../routes/auth/PrivacyPage.jsx";
 import ResetPasswordPage from "../routes/auth/ResetPasswordPage.jsx";
 import SignupPage from "../routes/auth/SignupPage.jsx";
+import UpdatePasswordPage from "../routes/auth/UpdatePasswordPage.jsx";
 import {
   LandingRoute,
   NotFoundRoute,
@@ -27,16 +32,34 @@ import {
 
 // Routes behind a guard are split out, so a resident never downloads the
 // responder workspace and a responder never downloads the report forms.
-const ResidentHomePage = lazy(() => import("../routes/home/ResidentHomePage.jsx"));
-const ReportFormPage = lazy(() => import("../routes/reports/ReportFormPage.jsx"));
+const ResidentHomePage = lazy(
+  () => import("../routes/home/ResidentHomePage.jsx"),
+);
+const ReportFormPage = lazy(
+  () => import("../routes/reports/ReportFormPage.jsx"),
+);
 const MyReportsPage = lazy(() => import("../routes/reports/MyReportsPage.jsx"));
-const CommunityFeedPage = lazy(() => import("../routes/community/CommunityFeedPage.jsx"));
-const ResponderApplicationPage = lazy(() => import("../routes/responder/ResponderApplicationPage.jsx"));
-const ReviewQueuePage = lazy(() => import("../routes/responder/ReviewQueuePage.jsx"));
-const IncidentQueuePage = lazy(() => import("../routes/responder/IncidentQueuePage.jsx"));
-const IncidentDetailPage = lazy(() => import("../routes/responder/IncidentDetailPage.jsx"));
-const ResponderDashboardPage = lazy(() => import("../routes/responder/ResponderDashboardPage.jsx"));
-const HotlineDirectoryPage = lazy(() => import("../routes/hotlines/HotlineDirectoryPage.jsx"));
+const ResponderApplicationPage = lazy(
+  () => import("../routes/responder/ResponderApplicationPage.jsx"),
+);
+const ResponderAdvisoriesPage = lazy(
+  () => import("../routes/responder/ResponderAdvisoriesPage.jsx"),
+);
+const ReviewQueuePage = lazy(
+  () => import("../routes/responder/ReviewQueuePage.jsx"),
+);
+const IncidentQueuePage = lazy(
+  () => import("../routes/responder/IncidentQueuePage.jsx"),
+);
+const IncidentDetailPage = lazy(
+  () => import("../routes/responder/IncidentDetailPage.jsx"),
+);
+const ResponderDashboardPage = lazy(
+  () => import("../routes/responder/ResponderDashboardPage.jsx"),
+);
+const HotlineDirectoryPage = lazy(
+  () => import("../routes/hotlines/HotlineDirectoryPage.jsx"),
+);
 const AccountPage = lazy(() => import("../routes/account/AccountPage.jsx"));
 
 export const appRoutes = [
@@ -44,8 +67,18 @@ export const appRoutes = [
     path: "/",
     element: <PublicLayout />,
     errorElement: <RouteErrorPage />,
+    handle: { title: "Tabang" },
     children: [
-      { index: true, element: <LandingRoute /> },
+      {
+        index: true,
+        element: <LandingRoute />,
+        handle: { title: "Report flooding and request help in Aklan" },
+      },
+      {
+        path: "hotlines",
+        element: <HotlineDirectoryPage />,
+        handle: { title: "Emergency hotlines" },
+      },
       {
         path: "login",
         element: (
@@ -53,6 +86,7 @@ export const appRoutes = [
             <LoginPage />
           </RequireAnonymous>
         ),
+        handle: { title: "Sign in to Tabang" },
       },
       {
         path: "signup",
@@ -61,6 +95,7 @@ export const appRoutes = [
             <SignupPage />
           </RequireAnonymous>
         ),
+        handle: { title: "Create a resident account" },
       },
       {
         path: "reset-password",
@@ -69,8 +104,22 @@ export const appRoutes = [
             <ResetPasswordPage />
           </RequireAnonymous>
         ),
+        handle: { title: "Reset your password" },
       },
-      { path: "privacy", element: <PrivacyPage /> },
+      {
+        path: "update-password",
+        element: (
+          <RequireAuth>
+            <UpdatePasswordPage />
+          </RequireAuth>
+        ),
+        handle: { title: "Choose a new password" },
+      },
+      {
+        path: "privacy",
+        element: <PrivacyPage />,
+        handle: { title: "Privacy policy and terms" },
+      },
     ],
   },
   {
@@ -81,15 +130,49 @@ export const appRoutes = [
       </RequireAuth>
     ),
     errorElement: <RouteErrorPage />,
+    handle: { title: "Resident workspace" },
     children: [
-      { index: true, element: <ResidentHomePage /> },
-      { path: "community", element: <CommunityFeedPage /> },
-      { path: "reports", element: <MyReportsPage /> },
-      { path: "reports/new", element: <ReportFormPage kind="flood" /> },
-      { path: "help/new", element: <ReportFormPage kind="help" /> },
-      { path: "hotlines", element: <HotlineDirectoryPage /> },
-      { path: "account", element: <AccountPage /> },
-      { path: "responder-application", element: <ResponderApplicationPage /> },
+      {
+        index: true,
+        element: <ResidentHomePage />,
+        handle: { title: "Resident home" },
+      },
+      {
+        // Advisories now have one home: the resident home page.
+        path: "community",
+        element: <Navigate replace to="/app" />,
+        handle: { redirectTo: "/app" },
+      },
+      {
+        path: "reports",
+        element: <MyReportsPage />,
+        handle: { title: "My reports" },
+      },
+      {
+        path: "reports/new",
+        element: <ReportFormPage kind="flood" />,
+        handle: { title: "Report a flood" },
+      },
+      {
+        path: "help/new",
+        element: <ReportFormPage kind="help" />,
+        handle: { title: "Ask for assistance" },
+      },
+      {
+        path: "hotlines",
+        element: <HotlineDirectoryPage />,
+        handle: { title: "Resident emergency hotlines" },
+      },
+      {
+        path: "account",
+        element: <AccountPage />,
+        handle: { title: "Resident account" },
+      },
+      {
+        path: "responder-application",
+        element: <ResponderApplicationPage />,
+        handle: { title: "Responder application" },
+      },
     ],
   },
   {
@@ -100,10 +183,28 @@ export const appRoutes = [
       </RequireResponder>
     ),
     errorElement: <RouteErrorPage />,
+    handle: { title: "Responder workspace" },
     children: [
-      { index: true, element: <ResponderDashboardPage /> },
-      { path: "incidents", element: <IncidentQueuePage /> },
-      { path: "incidents/:id", element: <IncidentDetailPage /> },
+      {
+        index: true,
+        element: <ResponderDashboardPage />,
+        handle: { title: "Responder dashboard" },
+      },
+      {
+        path: "incidents",
+        element: <IncidentQueuePage />,
+        handle: { title: "Incident queue" },
+      },
+      {
+        path: "incidents/:id",
+        element: <IncidentDetailPage />,
+        handle: { title: "Incident details" },
+      },
+      {
+        path: "advisories",
+        element: <ResponderAdvisoriesPage />,
+        handle: { title: "Public advisories" },
+      },
       {
         path: "applications",
         element: (
@@ -111,14 +212,24 @@ export const appRoutes = [
             <ReviewQueuePage />
           </RequireReviewer>
         ),
+        handle: { title: "Review applications" },
       },
-      { path: "hotlines", element: <HotlineDirectoryPage /> },
-      { path: "account", element: <AccountPage area="Responder route" /> },
+      {
+        path: "hotlines",
+        element: <HotlineDirectoryPage />,
+        handle: { title: "Responder hotlines" },
+      },
+      {
+        path: "account",
+        element: <AccountPage />,
+        handle: { title: "Responder account" },
+      },
     ],
   },
   {
     path: "*",
     element: <NotFoundRoute />,
+    handle: { title: "Page not found" },
   },
 ];
 

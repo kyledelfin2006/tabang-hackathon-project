@@ -1,129 +1,70 @@
-import {
-  collection,
-  doc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-  where,
-} from "firebase/firestore";
-import { getFirebaseAuth, getFirebaseDb } from "../../config/firebase.js";
-import { APPLICATION_STATUS } from "./applicationRepository.js";
-
-const APPLICATIONS_COLLECTION = "responderApplications";
-const ROLE_ASSIGNMENTS_COLLECTION = "roleAssignments";
+import { getApiClient } from "../http/apiClient.js";
+import { toMillis } from "../data/unwrap.js";
 
 export const REVIEW_PAGE_SIZE = 20;
 
+/** Takes plain values: the timestamp is in milliseconds. */
 export function toReviewItem(id, raw = {}) {
   return Object.freeze({
     id,
     applicantId: raw.applicantId ?? id,
+    applicantName: raw.applicantName ?? "",
+    applicantEmail: raw.applicantEmail ?? "",
     organization: raw.organization ?? "",
     badgeNumber: raw.badgeNumber ?? "",
     municipality: raw.municipality ?? "",
     consentVersion: raw.consentVersion ?? "",
     identityDocumentPath: raw.identityDocumentPath ?? null,
     selfiePath: raw.selfiePath ?? null,
-    submittedAtMillis:
-      typeof raw.submittedAt?.toMillis === "function"
-        ? raw.submittedAt.toMillis()
-        : null,
+    submittedAtMillis: Number.isFinite(raw.submittedAtMillis)
+      ? raw.submittedAtMillis
+      : null,
   });
 }
 
-export function createReviewRepository({
-  db,
-  auth,
-  collectionRef = collection,
-  documentRef = doc,
-  runQuery = getDocs,
-  transactionRunner = runTransaction,
-  deleteEvidence,
-} = {}) {
-  async function destroyEvidence(publicId, idToken) {
-    if (!publicId) {
-      return;
-    }
-
-    await fetch("/api/uploads/identity-delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken, publicId }),
-    });
-  }
+export function createReviewRepository({ client } = {}) {
+  const api = () => client ?? getApiClient();
 
   return {
     async listPendingApplications() {
-      const database = db ?? getFirebaseDb();
-      const snapshot = await runQuery(
-        query(
-          collectionRef(database, APPLICATIONS_COLLECTION),
-          where("status", "==", APPLICATION_STATUS.pending),
-          orderBy("submittedAt", "asc"),
-          limit(REVIEW_PAGE_SIZE),
-        ),
+      const items = await api().get("/api/app/applications");
+      return (items || []).map((item) =>
+        toReviewItem(item.applicantId || item.id, {
+          applicantId: item.applicantId || item.id,
+          applicantName: item.applicantName,
+          applicantEmail: item.applicantEmail,
+          organization: item.organization,
+          badgeNumber: item.badgeNumber,
+          municipality: item.municipality,
+          consentVersion: item.consentVersion,
+          identityDocumentPath: item.identityDocumentPath,
+          selfiePath: item.selfiePath,
+          submittedAtMillis: item.submittedAtMillis ?? toMillis(item.submittedAt),
+        }),
       );
+    },
 
-      return snapshot.docs.map((document) =>
-        toReviewItem(document.id, document.data()),
-      );
+    /** An authorized link to one evidence file, for a reviewer to open. */
+    async getEvidenceUrl(path) {
+      if (!path) return "";
+      const cleanPath = String(path).replace(/^\/+/, "");
+      return `/api/app/files/identity-evidence/${cleanPath}`;
     },
 
     /**
      * Records a decision and, on approval, grants the role.
-     *
-     * Both writes happen in one transaction: an application marked approved
-     * without a matching role assignment would be a responder who cannot work,
-     * and a role assignment without a recorded decision would be an
-     * unattributable grant.
+     * The server deletes the applicant's evidence files on decision and returns { ok, evidenceDeleted }.
      */
-    async decide({ application, approve, notes, reviewerId }) {
-      const database = db ?? getFirebaseDb();
-      const applicationRef = documentRef(
-        database,
-        APPLICATIONS_COLLECTION,
-        application.id,
-      );
-      const roleRef = documentRef(
-        database,
-        ROLE_ASSIGNMENTS_COLLECTION,
-        application.applicantId,
+    async decide({ application, approve, notes }) {
+      const res = await api().post(
+        `/api/app/applications/${application.applicantId}/decision`,
+        {
+          approve: Boolean(approve),
+          notes: notes ?? "",
+        },
       );
 
-      await transactionRunner(database, async (transaction) => {
-        transaction.update(applicationRef, {
-          status: approve
-            ? APPLICATION_STATUS.approved
-            : APPLICATION_STATUS.rejected,
-          reviewedBy: reviewerId,
-          reviewedAt: serverTimestamp(),
-          reviewNotes: notes ?? "",
-          // The evidence is destroyed immediately after this transaction, so
-          // the stored paths must not outlive the decision.
-          identityDocumentPath: null,
-          selfiePath: null,
-        });
-
-        if (approve) {
-          transaction.set(roleRef, {
-            userId: application.applicantId,
-            role: "responder",
-            assignedBy: reviewerId,
-            assignedAt: serverTimestamp(),
-          });
-        }
-      });
-
-      // Deletion happens after the decision is durable. If it fails, the
-      // decision still stands and the evidence can be purged manually.
-      const remove = deleteEvidence ?? destroyEvidence;
-      const idToken = await (auth ?? getFirebaseAuth()).currentUser?.getIdToken();
-
-      await remove(application.identityDocumentPath, idToken);
-      await remove(application.selfiePath, idToken);
+      return { evidenceDeleted: Boolean(res?.evidenceDeleted) };
     },
   };
 }
