@@ -101,7 +101,7 @@ describe("advisory projection", () => {
       summary: "Floodwater rising near the market road.",
       barangay: "Poblacion",
       kind: "flood",
-      createdAt: { toMillis: () => 1_755_000_000_000 },
+      createdAtMillis: 1_755_000_000_000,
       preciseLocation: { latitude: 11.7061, longitude: 122.3648 },
       contactPhone: "09171234567",
       description: "Private description that must not leak.",
@@ -112,8 +112,11 @@ describe("advisory projection", () => {
     expect(Object.keys(projected).sort()).toEqual([
       "barangay",
       "createdAtMillis",
+      "expiresAtMillis",
       "id",
       "kind",
+      "municipality",
+      "source",
       "summary",
     ]);
   });

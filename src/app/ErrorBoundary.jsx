@@ -1,5 +1,6 @@
 import { Component } from "react";
 import ErrorState from "../components/feedback/ErrorState.jsx";
+import { PageHeading } from "../components/ui/Primitives.jsx";
 
 export default class AppErrorBoundary extends Component {
   constructor(props) {
@@ -29,12 +30,15 @@ export default class AppErrorBoundary extends Component {
     if (this.state.error) {
       return (
         <div className="error-shell">
-          <ErrorState
-            title="This page did not load"
-            message="Something went wrong before the page could open. Reloading may fix it. If it does not, the hotline numbers are printed on the barangay noticeboard — do not wait on this site during an emergency."
-            actionLabel="Reload the page"
-            onAction={this.handleReload}
-          />
+          <main className="shell__content">
+            <PageHeading>This page did not load</PageHeading>
+            <ErrorState
+              title="Please try again"
+              message="Something went wrong before the page could open. Reload to try again. If you need help now, call 911 or open the hotline directory."
+              actionLabel="Reload the page"
+              onAction={this.handleReload}
+            />
+          </main>
         </div>
       );
     }

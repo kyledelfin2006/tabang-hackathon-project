@@ -3,34 +3,46 @@ import { SESSION_STATUS } from "../../app/providers/AuthContext.js";
 import { useAuth } from "../../app/providers/useAuth.js";
 import ErrorState from "../feedback/ErrorState.jsx";
 import LoadingState from "../feedback/LoadingState.jsx";
+import { PageHeading } from "../ui/Primitives.jsx";
 import { homeRouteForRole } from "../../services/auth/roles.js";
 
-function SessionPending() {
-  return (
+function SessionPending({ standalone = true }) {
+  const state = (
+    <LoadingState
+      title="Checking your session"
+      message="Confirming who you are before loading this page."
+    />
+  );
+
+  return standalone ? (
     <div className="shell shell--public">
       <main className="shell__content">
-        <LoadingState
-          title="Checking your session"
-          message="Confirming who you are before loading this page."
-        />
+        <PageHeading>Checking your session</PageHeading>
+        {state}
       </main>
     </div>
+  ) : (
+    state
   );
 }
 
-function SessionUnavailable({ detail }) {
-  return (
+function SessionUnavailable({ standalone = true }) {
+  const state = (
+    <ErrorState
+      title="Try again later"
+      message="We cannot confirm your account right now. If you need emergency help, call 911 or contact your barangay hall."
+    />
+  );
+
+  return standalone ? (
     <div className="shell shell--public">
       <main className="shell__content">
-        <ErrorState
-          title="Sign-in is unavailable"
-          message={
-            detail ??
-            "The application could not reach the authentication service."
-          }
-        />
+        <PageHeading>Sign-in is unavailable</PageHeading>
+        {state}
       </main>
     </div>
+  ) : (
+    state
   );
 }
 
@@ -39,7 +51,7 @@ function SessionUnavailable({ detail }) {
  * flashes before a redirect.
  */
 export function RequireAuth({ children }) {
-  const { status, initializationError } = useAuth();
+  const { status } = useAuth();
   const location = useLocation();
 
   if (status === SESSION_STATUS.loading) {
@@ -47,7 +59,7 @@ export function RequireAuth({ children }) {
   }
 
   if (status === SESSION_STATUS.unavailable) {
-    return <SessionUnavailable detail={initializationError} />;
+    return <SessionUnavailable />;
   }
 
   if (status === SESSION_STATUS.anonymous) {
@@ -68,14 +80,14 @@ export function RequireAuth({ children }) {
  * Firestore rules remain the real authorization boundary.
  */
 export function RequireResponder({ children }) {
-  const { status, role, isResponder, initializationError } = useAuth();
+  const { status, role, isResponder } = useAuth();
 
   if (status === SESSION_STATUS.loading) {
     return <SessionPending />;
   }
 
   if (status === SESSION_STATUS.unavailable) {
-    return <SessionUnavailable detail={initializationError} />;
+    return <SessionUnavailable />;
   }
 
   if (status === SESSION_STATUS.anonymous) {
@@ -96,7 +108,7 @@ export function RequireAnonymous({ children }) {
   const { status, role } = useAuth();
 
   if (status === SESSION_STATUS.loading) {
-    return <SessionPending />;
+    return <SessionPending standalone={false} />;
   }
 
   if (status === SESSION_STATUS.authenticated) {
@@ -114,14 +126,14 @@ export function RequireAnonymous({ children }) {
  * independently; this only avoids showing a route that would fail anyway.
  */
 export function RequireReviewer({ children }) {
-  const { status, role, isReviewer, initializationError } = useAuth();
+  const { status, role, isReviewer } = useAuth();
 
   if (status === SESSION_STATUS.loading) {
-    return <SessionPending />;
+    return <SessionPending standalone={false} />;
   }
 
   if (status === SESSION_STATUS.unavailable) {
-    return <SessionUnavailable detail={initializationError} />;
+    return <SessionUnavailable standalone={false} />;
   }
 
   if (status === SESSION_STATUS.anonymous) {

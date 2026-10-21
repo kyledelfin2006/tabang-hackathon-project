@@ -1,0 +1,8 @@
+{
+  "_synthetic": "Invented for tests. DOST has not published its Signal contract; this is not a real DOST payload and must not be read as one.",
+  "bulletinId": "SYNTHETIC-TCWS-0001",
+  "signalLevel": 2,
+  "areas": ["Kalibo", "Numancia"],
+  "issued": "2026-10-01T08:00:00+08:00",
+  "validUntil": "2026-10-02T08:00:00+08:00"
+}

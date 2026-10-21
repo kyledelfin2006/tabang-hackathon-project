@@ -80,6 +80,34 @@ export function validateSignupInput(input = {}) {
   return { values, errors, isValid: Object.keys(errors).length === 0 };
 }
 
+/** The details a resident may change about themselves after sign-up. */
+export function validateProfileInput(input = {}) {
+  const values = {
+    displayName: collapseWhitespace(input.displayName),
+    phone: normalizePhone(input.phone),
+    barangay: collapseWhitespace(input.barangay),
+  };
+  const errors = {};
+
+  if (!values.displayName) {
+    errors.displayName = "Enter your full name.";
+  } else if (values.displayName.length > MAX_DISPLAY_NAME_LENGTH) {
+    errors.displayName = `Use ${MAX_DISPLAY_NAME_LENGTH} characters or fewer.`;
+  }
+
+  if (!PHONE_PATTERN.test(values.phone)) {
+    errors.phone = "Enter a Philippine mobile number, for example 09171234567.";
+  }
+
+  if (!values.barangay) {
+    errors.barangay = "Enter your barangay.";
+  } else if (values.barangay.length > MAX_BARANGAY_LENGTH) {
+    errors.barangay = `Use ${MAX_BARANGAY_LENGTH} characters or fewer.`;
+  }
+
+  return { values, errors, isValid: Object.keys(errors).length === 0 };
+}
+
 export function validateLoginInput(input = {}) {
   const values = {
     email: normalizeEmail(input.email),
@@ -109,4 +137,4 @@ export function validateEmailOnlyInput(input = {}) {
   return { values, errors, isValid: Object.keys(errors).length === 0 };
 }
 
-export { MIN_PASSWORD_LENGTH, PHONE_PATTERN };
+export { MIN_PASSWORD_LENGTH, PHONE_PATTERN, collapseWhitespace };

@@ -17,50 +17,51 @@ const SETUP_FAILURE_MESSAGE =
   "Sign-in is not configured correctly on this site. This is a fault on our side and retrying will not help. Please report it.";
 
 /**
- * Converts a Firebase auth error into a user-facing message.
+ * Converts an auth error into a user-facing message.
  *
  * Every credential-related failure collapses into one message so the UI never
  * reveals whether an arbitrary email address is registered.
  */
 export function describeAuthError(error) {
+  // A network failure is a fetch that never got an answer; it has no code.
+  if (error?.name === "AuthRetryableFetchError" || error?.name === "TypeError") {
+    return "The network request failed. Check your connection and try again.";
+  }
+
   const code = typeof error?.code === "string" ? error.code : "";
 
   switch (code) {
-    case "auth/invalid-credential":
-    case "auth/invalid-email":
-    case "auth/invalid-login-credentials":
-    case "auth/user-disabled":
-    case "auth/user-not-found":
-    case "auth/wrong-password":
+    case "invalid_credentials":
+    case "email_address_invalid":
+    case "user_not_found":
+    case "user_banned":
       return GENERIC_CREDENTIAL_MESSAGE;
-    case "auth/email-already-in-use":
+    case "email_not_confirmed":
+      return "Confirm your email address using the link we sent, then sign in.";
+    case "user_already_exists":
+    case "email_exists":
       // Deliberately vague: registration must not confirm existing accounts.
       return "We could not complete that registration. If you already have an account, sign in or reset your password instead.";
-    case "auth/weak-password":
+    case "weak_password":
       return "Choose a longer, less predictable password.";
-    case "auth/too-many-requests":
+    case "same_password":
+      return "Choose a password you have not used for this account before.";
+    case "rate_limit_exceeded":
+      return "Too many attempts. Wait 15 minutes and try again.";
+    case "token_expired":
+      return "This link has expired. Ask for a new one.";
+    case "over_request_rate_limit":
+    case "over_email_send_rate_limit":
       return "Too many attempts. Wait a few minutes before trying again.";
-    case "auth/network-request-failed":
-      return "The network request failed. Check your connection and try again.";
 
     /*
-     * Setup faults. These are the codes that were being reported as connection
-     * problems. They mean the project is misconfigured — the sign-in provider
-     * is switched off, the domain is not authorised, or Authentication was
-     * never enabled — and no amount of retrying by the person will fix them.
+     * Setup faults. They mean the project is misconfigured, and
+     * no amount of retrying by the person will fix them.
      */
-    case "auth/operation-not-allowed":
-    case "auth/configuration-not-found":
-    case "auth/unauthorized-domain":
-    case "auth/invalid-api-key":
-    case "auth/api-key-not-valid":
+    case "signup_disabled":
+    case "email_provider_disabled":
     case "app/auth-unavailable":
       return SETUP_FAILURE_MESSAGE;
-
-    // A Firestore rejection during registration, after the account itself was
-    // created. Worth its own message: the account may well exist.
-    case "permission-denied":
-      return "Your account was created, but your profile could not be saved. Try signing in.";
     default:
       return GENERIC_FAILURE_MESSAGE;
   }
@@ -70,8 +71,8 @@ export function describeAuthError(error) {
  * The error code, for the console only.
  *
  * Users get plain language; whoever is debugging needs the code. This is safe
- * to log — Firebase auth codes carry no personal data, no email address, and
- * no token.
+ * to log: auth codes carry no personal data, no email address, and no
+ * token.
  */
 export function describeAuthErrorForDiagnostics(error) {
   const code = typeof error?.code === "string" ? error.code : "(no code)";

@@ -14,7 +14,7 @@ export const INCIDENT_STATUS = Object.freeze({
  * quietly reopen, because the resident has already been told it was handled.
  * Cancellation is a resident action and is deliberately absent here.
  */
-const ALLOWED_TRANSITIONS = Object.freeze({
+export const ALLOWED_TRANSITIONS = Object.freeze({
   [INCIDENT_STATUS.new]: Object.freeze([INCIDENT_STATUS.acknowledged]),
   [INCIDENT_STATUS.acknowledged]: Object.freeze([
     INCIDENT_STATUS.dispatched,
@@ -39,6 +39,29 @@ export function allowedNextStatuses(currentStatus) {
 export function canTransition(fromStatus, toStatus) {
   return allowedNextStatuses(fromStatus).includes(toStatus);
 }
+
+// What responders and residents read; the stored values are for code.
+export const STATUS_LABELS = Object.freeze({
+  [INCIDENT_STATUS.new]: "Unclaimed",
+  [INCIDENT_STATUS.acknowledged]: "Acknowledged",
+  [INCIDENT_STATUS.dispatched]: "Dispatched",
+  [INCIDENT_STATUS.onScene]: "On scene",
+  [INCIDENT_STATUS.resolved]: "Resolved",
+  [INCIDENT_STATUS.cancelled]: "Cancelled",
+});
+
+export const VERIFICATION_LABELS = Object.freeze({
+  pending: "Not yet verified",
+  verified: "Verified",
+  rejected: "Could not be verified",
+});
+
+export const ROLE_LABELS = Object.freeze({
+  resident: "Resident",
+  responder: "Responder",
+  reviewer: "Reviewer",
+  admin: "Administrator",
+});
 
 export function describeTransitionRejection(fromStatus, toStatus) {
   if (!Object.values(INCIDENT_STATUS).includes(toStatus)) {
@@ -88,7 +111,9 @@ export function elapsedSince(millis, now = Date.now()) {
 
   const hours = Math.floor(minutes / 60);
 
-  return hours < 24 ? `${hours} hr ${minutes % 60} min` : `${Math.floor(hours / 24)} d`;
+  return hours < 24
+    ? `${hours} hr ${minutes % 60} min`
+    : `${Math.floor(hours / 24)} d`;
 }
 
 /**
@@ -97,16 +122,16 @@ export function elapsedSince(millis, now = Date.now()) {
  * Responders handling an incident need the precise location and the contact
  * number. They are never given the reporter's other profile fields or any
  * identity evidence, so this projection lists exactly what the workspace uses.
+ * Takes plain values: timestamps are milliseconds and the location is
+ * `{ latitude, longitude }` or null.
  */
 export function toIncident(id, raw = {}, now = Date.now()) {
-  const createdAtMillis =
-    typeof raw.createdAt?.toMillis === "function"
-      ? raw.createdAt.toMillis()
-      : null;
-  const acknowledgedAtMillis =
-    typeof raw.acknowledgedAt?.toMillis === "function"
-      ? raw.acknowledgedAt.toMillis()
-      : null;
+  const createdAtMillis = Number.isFinite(raw.createdAtMillis)
+    ? raw.createdAtMillis
+    : null;
+  const acknowledgedAtMillis = Number.isFinite(raw.acknowledgedAtMillis)
+    ? raw.acknowledgedAtMillis
+    : null;
 
   const incident = {
     id,
@@ -115,9 +140,13 @@ export function toIncident(id, raw = {}, now = Date.now()) {
     verificationStatus: raw.verificationStatus ?? "pending",
     priority: raw.priority ?? "medium",
     publicLocationLabel: raw.publicLocationLabel ?? "",
+    municipality: raw.municipality ?? "",
+    barangay: raw.barangay ?? "",
+    landmark: raw.landmark ?? "",
     description: raw.description ?? "",
     contactPhone: raw.contactPhone ?? "",
     preciseLocation: raw.preciseLocation ?? null,
+    imagePaths: Array.isArray(raw.imagePaths) ? raw.imagePaths : [],
     severity: raw.severity ?? null,
     need: raw.need ?? null,
     peopleAffected: raw.peopleAffected ?? null,
@@ -139,9 +168,8 @@ export function toIncident(id, raw = {}, now = Date.now()) {
 /**
  * Builds the append-only audit event for a transition.
  *
- * The actor is taken from the verified session rather than from anything the
- * caller passes in, and the rules require it to match the writing account, so
- * an event cannot be attributed to somebody else.
+ * The database functions write the stored event with the caller's own id and
+ * role; this mirrors that shape for display and for tests.
  */
 export function buildTransitionEvent({
   fromStatus,

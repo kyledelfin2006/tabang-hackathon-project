@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../app/providers/useAuth.js";
+import ErrorState from "../../components/feedback/ErrorState.jsx";
 import { FormField, FormStatus } from "../../components/forms/FormField.jsx";
 import { Badge, Section, Skeleton } from "../../components/ui/Primitives.jsx";
 import { prepareImageForUpload } from "../../services/uploads/prepareImage.js";
@@ -27,7 +28,7 @@ const STATUS_COPY = {
     tone: "danger",
     label: "Not approved",
     message:
-      "A reviewer did not approve this application. Contact your organization if you believe this is a mistake.",
+      "A reviewer did not approve this application. Read their notes below; you can correct your details and apply again.",
   },
 };
 
@@ -51,6 +52,7 @@ export default function ResponderApplicationPage({ applicationRepository }) {
   const [errors, setErrors] = useState({});
   const [formError, setFormError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [reapplying, setReapplying] = useState(false);
   const activeRef = useRef(0);
 
   const load = useCallback(
@@ -65,8 +67,10 @@ export default function ResponderApplicationPage({ applicationRepository }) {
         setExisting(application);
         setLoadState("ready");
       } catch {
+        // A failed load must not look like "no application yet": that would
+        // invite a second application while the first is pending.
         if (activeRef.current === requestId) {
-          setLoadState("ready");
+          setLoadState("error");
         }
       }
     },
@@ -75,11 +79,23 @@ export default function ResponderApplicationPage({ applicationRepository }) {
 
   useEffect(() => {
     activeRef.current += 1;
+
+    // Never look up an application before the session names the applicant.
+    if (!uid) {
+      return undefined;
+    }
+
     load(activeRef.current);
 
     return () => {
       activeRef.current += 1;
     };
+  }, [load, uid]);
+
+  const retry = useCallback(() => {
+    activeRef.current += 1;
+    setLoadState("loading");
+    load(activeRef.current);
   }, [load]);
 
   const setField = (field) => (value) =>
@@ -107,7 +123,11 @@ export default function ResponderApplicationPage({ applicationRepository }) {
     setFormError(null);
 
     const hasEvidence = Boolean(documents.identity && documents.selfie);
-    const { values, errors: fieldErrors, isValid } = validateApplication(form, {
+    const {
+      values,
+      errors: fieldErrors,
+      isValid,
+    } = validateApplication(form, {
       hasEvidence,
     });
 
@@ -127,16 +147,15 @@ export default function ResponderApplicationPage({ applicationRepository }) {
         uid,
         values,
         evidence: {
-          identityDocumentPath: identity.publicId,
-          selfiePath: selfie.publicId,
+          identityDocumentPath: identity.path,
+          selfiePath: selfie.path,
         },
       });
 
       setExisting({ ...values, status: APPLICATION_STATUS.pending });
-    } catch (error) {
-      setFormError(
-        error?.message ?? "The application could not be sent. Try again.",
-      );
+      setReapplying(false);
+    } catch {
+      setFormError("The application could not be sent. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -146,11 +165,22 @@ export default function ResponderApplicationPage({ applicationRepository }) {
     return <Skeleton label="Loading your application" lines={3} />;
   }
 
-  if (existing) {
+  if (loadState === "error") {
+    return (
+      <ErrorState
+        title="Your application could not be loaded"
+        message="Check your connection and try again. Nothing has been submitted or changed."
+        actionLabel="Try again"
+        onAction={retry}
+      />
+    );
+  }
+
+  if (existing && !reapplying) {
     const copy = STATUS_COPY[existing.status] ?? STATUS_COPY.pending;
 
     return (
-      <Section id="application" title="Responder application">
+      <Section id="application" title="Application status">
         <div className="surface-card">
           <Badge tone={copy.tone}>{copy.label}</Badge>
           <p>{copy.message}</p>
@@ -169,6 +199,26 @@ export default function ResponderApplicationPage({ applicationRepository }) {
               <strong>Reviewer notes:</strong> {existing.reviewNotes}
             </p>
           ) : null}
+          {existing.status === APPLICATION_STATUS.rejected ? (
+            <div className="button-row">
+              <button
+                className="action-button"
+                onClick={() => {
+                  setForm((current) => ({
+                    ...current,
+                    organization: existing.organization,
+                    badgeNumber: existing.badgeNumber ?? "",
+                    municipality: existing.municipality,
+                    consentAccepted: false,
+                  }));
+                  setReapplying(true);
+                }}
+                type="button"
+              >
+                Apply again
+              </button>
+            </div>
+          ) : null}
         </div>
       </Section>
     );
@@ -177,14 +227,14 @@ export default function ResponderApplicationPage({ applicationRepository }) {
   return (
     <Section
       id="application"
-      title="Apply to be a responder"
+      title="Application form"
       description="Submitting this does not grant responder access. A reviewer checks every application."
     >
       <form className="auth-form" noValidate onSubmit={handleSubmit}>
         <FormStatus message={formError} />
 
         <div className="surface-card">
-          <h4>Your verified details</h4>
+          <h3>Your verified details</h3>
           <p>
             These come from your account and are not re-entered here, so an
             application always matches the account it belongs to.

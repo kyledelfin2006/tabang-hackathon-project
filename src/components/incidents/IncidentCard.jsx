@@ -18,7 +18,7 @@ export default function IncidentCard({ incident, onClaim, claiming }) {
         ) : null}
       </div>
 
-      <h4 className="report-card__title">{incident.publicLocationLabel}</h4>
+      <h3 className="report-card__title">{incident.publicLocationLabel}</h3>
       <p className="report-card__body">{incident.description}</p>
 
       <div className="button-row">

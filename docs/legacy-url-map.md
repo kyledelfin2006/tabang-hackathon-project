@@ -1,9 +1,8 @@
 # Legacy URL map
 
-Every legacy page is mapped to the route that replaced it. None is deleted
-outright: each becomes a small redirect stub, so an old bookmark, a printed
-flyer, or a link shared in a barangay group chat still reaches the right place
-instead of a 404.
+Every retired page has a permanent server redirect to its replacement route,
+so an old bookmark, a printed flyer, or a link shared in a barangay group chat
+still reaches the right place instead of a 404.
 
 | Legacy URL | Replacement route | Notes |
 |---|---|---|
@@ -18,20 +17,23 @@ instead of a 404.
 | `/RequestHelp.html` | `/app/help/new` | Help request form. |
 | `/MyReports.html` | `/app/reports` | Personal report list. |
 | `/AllReports.html` | `/responder/incidents` | Responder incident queue. |
-| `/Hotline.html` | `/app/hotlines` | Keeps the three numbers as static text. |
-| `/responderhotline.html` | `/responder/hotlines` | Same directory, responder shell. |
+| `/Hotline.html` | `/hotlines` | Public hotline directory. |
+| `/responderhotline.html` | `/hotlines` | Public hotline directory. |
 | `/Dashboard.html` | `/responder` | Fabricated KPIs removed in Phase 9. |
 | `/responderhomepage.html` | `/responder` | Responder workspace. |
 | `/AccountInfo.html` | `/app/account` | Resident account. |
 | `/AccountInformation.html` | `/responder/account` | Responder account. |
 | `/Privacypolicy.html` | `/privacy` | Policy content migrated in Phase 3. |
 
+## Retired app routes
+
+- `/app/community` now redirects to `/app` inside the app, because advisories have one home, the resident home page (FEAT-001 plan phase 4). It is an app route, not a server redirect, so it is not in the table above.
+
 ## Kept deliberately
 
 - `/index.html` — the application entry.
-- `/404.html` — the static server's not-found page.
-- `/googlebf1b788405b1680b.html` — a search-console verification token. Removing
-  it would silently break domain verification.
+- `/googlebf1b788405b1680b.html` — served from `public/` so the build keeps
+  the search-console verification token.
 
 ## Retired with the pages
 

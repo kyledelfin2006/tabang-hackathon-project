@@ -1,7 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import {
+  createMemoryRouter,
+  MemoryRouter,
+  RouterProvider,
+} from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import AppProviders from "../app/providers/AppProviders.jsx";
+import { appRoutes } from "../app/router.jsx";
 import HotlineDirectoryPage from "../routes/hotlines/HotlineDirectoryPage.jsx";
 import {
   MAX_COMMENT_LENGTH,
@@ -17,7 +22,7 @@ const verifiedRaw = {
   coverageArea: "Province of Aklan",
   phoneNumbers: ["(036) 262-4979"],
   verified: true,
-  verifiedAt: { toMillis: () => Date.parse("2026-08-01T00:00:00Z") },
+  verifiedAtMillis: Date.parse("2026-08-01T00:00:00Z"),
   verifiedBy: "MDRRMO Kalibo",
   ratingCount: 4,
   ratingTotal: 16,
@@ -46,7 +51,9 @@ describe("hotline projection", () => {
   });
 
   it("reports no average when nobody has rated", () => {
-    expect(toHotline("a", { ratingCount: 0, ratingTotal: 0 }).averageRating).toBeNull();
+    expect(
+      toHotline("a", { ratingCount: 0, ratingTotal: 0 }).averageRating,
+    ).toBeNull();
   });
 
   it("refuses to call a hotline verified without a verification time", () => {
@@ -59,7 +66,7 @@ describe("hotline projection", () => {
     const verifiedAtMillis = Date.parse("2026-01-01T00:00:00Z");
     const hotline = toHotline(
       "a",
-      { ...verifiedRaw, verifiedAt: { toMillis: () => verifiedAtMillis } },
+      { ...verifiedRaw, verifiedAtMillis },
       verifiedAtMillis + VERIFICATION_STALE_AFTER_MS + 1,
     );
 
@@ -82,83 +89,22 @@ describe("review validation", () => {
   });
 });
 
-describe("rating aggregate", () => {
-  function repositoryOver({ hotline, existingReview }) {
-    const hotlineWrites = [];
-    const reviewWrites = [];
-
-    const transaction = {
-      get: async (reference) =>
-        reference.path.includes("/reviews/")
-          ? {
-              exists: () => existingReview !== null,
-              data: () => existingReview,
-            }
-          : { exists: () => true, data: () => hotline },
-      set: (_ref, data) => reviewWrites.push(data),
-      update: (_ref, data) => hotlineWrites.push(data),
-    };
-
-    return {
-      hotlineWrites,
-      reviewWrites,
-      repository: createHotlineRepository({
-        db: {},
-        documentRef: (_db, ...segments) => ({ path: segments.join("/") }),
-        transactionRunner: (_db, work) => work(transaction),
-      }),
-    };
-  }
-
-  it("adds one rating for a first-time reviewer", async () => {
-    const { repository, hotlineWrites } = repositoryOver({
-      hotline: { ratingCount: 2, ratingTotal: 8 },
-      existingReview: null,
+// Totals are computed by the hotline_directory view from stored reviews;
+// tests/policies/hotlines.test.mjs proves they cannot be forged.
+describe("rating submission", () => {
+  it("writes only the review, never a count or a total", async () => {
+    const writes = [];
+    const repository = createHotlineRepository({
+      client: {
+        put: async (path, body) => (writes.push([path, body]), { ok: true }),
+      },
     });
 
-    await repository.submitReview({
-      hotlineId: "a",
-      uid: "resident-1",
-      rating: 5,
-      comment: "",
-    });
+    await repository.submitReview({ hotlineId: "a", rating: 4, comment: "Answered quickly." });
 
-    expect(hotlineWrites[0].ratingCount).toBe(3);
-    expect(hotlineWrites[0].ratingTotal).toBe(13);
-  });
-
-  it("replaces a previous rating instead of stacking a second one", async () => {
-    const { repository, hotlineWrites } = repositoryOver({
-      hotline: { ratingCount: 2, ratingTotal: 8 },
-      existingReview: { rating: 3 },
-    });
-
-    await repository.submitReview({
-      hotlineId: "a",
-      uid: "resident-1",
-      rating: 5,
-      comment: "",
-    });
-
-    // Count is unchanged; only the delta moves the total.
-    expect(hotlineWrites[0].ratingCount).toBe(2);
-    expect(hotlineWrites[0].ratingTotal).toBe(10);
-  });
-
-  it("stores the review under the reviewer's own id", async () => {
-    const { repository, reviewWrites } = repositoryOver({
-      hotline: { ratingCount: 0, ratingTotal: 0 },
-      existingReview: null,
-    });
-
-    await repository.submitReview({
-      hotlineId: "a",
-      uid: "resident-1",
-      rating: 4,
-      comment: "Answered quickly.",
-    });
-
-    expect(reviewWrites[0].reviewerId).toBe("resident-1");
+    expect(writes).toEqual([
+      ["/api/app/hotlines/a/review", { rating: 4, comment: "Answered quickly." }],
+    ]);
   });
 });
 
@@ -178,7 +124,9 @@ describe("hotline directory route", () => {
     renderDirectory({
       listHotlines: vi
         .fn()
-        .mockResolvedValue([toHotline("a", { ...verifiedRaw, verified: false })]),
+        .mockResolvedValue([
+          toHotline("a", { ...verifiedRaw, verified: false }),
+        ]),
       submitReview: vi.fn(),
     });
 
@@ -200,7 +148,13 @@ describe("hotline directory route", () => {
     expect(
       await screen.findByRole("link", { name: "(036) 262-4979" }),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText("Did this number help?")).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Did this number help?"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
   });
 
   it("submits a rating for the signed-in account", async () => {
@@ -211,6 +165,7 @@ describe("hotline directory route", () => {
       submitReview,
     });
 
+    fireEvent.click(await screen.findByText("Rate this number"));
     fireEvent.change(await screen.findByLabelText("Did this number help?"), {
       target: { value: "5" },
     });
@@ -233,7 +188,81 @@ describe("hotline directory route", () => {
     });
 
     expect(
-      await screen.findByText(/call your barangay hall or the national emergency line/),
+      await screen.findByText(
+        /you can still call 911 or contact your barangay hall/i,
+      ),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
+  });
+
+  it("keeps the 911 card when the directory is empty", async () => {
+    renderDirectory(
+      {
+        listHotlines: vi.fn().mockResolvedValue([]),
+        submitReview: vi.fn(),
+      },
+      { signedIn: false },
+    );
+
+    expect(
+      await screen.findByText("No hotlines listed yet"),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
+  });
+
+  it("serves /hotlines publicly with one focused page heading", async () => {
+    const publicRoot = appRoutes.find((route) => route.path === "/");
+    const routes = appRoutes.map((route) =>
+      route === publicRoot
+        ? {
+            ...route,
+            children: route.children.map((child) =>
+              child.path === "hotlines"
+                ? {
+                    ...child,
+                    element: (
+                      <HotlineDirectoryPage
+                        hotlineRepository={{
+                          listHotlines: vi.fn().mockResolvedValue([]),
+                          submitReview: vi.fn(),
+                        }}
+                      />
+                    ),
+                  }
+                : child,
+            ),
+          }
+        : route,
+    );
+    const router = createMemoryRouter(routes, {
+      initialEntries: ["/hotlines"],
+    });
+
+    render(
+      <AppProviders authGateway={createFakeAuthGateway()}>
+        <RouterProvider router={router} />
+      </AppProviders>,
+    );
+
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Emergency hotlines",
+    });
+
+    expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(heading).toHaveFocus();
+    expect(screen.getByRole("link", { name: "Call 911 now" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
+    await waitFor(() =>
+      expect(document.title).toBe("Emergency hotlines | Tabang"),
+    );
   });
 });

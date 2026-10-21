@@ -1,5 +1,8 @@
 const STORAGE_KEY = "tabang.pendingReports.v1";
 
+// Fired on window after every change, so screens showing the queue refresh.
+export const QUEUE_CHANGED_EVENT = "tabang:pending-reports-changed";
+
 /**
  * How a submission is described to the resident.
  *
@@ -35,6 +38,12 @@ function readStore(storage) {
   }
 }
 
+function announceChange() {
+  if (typeof globalThis.dispatchEvent === "function") {
+    globalThis.dispatchEvent(new Event(QUEUE_CHANGED_EVENT));
+  }
+}
+
 function writeStore(storage, entries) {
   try {
     storage.setItem(STORAGE_KEY, JSON.stringify(entries));
@@ -42,6 +51,8 @@ function writeStore(storage, entries) {
     // Quota or private-mode failures are non-fatal; the caller still tries
     // to send, it just will not survive a reload.
   }
+
+  announceChange();
 }
 
 /**
@@ -50,7 +61,9 @@ function writeStore(storage, entries) {
  * Entries keep the report id generated when the form was opened, so a retry
  * writes to the same document and cannot file a second emergency.
  */
-export function createSubmissionQueue({ storage = globalThis.localStorage } = {}) {
+export function createSubmissionQueue({
+  storage = globalThis.localStorage,
+} = {}) {
   if (!storage) {
     // Server rendering or a locked-down browser: behave as an empty queue
     // rather than throwing during module load.
@@ -58,6 +71,8 @@ export function createSubmissionQueue({ storage = globalThis.localStorage } = {}
       list: () => [],
       enqueue: () => {},
       remove: () => {},
+      discard: () => {},
+      recordFailure: () => {},
       clear: () => {},
     };
   }
@@ -74,13 +89,21 @@ export function createSubmissionQueue({ storage = globalThis.localStorage } = {}
      * times offline still has exactly one queued report.
      */
     enqueue(entry) {
-      const entries = readStore(storage).filter(
-        (queued) => queued.reportId !== entry.reportId,
+      const existing = readStore(storage);
+      const previous = existing.find(
+        (queued) => queued.reportId === entry.reportId,
       );
 
       writeStore(storage, [
-        ...entries,
-        { ...entry, queuedAtMillis: entry.queuedAtMillis ?? Date.now() },
+        ...existing.filter((queued) => queued.reportId !== entry.reportId),
+        {
+          attempts: 0,
+          lastFailure: null,
+          ...previous,
+          ...entry,
+          queuedAtMillis:
+            entry.queuedAtMillis ?? previous?.queuedAtMillis ?? Date.now(),
+        },
       ]);
     },
 
@@ -88,6 +111,30 @@ export function createSubmissionQueue({ storage = globalThis.localStorage } = {}
       writeStore(
         storage,
         readStore(storage).filter((queued) => queued.reportId !== reportId),
+      );
+    },
+
+    /** The resident chose not to send this report after all. */
+    discard(reportId) {
+      writeStore(
+        storage,
+        readStore(storage).filter((queued) => queued.reportId !== reportId),
+      );
+    },
+
+    /** Counts a failed send and remembers why, for the pending list. */
+    recordFailure(reportId, reason) {
+      writeStore(
+        storage,
+        readStore(storage).map((queued) =>
+          queued.reportId === reportId
+            ? {
+                ...queued,
+                attempts: (queued.attempts ?? 0) + 1,
+                lastFailure: reason,
+              }
+            : queued,
+        ),
       );
     },
 
@@ -104,6 +151,8 @@ export function createSubmissionQueue({ storage = globalThis.localStorage } = {}
       } catch {
         // Nothing further to do; the entries are unreadable anyway.
       }
+
+      announceChange();
     },
   };
 }

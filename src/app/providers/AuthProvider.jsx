@@ -16,8 +16,8 @@ const ANONYMOUS_SESSION = Object.freeze({
 /**
  * The single source of session truth for the application.
  *
- * Components never call Firebase directly; they read this context and call the
- * gateway actions it exposes. Tests inject a fake gateway instead of Firebase.
+ * Components never call backend APIs directly; they read this context and call the
+ * gateway actions it exposes. Tests inject a fake gateway.
  */
 export default function AuthProvider({ children, gateway }) {
   const [session, setSession] = useState(null);
@@ -25,12 +25,7 @@ export default function AuthProvider({ children, gateway }) {
   const [loadedGateway, setLoadedGateway] = useState(null);
 
   /*
-   * The Firebase SDK is imported dynamically.
-   *
-   * A static import put the whole SDK in the entry chunk, so every visitor
-   * downloaded roughly 880 kB before the landing page could paint, including
-   * anyone who only wanted a hotline number. Splitting the routes alone did
-   * not help, because this provider is mounted for every route.
+   * The auth gateway is imported dynamically.
    *
    * Tests inject a gateway and never reach this path.
    */
@@ -41,25 +36,20 @@ export default function AuthProvider({ children, gateway }) {
 
     let cancelled = false;
 
-    import("../../services/auth/firebaseAuthGateway.js")
+    import("../../services/auth/authGateway.js")
       .then((module) => {
         if (cancelled) {
           return;
         }
 
-        setLoadedGateway({ gateway: module.createFirebaseAuthGateway(), error: null });
+        setLoadedGateway({ gateway: module.createAuthGateway(), error: null });
       })
       .catch((error) => {
         if (cancelled) {
           return;
         }
 
-        // Missing configuration must fail loudly rather than silently
-        // rendering protected content. The message names the missing
-        // VITE_FIREBASE_* keys, so it goes to the console verbatim: without it
-        // the only visible symptom is every sign-in failing for no stated
-        // reason.
-        console.error("Tabang: Firebase failed to initialise.", error);
+        console.error("Tabang: Auth failed to initialise.", error);
 
         setLoadedGateway({
           gateway: null,
@@ -84,25 +74,21 @@ export default function AuthProvider({ children, gateway }) {
       return undefined;
     }
 
-    return setup.gateway.observeSession((nextSession) => {
-      setSession(nextSession ?? null);
-      setSessionResolved(true);
-    });
+    return setup.gateway.observeSession(
+      (nextSession) => {
+        setSession(nextSession ?? null);
+        setSessionResolved(true);
+      },
+      // A different user is signing in: stay loading until their session is
+      // built, so guards do not bounce them back to the sign-in form.
+      { onPending: () => setSessionResolved(false) },
+    );
   }, [setup]);
 
   const requireGateway = useCallback(() => {
     if (!setup?.gateway) {
-      /*
-       * Carries a code so the error mapper can name this properly.
-       *
-       * Without one it fell through to the generic message, which told the
-       * person to try again in a moment — advice that can never work, because
-       * the app has no Firebase configuration and every retry fails
-       * identically. The cause is almost always a build made without the
-       * VITE_FIREBASE_* values present.
-       */
       const error = new Error(
-        "Authentication is unavailable: the app has no Firebase configuration.",
+        "Authentication is unavailable.",
       );
 
       error.code = "app/auth-unavailable";
@@ -132,7 +118,19 @@ export default function AuthProvider({ children, gateway }) {
     createSubmissionQueue().clear();
   }, [requireGateway]);
   const updateOwnProfile = useCallback(
-    (uid, input) => requireGateway().updateOwnProfile(uid, input),
+    async (uid, input) => {
+      await requireGateway().updateOwnProfile(uid, input);
+      // The stored row changed; show it now rather than after a reload.
+      setSession((current) =>
+        current?.user?.uid === uid
+          ? { ...current, profile: { ...current.profile, ...input } }
+          : current,
+      );
+    },
+    [requireGateway],
+  );
+  const updatePassword = useCallback(
+    (password) => requireGateway().updatePassword(password),
     [requireGateway],
   );
 
@@ -157,7 +155,7 @@ export default function AuthProvider({ children, gateway }) {
       isResponder: authenticated && isResponderRole(role),
       isReviewer: authenticated && isReviewerRole(role),
       // Optional: `setup` is null on the first render in production, before
-      // the dynamic Firebase import resolves. Tests inject a gateway, so
+      // the dynamic auth gateway import resolves. Tests inject a gateway, so
       // `setup` is always truthy there and never exercised this path.
       initializationError: setup?.error ?? null,
       signIn,
@@ -165,6 +163,7 @@ export default function AuthProvider({ children, gateway }) {
       sendPasswordReset,
       signOut: signOutOfSession,
       updateOwnProfile,
+      updatePassword,
     };
   }, [
     setup,
@@ -175,6 +174,7 @@ export default function AuthProvider({ children, gateway }) {
     sendPasswordReset,
     signOutOfSession,
     updateOwnProfile,
+    updatePassword,
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

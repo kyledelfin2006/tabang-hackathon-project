@@ -3,11 +3,19 @@ import { useAuth } from "../../app/providers/useAuth.js";
 import EmptyState from "../../components/feedback/EmptyState.jsx";
 import ErrorState from "../../components/feedback/ErrorState.jsx";
 import Modal from "../../components/feedback/Modal.jsx";
+import { FormStatus } from "../../components/forms/FormField.jsx";
+import PendingReports from "../../components/reports/PendingReports.jsx";
 import ReportCard from "../../components/reports/ReportCard.jsx";
-import { ActionLink, Section, Skeleton } from "../../components/ui/Primitives.jsx";
+import {
+  ActionLink,
+  Section,
+  Skeleton,
+} from "../../components/ui/Primitives.jsx";
+import { describeActionError } from "../../services/errors/describeActionError.js";
+import { createSubmissionQueue } from "../../services/offline/submissionQueue.js";
 import { createReportRepository } from "../../services/reports/reportRepository.js";
 
-export default function MyReportsPage({ reportRepository }) {
+export default function MyReportsPage({ reportRepository, submissionQueue }) {
   const { user } = useAuth();
   const reporterId = user?.uid;
   const repository = useMemo(
@@ -21,6 +29,11 @@ export default function MyReportsPage({ reportRepository }) {
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pendingCancel, setPendingCancel] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const queue = useMemo(
+    () => submissionQueue ?? createSubmissionQueue(),
+    [submissionQueue],
+  );
 
   // Guards against a response arriving after the route unmounts.
   const activeRef = useRef(0);
@@ -49,12 +62,19 @@ export default function MyReportsPage({ reportRepository }) {
 
   useEffect(() => {
     activeRef.current += 1;
+
+    // Never query before the session names a reporter; an id-less query would
+    // briefly show an empty list that is not this resident's.
+    if (!reporterId) {
+      return undefined;
+    }
+
     loadFirstPage(activeRef.current);
 
     return () => {
       activeRef.current += 1;
     };
-  }, [loadFirstPage]);
+  }, [loadFirstPage, reporterId]);
 
   const retry = useCallback(() => {
     activeRef.current += 1;
@@ -64,6 +84,7 @@ export default function MyReportsPage({ reportRepository }) {
 
   async function loadMore() {
     setLoadingMore(true);
+    setActionError(null);
 
     try {
       const page = await repository.listMyReports({ reporterId, cursor });
@@ -71,8 +92,9 @@ export default function MyReportsPage({ reportRepository }) {
       setReports((current) => [...current, ...page.reports]);
       setCursor(page.cursor);
       setHasMore(page.hasMore);
-    } catch {
-      setHasMore(false);
+    } catch (error) {
+      // The button stays, so the resident can try again.
+      setActionError(describeActionError(error));
     } finally {
       setLoadingMore(false);
     }
@@ -87,79 +109,95 @@ export default function MyReportsPage({ reportRepository }) {
       return;
     }
 
-    await repository.cancelReport({ reportId: target.id });
-    setReports((current) =>
-      current.map((report) =>
-        report.id === target.id
-          ? { ...report, incidentStatus: "cancelled", isCancelled: true }
-          : report,
-      ),
-    );
+    setActionError(null);
+
+    try {
+      await repository.cancelReport({ reportId: target.id });
+      setReports((current) =>
+        current.map((report) =>
+          report.id === target.id
+            ? {
+                ...report,
+                incidentStatus: "cancelled",
+                isCancelled: true,
+                canCancel: false,
+              }
+            : report,
+        ),
+      );
+    } catch (error) {
+      setActionError(describeActionError(error));
+    }
   }
 
   return (
-    <Section
-      id="my-reports"
-      title="My reports"
-      description="Only your own reports appear here. Responders handling them can also see them."
-      action={<ActionLink to="/app/reports/new">New report</ActionLink>}
-    >
-      {loadState === "loading" ? (
-        <Skeleton label="Loading your reports" lines={4} />
-      ) : null}
+    <>
+      <PendingReports queue={queue} repository={repository} />
+      <Section
+        id="my-reports"
+        title="Submitted reports"
+        description="Only your own reports appear here. Responders handling them can also see them."
+        action={<ActionLink to="/app/reports/new">New report</ActionLink>}
+      >
+        <FormStatus message={actionError} />
 
-      {loadState === "error" ? (
-        <ErrorState
-          title="Your reports could not be loaded"
-          message="This does not affect reports you have already filed."
-          actionLabel="Try again"
-          onAction={retry}
+        {loadState === "loading" ? (
+          <Skeleton label="Loading your reports" lines={4} />
+        ) : null}
+
+        {loadState === "error" ? (
+          <ErrorState
+            title="Your reports could not be loaded"
+            message="This does not affect reports you have already filed."
+            actionLabel="Try again"
+            onAction={retry}
+          />
+        ) : null}
+
+        {loadState === "ready" && reports.length === 0 ? (
+          <EmptyState
+            title="You have not filed any reports"
+            message="When you report flooding or request help, it will appear here with its current status."
+          />
+        ) : null}
+
+        {loadState === "ready" && reports.length > 0 ? (
+          <>
+            <ul className="report-list">
+              {reports.map((report) => (
+                <ReportCard
+                  key={report.id}
+                  onCancel={setPendingCancel}
+                  report={report}
+                  variant="personal"
+                />
+              ))}
+            </ul>
+
+            {hasMore ? (
+              <div className="button-row">
+                <button
+                  className="action-button action-button--secondary"
+                  disabled={loadingMore}
+                  onClick={loadMore}
+                  type="button"
+                >
+                  {loadingMore ? "Loading…" : "Load older reports"}
+                </button>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+
+        <Modal
+          confirmLabel="Cancel the report"
+          description="Responders keep a record of this report so the response history stays intact, but it will no longer be treated as active. This cannot be undone."
+          onClose={() => setPendingCancel(null)}
+          onConfirm={confirmCancel}
+          open={Boolean(pendingCancel)}
+          title="Cancel this report?"
         />
-      ) : null}
-
-      {loadState === "ready" && reports.length === 0 ? (
-        <EmptyState
-          title="You have not filed any reports"
-          message="When you report flooding or request help, it will appear here with its current status."
-        />
-      ) : null}
-
-      {loadState === "ready" && reports.length > 0 ? (
-        <>
-          <ul className="report-list">
-            {reports.map((report) => (
-              <ReportCard
-                key={report.id}
-                onCancel={setPendingCancel}
-                report={report}
-                variant="personal"
-              />
-            ))}
-          </ul>
-
-          {hasMore ? (
-            <div className="button-row">
-              <button
-                className="action-button action-button--secondary"
-                disabled={loadingMore}
-                onClick={loadMore}
-                type="button"
-              >
-                {loadingMore ? "Loading…" : "Load older reports"}
-              </button>
-            </div>
-          ) : null}
-        </>
-      ) : null}
-
-      <Modal
-        confirmLabel="Cancel the report"
-        description="Responders keep a record of this report so the response history stays intact, but it will no longer be treated as active. This cannot be undone."
-        onClose={() => setPendingCancel(null)}
-        onConfirm={confirmCancel}
-        open={Boolean(pendingCancel)}
-        title="Cancel this report?"
-      />
-    </Section>
+      </Section>
+    </>
   );
 }

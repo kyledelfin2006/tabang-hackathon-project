@@ -2,12 +2,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 import AppProviders from "../app/providers/AppProviders.jsx";
-import CommunityFeedPage from "../routes/community/CommunityFeedPage.jsx";
+import ResidentHomePage from "../routes/home/ResidentHomePage.jsx";
 import MyReportsPage from "../routes/reports/MyReportsPage.jsx";
 import {
   REPORT_PAGE_SIZE,
   buildMyReportsQuerySpec,
-  createReportRepository,
   toPersonalReport,
 } from "../services/reports/reportRepository.js";
 import { createFakeAuthGateway, residentSession } from "./fakeAuthGateway.js";
@@ -31,6 +30,7 @@ const personalReport = {
   incidentStatus: "new",
   createdAtMillis: Date.parse("2026-08-14T02:00:00Z"),
   isCancelled: false,
+  canCancel: true,
   isStale: false,
 };
 
@@ -65,39 +65,17 @@ describe("personal report projection", () => {
   });
 });
 
+// Paging against real rows, including ties and cursors, is covered by
+// tests/policies/repositories.test.mjs against the local database.
 describe("owner-scoped pagination", () => {
-  function repositoryOver(documents) {
-    const specs = [];
-
-    return {
-      specs,
-      repository: createReportRepository({
-        db: {},
-        // Bypasses Firestore query construction; the spec below is what the
-        // real builder consumes, so this asserts the same contract.
-        queryBuilder: (_db, spec) => {
-          specs.push(spec);
-
-          return spec;
-        },
-        runQuery: async () => ({
-          docs: documents.map((document) => ({
-            id: document.id,
-            data: () => document,
-          })),
-        }),
-      }),
-    };
-  }
-
   it("filters by owner and orders deterministically", () => {
     const spec = buildMyReportsQuerySpec({ reporterId: "resident-1" });
 
     expect(spec.reporterId).toBe("resident-1");
-    // A tie on createdAt must still have a stable order.
+    // A tie on created_at must still have a stable order.
     expect(spec.orderBy).toEqual([
-      ["createdAt", "desc"],
-      ["__name__", "desc"],
+      ["created_at", "desc"],
+      ["id", "desc"],
     ]);
   });
 
@@ -112,44 +90,10 @@ describe("owner-scoped pagination", () => {
   });
 
   it("passes a cursor through only when one is supplied", () => {
+    const cursor = { createdAt: "2026-10-17T00:00:00+00:00", id: "report-9" };
+
     expect(buildMyReportsQuerySpec({ reporterId: "r" }).cursor).toBeNull();
-    expect(
-      buildMyReportsQuerySpec({ reporterId: "r", cursor: "doc-9" }).cursor,
-    ).toBe("doc-9");
-  });
-
-  it("returns a cursor and a hasMore flag from a full page", async () => {
-    const documents = Array.from({ length: REPORT_PAGE_SIZE }, (_, index) => ({
-      id: `report-${index}`,
-      kind: "flood",
-      incidentStatus: "new",
-      verificationStatus: "pending",
-    }));
-    const { repository, specs } = repositoryOver(documents);
-    const page = await repository.listMyReports({ reporterId: "resident-1" });
-
-    expect(page.reports).toHaveLength(REPORT_PAGE_SIZE);
-    expect(page.hasMore).toBe(true);
-    expect(page.cursor).not.toBeNull();
-    expect(specs[0].reporterId).toBe("resident-1");
-  });
-
-  it("reports no further pages when the page is short", async () => {
-    const { repository } = repositoryOver([
-      { id: "report-1", kind: "flood", incidentStatus: "new" },
-    ]);
-    const page = await repository.listMyReports({ reporterId: "resident-1" });
-
-    expect(page.hasMore).toBe(false);
-    expect(page.cursor).not.toBeNull();
-  });
-
-  it("never asks Firestore for more than one page worth of documents", async () => {
-    const { repository, specs } = repositoryOver([]);
-
-    await repository.listMyReports({ reporterId: "resident-1", pageSize: 500 });
-
-    expect(specs[0].limit).toBe(REPORT_PAGE_SIZE);
+    expect(buildMyReportsQuerySpec({ reporterId: "r", cursor }).cursor).toBe(cursor);
   });
 });
 
@@ -182,6 +126,7 @@ describe("my reports route", () => {
 
     await screen.findByText("You have not filed any reports");
     expect(listMyReports).toHaveBeenCalledWith({ reporterId: "resident-1" });
+    expect(listMyReports).toHaveBeenCalledTimes(1);
   });
 
   it("cancels only after an explicit confirmation", async () => {
@@ -217,10 +162,12 @@ describe("my reports route", () => {
   });
 });
 
-describe("community feed route", () => {
+// The separate community page now redirects to the resident home, which is
+// the one place advisories are shown.
+describe("advisories on the resident home", () => {
   it("renders only sanitized public fields", async () => {
     renderWithProviders(
-      <CommunityFeedPage
+      <ResidentHomePage
         advisoryRepository={{
           listRecentAdvisories: vi.fn().mockResolvedValue([publicAdvisory]),
         }}
@@ -236,7 +183,7 @@ describe("community feed route", () => {
     // A deliberately over-broad document: the public variant has no branch
     // that renders any of these fields, so none may reach the DOM.
     renderWithProviders(
-      <CommunityFeedPage
+      <ResidentHomePage
         advisoryRepository={{
           listRecentAdvisories: vi.fn().mockResolvedValue([
             {
@@ -256,19 +203,5 @@ describe("community feed route", () => {
     expect(document.body.textContent).not.toContain(
       "Private description that must not leak.",
     );
-  });
-
-  it("explains that individual reports are not listed automatically", async () => {
-    renderWithProviders(
-      <CommunityFeedPage
-        advisoryRepository={{
-          listRecentAdvisories: vi.fn().mockResolvedValue([]),
-        }}
-      />,
-    );
-
-    expect(
-      await screen.findByText("No advisories published yet"),
-    ).toBeInTheDocument();
   });
 });

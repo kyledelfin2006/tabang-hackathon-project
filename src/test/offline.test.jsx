@@ -136,8 +136,12 @@ describe("emergency fallback", () => {
   it("still points somewhere when no hotlines could be loaded", () => {
     render(<EmergencyFallback hotlines={[]} />);
 
+    expect(screen.getByRole("link", { name: "911" })).toHaveAttribute(
+      "href",
+      "tel:911",
+    );
     expect(
-      screen.getByText(/Contact your barangay hall or the municipal DRRM office/),
+      screen.getByText(/contact your barangay hall or the municipal DRRM office/),
     ).toBeInTheDocument();
   });
 });

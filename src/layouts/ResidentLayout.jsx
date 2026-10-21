@@ -1,11 +1,15 @@
-import { Suspense, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Suspense, useEffect, useState } from "react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AppHeader from "../components/navigation/AppHeader.jsx";
 import LoadingState from "../components/feedback/LoadingState.jsx";
 import SkipLink from "../components/navigation/SkipLink.jsx";
 import BottomNav from "../components/navigation/BottomNav.jsx";
 import NavDrawer from "../components/navigation/NavDrawer.jsx";
 import { useAuth } from "../app/providers/useAuth.js";
+import usePageTitle from "../components/navigation/usePageTitle.js";
+import { PageHeading } from "../components/ui/Primitives.jsx";
+import { createSubmissionQueue } from "../services/offline/submissionQueue.js";
+import { replayQueuedReports } from "../services/reports/replayQueuedReports.js";
 
 const bottomNavItems = [
   { to: "/app", label: "Home" },
@@ -21,17 +25,50 @@ const drawerItems = [
   { to: "/app/help/new", label: "Request help" },
   { to: "/app/hotlines", label: "Hotlines" },
   { to: "/app/reports", label: "My reports" },
-  { to: "/app/community", label: "Community advisories" },
   { to: "/app/responder-application", label: "Apply as responder" },
   { to: "/app/account", label: "Account" },
 ];
 
-export default function ResidentLayout() {
+export default function ResidentLayout({ submissionQueue, reportRepository }) {
+  const pageTitle = usePageTitle();
+  const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { profile, user, signOut } = useAuth();
+  const { isResponder, signOut, user } = useAuth();
   const navigate = useNavigate();
+  const reporterId = user?.uid;
 
-  const displayName = profile?.displayName || user?.displayName || "Resident";
+  // Reports saved on this phone are resent when the app opens and whenever
+  // the connection comes back, without the resident having to remember.
+  useEffect(() => {
+    if (!reporterId) {
+      return undefined;
+    }
+
+    const queue = submissionQueue ?? createSubmissionQueue();
+    const replay = async () => {
+      if (queue.list().length === 0) {
+        return;
+      }
+
+      try {
+        // Loaded on demand to keep the entry chunk small.
+        const repository =
+          reportRepository ??
+          (
+            await import("../services/reports/reportRepository.js")
+          ).createReportRepository();
+
+        await replayQueuedReports({ queue, repository, reporterId });
+      } catch {
+        // The entries stay queued and are retried on the next open or online.
+      }
+    };
+
+    replay();
+    window.addEventListener("online", replay);
+
+    return () => window.removeEventListener("online", replay);
+  }, [reporterId, submissionQueue, reportRepository]);
 
   async function handleSignOut() {
     setDrawerOpen(false);
@@ -43,9 +80,6 @@ export default function ResidentLayout() {
     <div className="shell shell--resident">
       <SkipLink />
       <AppHeader
-        eyebrow="Tabang"
-        title={`Kumusta, ${displayName}`}
-        subtitle="Report flooding, request help, and reach the hotlines serving Aklan."
         menu={{
           label: "Open navigation menu",
           controls: "resident-drawer",
@@ -65,7 +99,14 @@ export default function ResidentLayout() {
           </button>
         }
         id="resident-drawer"
-        items={drawerItems}
+        items={
+          isResponder
+            ? [
+                ...drawerItems,
+                { to: "/responder", label: "Responder workspace" },
+              ]
+            : drawerItems
+        }
         labelledBy="resident-drawer-title"
         onClose={() => setDrawerOpen(false)}
         open={drawerOpen}
@@ -73,6 +114,7 @@ export default function ResidentLayout() {
       />
 
       <main className="shell__content shell__content--with-nav" id="main">
+        <PageHeading key={location.pathname}>{pageTitle}</PageHeading>
         <Suspense
           fallback={
             <LoadingState
