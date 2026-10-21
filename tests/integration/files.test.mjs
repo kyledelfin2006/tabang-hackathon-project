@@ -9,7 +9,7 @@ import { runMigrations } from "../../server/db/migrate.mjs";
 import { createPostgresStore } from "../../server/store.mjs";
 import { startTestServer } from "../server/testServer.mjs";
 import { createApiClient, createSignedInUser } from "./helpers/appClient.mjs";
-import { PNG_BYTES } from "../policies/helpers/files.mjs";
+import { PNG_BYTES } from "./helpers/files.mjs";
 import { resolveFilePath } from "../../server/files.mjs";
 
 before(async () => {

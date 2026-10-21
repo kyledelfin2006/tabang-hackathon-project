@@ -143,23 +143,23 @@ Checkpoint message: `feat(files): store report photos and evidence on disk behin
 ### Phase 5: Switch the client and remove Supabase
 
 Requirements: FEAT-002/REQ-007 (client part), REQ-010, REQ-011, REQ-012, REQ-016
-State: Not started
+State: Complete
 
 Tasks:
 
-- [ ] `src/services/http/apiClient.js`; rewrite the auth gateway, the six repositories, and the uploader on it with unchanged method names.
-- [ ] Photo slots show "Photo unavailable" when an image fails to load.
-- [ ] Content Security Policy: `connect-src 'self'`, `img-src 'self' blob: data:`.
-- [ ] Remove `@supabase/supabase-js`, `supabase`, `src/config/supabase.js`, `server/supabaseAdmin.mjs`, `supabase/`, `scripts/build/check-env.mjs` and its build hook, `tests/policies/`, and the `VITE_SUPABASE_*` and `SUPABASE_*` keys.
-- [ ] Port the `repositories` and `smoke` scenarios to `tests/integration/` through the real client repositories with a cookie-keeping `fetch`.
-- [ ] Update `providerIsolation.test.js` for `pg` and `@supabase/*`; update unit tests whose fakes referenced Supabase shapes.
-- [ ] CI: replace the `policies` job with an `integration` job using a `postgres:17` service container.
+- [x] `src/services/http/apiClient.js`; rewrite the auth gateway, the six repositories, and the uploader on it with unchanged method names.
+- [x] Photo slots show "Photo unavailable" when an image fails to load.
+- [x] Content Security Policy: `connect-src 'self'`, `img-src 'self' blob: data:`.
+- [x] Remove `@supabase/supabase-js`, `supabase`, `src/config/supabase.js`, `server/supabaseAdmin.mjs`, `supabase/`, `scripts/build/check-env.mjs` and its build hook, `tests/policies/`, and the `VITE_SUPABASE_*` and `SUPABASE_*` keys.
+- [x] Port the `repositories` and `smoke` scenarios to `tests/integration/` through the real client repositories with a cookie-keeping `fetch`.
+- [x] Update `providerIsolation.test.js` for `pg` and `@supabase/*`; update unit tests whose fakes referenced Supabase shapes.
+- [x] CI: replace the `policies` job with an `integration` job using a `postgres:17` service container.
 
 Verification:
 
-- [ ] `npm ci`, `npm run lint`, `npm run test:unit` three times, `npm run test:server`, `npm run db:reset`, `npm run test:integration`, `npm run build`: pass.
-- [ ] `git grep -i supabase` outside `docs/archive`, `docs/evidence`, and the migration specs: no hits; the built `dist/` contains no Supabase URL or key name.
-- [ ] `npm audit --omit=dev --audit-level=high`: 0.
+- [x] `npm ci`, `npm run lint`, `npm run test:unit` three times, `npm run test:server`, `npm run db:reset`, `npm run test:integration`, `npm run build`: pass.
+- [x] `git grep -i supabase` outside `docs/archive`, `docs/evidence`, and the migration specs: no hits; the built `dist/` contains no Supabase URL or key name.
+- [x] `npm audit --omit=dev --audit-level=high`: 0.
 
 Checkpoint message: `refactor(client): move the app onto the tabang api and remove supabase`
 

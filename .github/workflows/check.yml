@@ -41,8 +41,22 @@ jobs:
       - name: Build
         run: npm run build
 
-  policies:
+  integration:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: tabang
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
 
@@ -51,22 +65,14 @@ jobs:
           node-version: "22"
           cache: npm
 
-      # npm ci installs the Supabase CLI as a dev dependency. The local stack
-      # runs in the runner's Docker and never touches a hosted project. This job
-      # is separate so a container problem cannot mask a failure above.
       - run: npm ci
 
-      - name: Start local Supabase
-        run: npm run db:start
+      - name: Apply migrations
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/tabang
+        run: npm run db:migrate
 
-      - name: Export local Supabase settings
-        run: |
-          npx supabase status -o env \
-            --override-name api.url=SUPABASE_URL \
-            --override-name auth.publishable_key=VITE_SUPABASE_PUBLISHABLE_KEY \
-            --override-name auth.secret_key=SUPABASE_SECRET_KEY \
-            | grep -E '^(SUPABASE_URL|VITE_SUPABASE_PUBLISHABLE_KEY|SUPABASE_SECRET_KEY)=' \
-            | tr -d '"' >> "$GITHUB_ENV"
-
-      - name: Database policy tests
-        run: npm run test:policies
+      - name: Integration tests
+        env:
+          DATABASE_URL: postgres://postgres:password@localhost:5432/tabang
+        run: npm run test:integration

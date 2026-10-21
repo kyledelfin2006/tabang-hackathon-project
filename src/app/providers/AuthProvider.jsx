@@ -16,8 +16,8 @@ const ANONYMOUS_SESSION = Object.freeze({
 /**
  * The single source of session truth for the application.
  *
- * Components never call Supabase directly; they read this context and call the
- * gateway actions it exposes. Tests inject a fake gateway instead of Supabase.
+ * Components never call backend APIs directly; they read this context and call the
+ * gateway actions it exposes. Tests inject a fake gateway.
  */
 export default function AuthProvider({ children, gateway }) {
   const [session, setSession] = useState(null);
@@ -25,12 +25,7 @@ export default function AuthProvider({ children, gateway }) {
   const [loadedGateway, setLoadedGateway] = useState(null);
 
   /*
-   * The Supabase SDK is imported dynamically.
-   *
-   * A static import puts the whole SDK in the entry chunk, so every visitor
-   * would download it before the landing page could paint, including
-   * anyone who only wanted a hotline number. Splitting the routes alone did
-   * not help, because this provider is mounted for every route.
+   * The auth gateway is imported dynamically.
    *
    * Tests inject a gateway and never reach this path.
    */
@@ -41,7 +36,7 @@ export default function AuthProvider({ children, gateway }) {
 
     let cancelled = false;
 
-    import("../../services/auth/supabaseAuthGateway.js")
+    import("../../services/auth/authGateway.js")
       .then((module) => {
         if (cancelled) {
           return;
@@ -54,12 +49,7 @@ export default function AuthProvider({ children, gateway }) {
           return;
         }
 
-        // Missing configuration must fail loudly rather than silently
-        // rendering protected content. The message names the missing
-        // VITE_SUPABASE_* keys, so it goes to the console verbatim: without it
-        // the only visible symptom is every sign-in failing for no stated
-        // reason.
-        console.error("Tabang: Supabase failed to initialise.", error);
+        console.error("Tabang: Auth failed to initialise.", error);
 
         setLoadedGateway({
           gateway: null,
@@ -97,17 +87,8 @@ export default function AuthProvider({ children, gateway }) {
 
   const requireGateway = useCallback(() => {
     if (!setup?.gateway) {
-      /*
-       * Carries a code so the error mapper can name this properly.
-       *
-       * Without one it fell through to the generic message, which told the
-       * person to try again in a moment, advice that can never work, because
-       * the app has no Supabase configuration and every retry fails
-       * identically. The cause is almost always a build made without the
-       * VITE_SUPABASE_* values present.
-       */
       const error = new Error(
-        "Authentication is unavailable: the app has no Supabase configuration.",
+        "Authentication is unavailable.",
       );
 
       error.code = "app/auth-unavailable";
@@ -174,7 +155,7 @@ export default function AuthProvider({ children, gateway }) {
       isResponder: authenticated && isResponderRole(role),
       isReviewer: authenticated && isReviewerRole(role),
       // Optional: `setup` is null on the first render in production, before
-      // the dynamic Supabase import resolves. Tests inject a gateway, so
+      // the dynamic auth gateway import resolves. Tests inject a gateway, so
       // `setup` is always truthy there and never exercised this path.
       initializationError: setup?.error ?? null,
       signIn,

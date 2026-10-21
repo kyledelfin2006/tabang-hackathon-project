@@ -37,33 +37,28 @@ function renderQueue(repository) {
   );
 }
 
-// The decision, the role grant, and clearing the stored paths happen inside
-// decide_application; tests/policies/applications.test.mjs covers them. These
-// tests cover what the repository does around that call.
+// The decision, role grant, and file deletion happen on the server;
+// tests/integration/appApplications.test.mjs covers them. These tests cover
+// what the repository does around that call.
 describe("decision and evidence deletion", () => {
-  function repositoryWith({ decisionError = null, removed } = {}) {
+  function repositoryWith({ decisionError = null, evidenceDeleted = true } = {}) {
     const calls = [];
     const client = {
-      rpc: async (name, args) => (calls.push(["rpc", name, args]), { error: decisionError }),
-      storage: {
-        from: (bucket) => ({
-          remove: async (paths) => {
-            calls.push(["remove", bucket, paths]);
-
-            if (removed instanceof Error) {
-              throw removed;
-            }
-
-            return { data: (removed ?? paths).map((name) => ({ name })), error: null };
-          },
-        }),
+      post: async (path, body) => {
+        calls.push(["post", path, body]);
+        if (decisionError) {
+          const err = new Error(decisionError.message || "forbidden");
+          err.code = decisionError.code || "forbidden";
+          throw err;
+        }
+        return { ok: true, evidenceDeleted };
       },
     };
 
     return { calls, repository: createReviewRepository({ client }) };
   }
 
-  it("records the decision first, then deletes both files", async () => {
+  it("records the decision first, then returns evidenceDeleted", async () => {
     const { calls, repository } = repositoryWith();
 
     const outcome = await repository.decide({
@@ -75,31 +70,25 @@ describe("decision and evidence deletion", () => {
     expect(outcome).toEqual({ evidenceDeleted: true });
     expect(calls).toEqual([
       [
-        "rpc",
-        "decide_application",
-        { applicant_id: "resident-9", approve: true, notes: "Badge verified with the office." },
+        "post",
+        "/api/app/applications/resident-9/decision",
+        { approve: true, notes: "Badge verified with the office." },
       ],
-      ["remove", "identity-evidence", ["resident-9/id.jpg", "resident-9/selfie.jpg"]],
     ]);
   });
 
   it("deletes nothing when the decision is refused", async () => {
-    const { calls, repository } = repositoryWith({ decisionError: { message: "forbidden" } });
+    const { repository } = repositoryWith({ decisionError: { message: "forbidden", code: "forbidden" } });
 
     await expect(repository.decide({ application, approve: true })).rejects.toMatchObject({
       code: "forbidden",
     });
-    expect(calls.filter(([kind]) => kind === "remove")).toEqual([]);
   });
 
   it("reports a failed deletion without undoing the decision", async () => {
-    const partial = repositoryWith({ removed: ["resident-9/id.jpg"] });
-    const thrown = repositoryWith({ removed: new Error("offline") });
+    const failed = repositoryWith({ evidenceDeleted: false });
 
-    await expect(partial.repository.decide({ application, approve: false })).resolves.toEqual({
-      evidenceDeleted: false,
-    });
-    await expect(thrown.repository.decide({ application, approve: false })).resolves.toEqual({
+    await expect(failed.repository.decide({ application, approve: false })).resolves.toEqual({
       evidenceDeleted: false,
     });
   });

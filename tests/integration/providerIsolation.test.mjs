@@ -25,3 +25,13 @@ test("pg is imported only in server/db.mjs", () => {
   );
   assert.deepEqual(offenders, []);
 });
+
+test("leaves no @supabase/* import behind", () => {
+  const offenders = [...sourceFiles("src"), ...sourceFiles("server")].filter(
+    (file) =>
+      /from\s+["']@supabase\/|import\(\s*["']@supabase\//.test(
+        readFileSync(file, "utf8"),
+      ),
+  );
+  assert.deepEqual(offenders, []);
+});

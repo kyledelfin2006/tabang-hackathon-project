@@ -33,7 +33,8 @@ export const INCIDENT_ROUTES = [
         const nextCursor = last
           ? {
               createdAt:
-                last.createdAt instanceof Date ? last.createdAt.toISOString() : last.createdAt,
+                last.createdAtIso ||
+                (last.createdAt instanceof Date ? last.createdAt.toISOString() : last.createdAt),
               id: last.id,
             }
           : null;

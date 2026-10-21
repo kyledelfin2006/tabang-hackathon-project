@@ -1,7 +1,7 @@
 # Verification: FEAT-002
 
 Created: 2026-10-21T11:18:00+08:00
-Updated: 2026-10-21T12:08:00+08:00
+Updated: 2026-10-21T15:36:00+08:00
 
 Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, Docker 29.7.2, Docker Compose 5.4.0, worktree `../Project_Tabang-integration` on `feat-002/render`, local untracked `.env` never staged.
 
@@ -28,3 +28,11 @@ Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, D
 | Phase 4, REQ-009 | `npm run test:integration` | Local Postgres container running, temporary UPLOAD_DIR, 34 tests in `tests/integration/` | Passed under stated conditions: 34 of 34 tests pass, including `files.test.mjs` testing report photo and evidence privacy, report upload ownership, refusal of wrong bytes and oversized files, traversal protection, applicant evidence deletion on decision, missing file honesty, and cache-control headers. | 2026-10-21T12:07:18+08:00 | Duration 4.75s. |
 | Phase 4 | `npm run lint` | ESLint across `src`, `server`, `scripts`, `tests` | Passed under stated conditions: exit 0, no errors or warnings. | 2026-10-21T12:07:57+08:00 | Clean. |
 | Phase 4 | `npm run test:unit` | vitest unit suite | Passed under stated conditions: 24 files, 240 of 240 tests pass. | 2026-10-21T12:08:15+08:00 | 0 regressions. |
+| Phase 5, REQ-007, REQ-010, REQ-011, REQ-012, REQ-016 | `npm run test:integration` | Local Postgres container running, 46 tests in `tests/integration/` | Passed under stated conditions: 46 of 46 tests pass, including smoke and repositories suites running against client repositories and auth gateway via cookie-keeping fetch. | 2026-10-21T15:34:26+08:00 | Real client repositories exercise all user and responder flows on local Postgres. |
+| Phase 5, REQ-011 | `npm run test:unit` | vitest unit suite, run 3 times consecutively | Passed under stated conditions: 23 files, 238 of 238 tests pass on all 3 consecutive runs with 0 flakes or regressions. | 2026-10-21T12:55:56+08:00 | `providerIsolation.test.js` enforces pg only in `server/db.mjs` and zero `@supabase/*` imports. |
+| Phase 5, REQ-012 | `npm run test:server` | node --test server suite, 43 tests | Passed under stated conditions: 43 of 43 tests pass, including CSP header tests verifying `connect-src 'self'` and `img-src 'self' blob: data:`. | 2026-10-21T15:34:35+08:00 | Verified with `tests/server/securityHeaders.test.mjs`. |
+| Phase 5 | `npm run lint` | ESLint across `src`, `server`, `scripts`, `tests` | Passed under stated conditions: exit 0, no errors or warnings. | 2026-10-21T15:34:44+08:00 | Clean. |
+| Phase 5, REQ-016 | `npm run build` | Vite production build into `dist/` | Passed under stated conditions: exit 0, built cleanly with 0 errors. | 2026-10-21T15:34:49+08:00 | 0 occurrences of Supabase in `dist/`. |
+| Phase 5, REQ-016 | Search `dist/` and codebase for Supabase | `git grep -i supabase` and filesystem search | Passed under stated conditions: 0 occurrences in `dist/`, 0 in `src/`, 0 in `server/`, 0 in `public/`. | 2026-10-21T15:35:14+08:00 | Only historical docs and secret scanners retain pattern. |
+| Phase 5 | `npm ci` | Clean package install from package-lock.json | Passed under stated conditions: 234 packages installed cleanly. | 2026-10-21T15:36:07+08:00 | Lockfile consistent with package.json. |
+| Phase 5 | `npm audit --omit=dev --audit-level=high` | Production dependency audit | Passed under stated conditions: 0 vulnerabilities found. | 2026-10-21T15:36:16+08:00 | Production tree clean. |

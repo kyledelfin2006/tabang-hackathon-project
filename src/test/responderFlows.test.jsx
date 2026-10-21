@@ -90,7 +90,7 @@ describe("REQ-018: responder advisories", () => {
   it("writes only the advisory columns, never author or source", async () => {
     const inserted = [];
     const client = {
-      from: () => ({ insert: async (row) => (inserted.push(row), { error: null }) }),
+      post: async (path, body) => (inserted.push([path, body]), { ok: true }),
     };
 
     await createAdvisoryRepository({ client }).publishAdvisory({
@@ -100,7 +100,7 @@ describe("REQ-018: responder advisories", () => {
     });
 
     expect(inserted).toEqual([
-      { kind: "advisory", summary: "Bridge closed.", municipality: null, barangay: null },
+      ["/api/app/advisories", { summary: "Bridge closed.", municipality: null, barangay: null }],
     ]);
   });
 });

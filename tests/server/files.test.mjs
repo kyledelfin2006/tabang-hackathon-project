@@ -11,7 +11,7 @@ import {
   writeIdentityEvidence,
   writeReportPhoto,
 } from "../../server/files.mjs";
-import { PNG_BYTES } from "../policies/helpers/files.mjs";
+import { PNG_BYTES } from "../integration/helpers/files.mjs";
 
 const JPEG_BYTES = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00]);
 const WEBP_BYTES = Buffer.from(

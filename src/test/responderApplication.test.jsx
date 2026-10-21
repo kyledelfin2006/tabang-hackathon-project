@@ -59,19 +59,22 @@ describe("application validation", () => {
   });
 });
 
-// Storage policies are what actually confine the files; see
-// tests/policies/storage.test.mjs. This checks the path the client asks for.
+// The files API confines the files; see
+// tests/integration/files.test.mjs.
 describe("identity evidence upload", () => {
   function repositoryFor(session) {
     const uploads = [];
     const client = {
-      auth: { getSession: async () => ({ data: { session } }) },
-      storage: {
-        from: (bucket) => ({
-          upload: async (path, file, options) => (
-            uploads.push({ bucket, path, options }), { error: null }
-          ),
-        }),
+      post: async (path, file, options) => {
+        if (!session) {
+          const err = new Error("Sign in to continue.");
+          err.code = "unauthorized";
+          err.status = 401;
+          throw err;
+        }
+        const returnedPath = `${session.user.id}/${crypto.randomUUID()}.png`;
+        uploads.push({ path, file, options, returnedPath });
+        return { path: returnedPath };
       },
     };
 
@@ -85,9 +88,8 @@ describe("identity evidence upload", () => {
     const result = await repository.uploadEvidence(file);
 
     expect(uploads).toHaveLength(1);
-    expect(uploads[0].bucket).toBe("identity-evidence");
-    expect(uploads[0].path).toMatch(/^resident-1\/[0-9a-f-]+\.png$/);
-    expect(result).toEqual({ path: uploads[0].path });
+    expect(uploads[0].path).toBe("/api/app/files/identity-evidence");
+    expect(result.path).toMatch(/^resident-1\/[0-9a-f-]+\.png$/);
   });
 
   it("refuses to upload without a signed-in account", async () => {

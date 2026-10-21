@@ -104,10 +104,16 @@ describe("report photo upload", () => {
   function uploaderWith(error = null) {
     const uploads = [];
     const client = {
-      storage: {
-        from: (bucket) => ({
-          upload: async (path, file, options) => (uploads.push({ bucket, path, options }), { error }),
-        }),
+      post: async (path, file, options) => {
+        if (error) {
+          const err = new Error(error.message || "Failed");
+          err.statusCode = error.statusCode;
+          err.code = error.code || "upload_failed";
+          throw err;
+        }
+        const generatedPath = `resident-1/report-1/${crypto.randomUUID()}.jpg`;
+        uploads.push({ path, file, options, generatedPath });
+        return { path: generatedPath };
       },
     };
 
@@ -125,10 +131,9 @@ describe("report photo upload", () => {
       onProgress,
     });
 
-    expect(uploads[0].bucket).toBe("report-photos");
-    expect(uploads[0].path).toMatch(/^resident-1\/report-1\/[0-9a-f-]+\.jpg$/);
-    expect(uploads[0].options).toEqual({ contentType: "image/jpeg" });
-    expect(result).toEqual({ path: uploads[0].path });
+    expect(uploads[0].path).toBe("/api/app/files/report-photos/report-1");
+    expect(uploads[0].options.headers).toEqual({ "Content-Type": "image/jpeg" });
+    expect(result.path).toMatch(/^resident-1\/report-1\/[0-9a-f-]+\.jpg$/);
     expect(onProgress).toHaveBeenCalledWith(100);
   });
 

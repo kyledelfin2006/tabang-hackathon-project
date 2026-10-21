@@ -1,11 +1,8 @@
-import { getSupabaseClient } from "../../config/supabase.js";
-import { toMillis, unwrap } from "../data/unwrap.js";
+import { getApiClient } from "../http/apiClient.js";
+import { toMillis } from "../data/unwrap.js";
 import { INCIDENT_STATUS, toIncident } from "./incidentLifecycle.js";
 
 export const INCIDENT_PAGE_SIZE = 25;
-
-// Signed photo links last long enough to look at an incident, not to share.
-const PHOTO_LINK_SECONDS = 10 * 60;
 
 const OPEN_STATUSES = Object.freeze([
   INCIDENT_STATUS.new,
@@ -13,9 +10,6 @@ const OPEN_STATUSES = Object.freeze([
   INCIDENT_STATUS.dispatched,
   INCIDENT_STATUS.onScene,
 ]);
-
-const INCIDENT_COLUMNS =
-  "id, kind, incident_status, verification_status, priority, municipality, barangay, landmark, public_location_label, description, contact_phone, latitude, longitude, severity, need, people_affected, image_paths, assigned_responder_ids, created_at, acknowledged_at";
 
 /**
  * Describes the incident queue query without touching the database.
@@ -45,26 +39,27 @@ export function rowToIncident(row, now) {
     row.id,
     {
       kind: row.kind,
-      incidentStatus: row.incident_status,
-      verificationStatus: row.verification_status,
+      incidentStatus: row.incident_status || row.incidentStatus,
+      verificationStatus: row.verification_status || row.verificationStatus,
       priority: row.priority,
       municipality: row.municipality,
       barangay: row.barangay,
       landmark: row.landmark,
-      publicLocationLabel: row.public_location_label,
+      publicLocationLabel: row.public_location_label || row.publicLocationLabel,
       description: row.description,
-      contactPhone: row.contact_phone,
+      contactPhone: row.contact_phone || row.contactPhone,
       preciseLocation:
-        row.latitude === null || row.longitude === null
+        row.preciseLocation ||
+        (row.latitude === null || row.longitude === null || row.latitude === undefined
           ? null
-          : { latitude: row.latitude, longitude: row.longitude },
+          : { latitude: row.latitude, longitude: row.longitude }),
       severity: row.severity,
       need: row.need,
-      peopleAffected: row.people_affected,
-      imagePaths: row.image_paths,
-      assignedResponderIds: row.assigned_responder_ids,
-      createdAtMillis: toMillis(row.created_at),
-      acknowledgedAtMillis: toMillis(row.acknowledged_at),
+      peopleAffected: row.people_affected || row.peopleAffected,
+      imagePaths: row.image_paths || row.imagePaths,
+      assignedResponderIds: row.assigned_responder_ids || row.assignedResponderIds,
+      createdAtMillis: row.createdAtMillis ?? toMillis(row.created_at || row.createdAt),
+      acknowledgedAtMillis: row.acknowledgedAtMillis ?? toMillis(row.acknowledged_at || row.acknowledgedAt),
     },
     now,
   );
@@ -74,171 +69,123 @@ export function createIncidentRepository({
   client,
   now = () => Date.now(),
 } = {}) {
-  const supabase = () => client ?? getSupabaseClient();
+  const api = () => client ?? getApiClient();
 
   return {
     /**
      * One page of the queue, oldest first.
-     *
-     * The cursor carries the last row's created_at and id, so a page boundary
-     * never skips or repeats an incident even when two share a timestamp.
      */
     async listIncidents(options = {}) {
       const spec = buildIncidentQuerySpec(options);
-      let query = supabase()
-        .from("reports")
-        .select(INCIDENT_COLUMNS)
-        .in("incident_status", spec.statuses);
+      const query = {
+        pageSize: spec.limit,
+      };
+
+      if (spec.statuses.length === 1) {
+        query.status = spec.statuses[0];
+      } else if (spec.statuses.length > 1) {
+        query.status = "open";
+      }
 
       if (spec.kind) {
-        query = query.eq("kind", spec.kind);
+        query.kind = spec.kind;
       }
 
       if (spec.cursor) {
-        // Quoted, because a timestamp contains characters the filter syntax
-        // otherwise treats as separators.
-        const createdAt = `"${spec.cursor.createdAt}"`;
-
-        query = query.or(
-          `created_at.gt.${createdAt},and(created_at.eq.${createdAt},id.gt.${spec.cursor.id})`,
-        );
+        query.cursorCreatedAt = spec.cursor.createdAt;
+        query.cursorId = spec.cursor.id;
       }
 
-      for (const [column, direction] of spec.orderBy) {
-        query = query.order(column, { ascending: direction === "asc" });
-      }
-
-      const rows = unwrap(await query.limit(spec.limit));
-      const clock = now();
-      const last = rows[rows.length - 1];
+      const res = await api().get("/api/app/incidents", { query });
 
       return {
-        incidents: rows.map((row) => rowToIncident(row, clock)),
-        cursor: last ? { createdAt: last.created_at, id: last.id } : null,
-        hasMore: rows.length === spec.limit,
+        incidents: res.incidents.map((r) => rowToIncident(r, now())),
+        cursor: res.cursor,
+        hasMore: res.hasMore,
       };
     },
 
     /**
-     * Exact counts from the database, not from a page of rows, so the
-     * dashboard never presents a partial count as a total.
+     * Exact counts from the database, not from a page of rows.
      */
     async countIncidents() {
-      const [counts] = unwrap(await supabase().rpc("incident_counts"));
+      const res = await api().get("/api/app/incidents/counts");
 
       return Object.freeze({
-        openIncidents: counts.open_incidents,
-        unclaimed: counts.unclaimed,
-        overdue: counts.overdue,
-        verified: counts.verified,
-        awaitingVerification: counts.awaiting_verification,
-        countedAtMillis: toMillis(counts.counted_at),
+        openIncidents: res.openIncidents,
+        unclaimed: res.unclaimed,
+        overdue: res.overdue,
+        verified: res.verified,
+        awaitingVerification: res.awaitingVerification,
+        countedAtMillis: res.countedAtMillis,
       });
     },
 
     async getIncident(incidentId) {
-      const row = unwrap(
-        await supabase()
-          .from("reports")
-          .select(INCIDENT_COLUMNS)
-          .eq("id", incidentId)
-          .maybeSingle(),
-      );
-
-      return row ? rowToIncident(row, now()) : null;
+      try {
+        const res = await api().get(`/api/app/incidents/${incidentId}`);
+        return res ? rowToIncident(res, now()) : null;
+      } catch (err) {
+        if (err.status === 404 || err.code === "not_found") {
+          return null;
+        }
+        throw err;
+      }
     },
 
     /**
      * Reads the audit trail oldest first.
-     *
-     * Events are append-only and carry server time, so this is the record of
-     * what actually happened rather than a reconstruction.
      */
     async listEvents(incidentId) {
-      const rows = unwrap(
-        await supabase()
-          .from("report_events")
-          .select(
-            "id, type, from_status, to_status, actor_id, actor_role, note, created_at",
-          )
-          .eq("report_id", incidentId)
-          .order("created_at", { ascending: true })
-          .order("id", { ascending: true })
-          .limit(100),
-      );
+      const rows = await api().get(`/api/app/incidents/${incidentId}/events`);
 
       return rows.map((row) =>
         Object.freeze({
           id: String(row.id),
           type: row.type ?? "status-change",
-          fromStatus: row.from_status ?? null,
-          toStatus: row.to_status ?? null,
-          actorId: row.actor_id ?? "",
-          actorRole: row.actor_role ?? "",
+          fromStatus: row.fromStatus ?? row.from_status ?? null,
+          toStatus: row.toStatus ?? row.to_status ?? null,
+          actorId: row.actorId ?? row.actor_id ?? "",
+          actorRole: row.actorRole ?? row.actor_role ?? "",
           note: row.note ?? "",
-          createdAtMillis: toMillis(row.created_at),
+          createdAtMillis: row.createdAtMillis ?? toMillis(row.createdAt || row.created_at),
         }),
       );
     },
 
     /**
      * Claims an incident for the signed-in responder.
-     *
-     * The database function locks the row, so two responders pressing claim at
-     * the same moment cannot both succeed: the second gets `already_claimed`
-     * rather than silently replacing the first. Silent overwrites are how two
-     * teams end up believing the other one went.
      */
     async claimIncident({ incidentId }) {
-      unwrap(await supabase().rpc("claim_incident", { report_id: incidentId }));
+      await api().post(`/api/app/incidents/${incidentId}/claim`);
     },
 
     /**
-     * Advances an incident and appends the matching audit event. From `new`,
-     * acknowledging is a claim. The function re-checks the stored status, so a
-     * stale screen cannot push an incident through a step it already passed.
+     * Advances an incident and appends the matching audit event.
      */
     async transitionIncident({ incidentId, toStatus, note }) {
-      unwrap(
-        await supabase().rpc("transition_incident", {
-          report_id: incidentId,
-          to_status: toStatus,
-          note: note ?? "",
-        }),
-      );
+      await api().post(`/api/app/incidents/${incidentId}/transition`, {
+        toStatus,
+        note: note ?? "",
+      });
     },
 
     /** Records `verified` or `rejected`; the database records who and when. */
     async verifyIncident({ incidentId, verificationStatus }) {
-      unwrap(
-        await supabase().rpc("verify_incident", {
-          report_id: incidentId,
-          verification_status: verificationStatus,
-        }),
-      );
+      await api().post(`/api/app/incidents/${incidentId}/verify`, {
+        verificationStatus,
+      });
     },
 
     /**
-     * Expiring links to the report's private photos, in the same order. A
-     * photo that cannot be signed comes back as null rather than failing the
-     * others.
+     * Expiring or authenticated links to the report's private photos.
      */
     async getPhotoUrls(imagePaths = []) {
-      if (imagePaths.length === 0) {
+      if (!imagePaths || imagePaths.length === 0) {
         return [];
       }
 
-      const signed = unwrap(
-        await supabase()
-          .storage.from("report-photos")
-          .createSignedUrls(imagePaths, PHOTO_LINK_SECONDS),
-      );
-
-      return imagePaths.map(
-        (path) =>
-          signed.find((entry) => entry.path === path && !entry.error)
-            ?.signedUrl ?? null,
-      );
+      return imagePaths.map((path) => (path ? `/api/app/files/report-photos/${path}` : null));
     },
   };
 }

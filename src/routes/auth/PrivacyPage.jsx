@@ -35,7 +35,7 @@ const SECTIONS = [
   {
     heading: "4. Where it is stored",
     items: [
-      "Accounts, reports, and files are stored with Supabase, which processes them on our behalf. Photos and identity documents are kept in private storage and opened only through links that expire within minutes.",
+      "Accounts, reports, and files are stored securely on Tabang's server and database. Photos and identity documents are kept in private storage and accessible only to authorized responders and reviewers.",
       "A report that could not be sent is saved on your phone until it is sent or you discard it. Signing out removes it from the phone.",
     ],
   },

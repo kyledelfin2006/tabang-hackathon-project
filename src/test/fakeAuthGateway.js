@@ -1,9 +1,9 @@
 import { ROLES } from "../services/auth/roles.js";
 
 /**
- * An in-memory stand-in for the Supabase auth gateway.
+ * An in-memory stand-in for the Tabang auth gateway.
  *
- * Unit tests must never reach a real Supabase project, and the provider takes
+ * Unit tests must never reach a real backend, and the provider takes
  * its gateway by injection precisely so this can be substituted.
  */
 export function createFakeAuthGateway({ session = null, actions = {} } = {}) {

@@ -1,5 +1,77 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../../../server/db.mjs";
+import { createApiClient as createHttpClient } from "../../../src/services/http/apiClient.js";
+
+export function createCookieFetch(server, { origin = "http://example.test", cookie = null } = {}) {
+  let sessionCookie = cookie;
+
+  const fetchFn = async (url, options = {}) => {
+    const path =
+      typeof url === "string"
+        ? url.startsWith("http")
+          ? new URL(url).pathname + new URL(url).search
+          : url
+        : String(url);
+
+    const reqHeaders = { ...(options.headers || {}) };
+    if (sessionCookie && !reqHeaders.cookie && !reqHeaders.Cookie) {
+      reqHeaders.cookie = sessionCookie;
+    }
+    if (["POST", "PUT", "PATCH", "DELETE"].includes((options.method || "GET").toUpperCase())) {
+      if (!reqHeaders.origin && !reqHeaders.Origin) {
+        reqHeaders.origin = origin;
+      }
+    }
+
+    let bodyPayload = options.body;
+    if (typeof Blob !== "undefined" && bodyPayload instanceof Blob) {
+      bodyPayload = Buffer.from(await bodyPayload.arrayBuffer());
+    }
+
+    const res = await server.request(path, {
+      method: options.method || "GET",
+      headers: reqHeaders,
+      body: bodyPayload,
+    });
+
+    const setCookie = res.headers["set-cookie"];
+    if (setCookie) {
+      const cookieStr = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+      const match = cookieStr.match(/tabang_session=([^;]+)/);
+      if (match) {
+        sessionCookie = `tabang_session=${match[1]}`;
+      } else if (
+        cookieStr.includes("Max-Age=0") ||
+        cookieStr.includes("Expires=Thu, 01 Jan 1970")
+      ) {
+        sessionCookie = null;
+      }
+    }
+
+    const responseHeaders = new Headers(res.headers);
+    return new Response(res.buffer || res.body, {
+      status: res.status,
+      headers: responseHeaders,
+    });
+  };
+
+  return {
+    fetchFn,
+    get cookie() {
+      return sessionCookie;
+    },
+    set cookie(val) {
+      sessionCookie = val;
+    },
+  };
+}
+
+export function createCookieApiClient(server, { origin = "http://example.test", cookie = null } = {}) {
+  const cookieJar = createCookieFetch(server, { origin, cookie });
+  const client = createHttpClient({ fetchFn: cookieJar.fetchFn });
+  client.cookieJar = cookieJar;
+  return client;
+}
 
 export function createApiClient(server, { origin = "http://example.test", cookie = null } = {}) {
   let sessionCookie = cookie;
@@ -97,10 +169,13 @@ export async function createSignedInUser(server, { role = "resident", overrides 
     ]);
   }
 
+  const appClient = createCookieApiClient(server, { cookie: client.cookie });
+
   return {
     id: userId,
     email,
     role,
     client,
+    appClient,
   };
 }

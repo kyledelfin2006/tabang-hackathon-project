@@ -187,10 +187,19 @@ describe("incident rows", () => {
   });
 });
 
-// The database functions decide; these check only that their answers reach
+// The app API decides; these check only that its answers reach
 // the screens as the error types the screens already recognise.
-function clientAnswering(message) {
-  return { rpc: async () => ({ error: message ? { message, code: "P0001" } : null }) };
+function clientAnswering(code) {
+  return {
+    post: async () => {
+      if (code) {
+        const err = new Error(code);
+        err.code = code;
+        throw err;
+      }
+      return { ok: true };
+    },
+  };
 }
 
 describe("incident actions", () => {
@@ -207,31 +216,26 @@ describe("incident actions", () => {
   it("verifies through the database function", async () => {
     const calls = [];
     const repository = createIncidentRepository({
-      client: { rpc: async (name, args) => (calls.push([name, args]), { error: null }) },
+      client: { post: async (path, body) => (calls.push([path, body]), { ok: true }) },
     });
 
     await repository.verifyIncident({ incidentId: "report-1", verificationStatus: "verified" });
 
     expect(calls).toEqual([
-      ["verify_incident", { report_id: "report-1", verification_status: "verified" }],
+      ["/api/app/incidents/report-1/verify", { verificationStatus: "verified" }],
     ]);
   });
 
   it("maps exact counts from the database", async () => {
     const repository = createIncidentRepository({
       client: {
-        rpc: async () => ({
-          data: [
-            {
-              open_incidents: 30,
-              unclaimed: 4,
-              overdue: 2,
-              verified: 11,
-              awaiting_verification: 19,
-              counted_at: "2026-10-18T00:00:00+00:00",
-            },
-          ],
-          error: null,
+        get: async () => ({
+          openIncidents: 30,
+          unclaimed: 4,
+          overdue: 2,
+          verified: 11,
+          awaitingVerification: 19,
+          countedAtMillis: Date.parse("2026-10-18T00:00:00+00:00"),
         }),
       },
     });
@@ -246,40 +250,27 @@ describe("incident actions", () => {
     });
   });
 
-  it("returns signed photo links in order and null for one that failed", async () => {
-    const repository = createIncidentRepository({
-      client: {
-        storage: {
-          from: () => ({
-            createSignedUrls: async (paths) => ({
-              data: [
-                { path: paths[1], signedUrl: "https://signed/b", error: null },
-                { path: paths[0], signedUrl: null, error: "Object not found" },
-              ],
-              error: null,
-            }),
-          }),
-        },
-      },
-    });
+  it("returns photo links in order and null for one that is empty", async () => {
+    const repository = createIncidentRepository();
 
-    expect(await repository.getPhotoUrls(["r/p/a.jpg", "r/p/b.jpg"])).toEqual([
+    expect(await repository.getPhotoUrls(["r/p/a.jpg", null, "r/p/b.jpg"])).toEqual([
+      "/api/app/files/report-photos/r/p/a.jpg",
       null,
-      "https://signed/b",
+      "/api/app/files/report-photos/r/p/b.jpg",
     ]);
     expect(await repository.getPhotoUrls([])).toEqual([]);
   });
 
-  it("passes the incident, status, and note to the database function", async () => {
+  it("passes the incident, status, and note to the transition endpoint", async () => {
     const calls = [];
     const repository = createIncidentRepository({
-      client: { rpc: async (name, args) => (calls.push([name, args]), { error: null }) },
+      client: { post: async (path, body) => (calls.push([path, body]), { ok: true }) },
     });
 
     await repository.transitionIncident({ incidentId: "report-1", toStatus: "dispatched", note: "Boat sent." });
 
     expect(calls).toEqual([
-      ["transition_incident", { report_id: "report-1", to_status: "dispatched", note: "Boat sent." }],
+      ["/api/app/incidents/report-1/transition", { toStatus: "dispatched", note: "Boat sent." }],
     ]);
   });
 });

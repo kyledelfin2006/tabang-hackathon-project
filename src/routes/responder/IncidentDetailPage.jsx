@@ -53,6 +53,7 @@ export default function IncidentDetailPage({ incidentRepository }) {
   const [incident, setIncident] = useState(null);
   const [events, setEvents] = useState([]);
   const [photoUrls, setPhotoUrls] = useState([]);
+  const [failedImages, setFailedImages] = useState(() => new Set());
   const [loadState, setLoadState] = useState("loading");
   const [note, setNote] = useState("");
   const [actionError, setActionError] = useState(null);
@@ -242,18 +243,21 @@ export default function IncidentDetailPage({ incidentRepository }) {
           {photoUrls.length > 0 ? (
             <ul className="photo-grid">
               {photoUrls.map((url, index) =>
-                url ? (
+                url && !failedImages.has(url) ? (
                   <li key={url}>
                     <a href={url} rel="noopener noreferrer" target="_blank">
                       <img
                         alt={`Photo ${index + 1} sent with the report`}
+                        onError={() =>
+                          setFailedImages((current) => new Set(current).add(url))
+                        }
                         src={url}
                       />
                     </a>
                   </li>
                 ) : (
                   <li key={`missing-${index}`}>
-                    Photo {index + 1} could not be loaded.
+                    Photo unavailable
                   </li>
                 ),
               )}

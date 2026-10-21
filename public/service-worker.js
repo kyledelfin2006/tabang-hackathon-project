@@ -3,9 +3,8 @@
  *
  * Nothing from the database is cached here. Incident details carry precise
  * coordinates and contact numbers, and a cache is readable by anyone who
- * later picks up the device, so protected data must never enter it. Requests
- * to Supabase are cross-origin and the API is under /api/, so both are passed
- * straight through.
+ * later picks up the device, so protected data must never enter it. All
+ * API and app requests under /api/ are passed straight through.
  */
 /*
  * Bump this on every release that changes the shell.

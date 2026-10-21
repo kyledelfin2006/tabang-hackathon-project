@@ -1,6 +1,24 @@
 import { randomUUID } from "node:crypto";
 import { query } from "../../../server/db.mjs";
 
+export async function resetDatabase() {
+  await query(
+    `truncate table
+      public.report_events,
+      public.reports,
+      public.responder_applications,
+      public.sessions,
+      public.password_resets,
+      public.role_assignments,
+      public.hotline_reviews,
+      public.public_feed,
+      public.signals,
+      public.profiles,
+      public.users
+    cascade;`,
+  );
+}
+
 export async function createUser(role = "resident") {
   const id = randomUUID();
   const email = `user-${id}@example.com`;

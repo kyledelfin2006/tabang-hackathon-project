@@ -1,14 +1,11 @@
-import { getSupabaseClient } from "../../config/supabase.js";
-import { toDataError, toMillis, unwrap } from "../data/unwrap.js";
+import { getApiClient } from "../http/apiClient.js";
+import { toDataError, toMillis } from "../data/unwrap.js";
 import { buildPublicSummary } from "./reportSchemas.js";
 
 export const REPORT_PAGE_SIZE = 10;
 
 // A report with no movement for this long is flagged as possibly out of date.
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
-
-const PERSONAL_COLUMNS =
-  "id, kind, municipality, barangay, landmark, public_location_label, description, severity, need, people_affected, verification_status, incident_status, created_at";
 
 // Cancellation is refused by the database once responders are acting on it.
 const CANCELLABLE_STATUSES = new Set(["new", "acknowledged"]);
@@ -76,7 +73,7 @@ export function toPersonalReport(id, raw = {}, now = Date.now()) {
   });
 }
 
-function rowToPersonalReport(row) {
+export function rowToPersonalReport(row) {
   return toPersonalReport(row.id, {
     kind: row.kind,
     municipality: row.municipality,
@@ -124,11 +121,8 @@ export function buildReportRow({ reportId, values, imagePaths = [] }) {
     : { ...base, need: values.need, people_affected: values.peopleAffected };
 }
 
-// Postgres reports a reused primary key as a unique violation.
-const DUPLICATE_KEY = "23505";
-
 export function createReportRepository({ client } = {}) {
-  const supabase = () => client ?? getSupabaseClient();
+  const api = () => client ?? getApiClient();
 
   return {
     /**
@@ -136,77 +130,58 @@ export function createReportRepository({ client } = {}) {
      *
      * The id is generated once per form session, so a double click, a retry
      * after a timeout, or a resubmit from a flaky connection all resolve to the
-     * same row instead of filing the same emergency several times. A row the
-     * caller cannot see would also collide, but ids are random UUIDs, so a
-     * collision means an earlier attempt by this resident already landed.
+     * same row instead of filing the same emergency several times.
      */
     async submitReport({ reportId, values, images = [] }) {
-      const { error } = await supabase()
-        .from("reports")
-        .insert(
-          buildReportRow({
-            reportId,
-            values,
-            imagePaths: images.map((image) => image.path),
-          }),
-        );
+      try {
+        await api().post("/api/app/reports", {
+          id: reportId,
+          values,
+          images,
+        });
 
-      if (error && error.code !== DUPLICATE_KEY) {
-        throw toDataError(error);
+        return { reportId };
+      } catch (err) {
+        if (err.code === "23505") {
+          return { reportId };
+        }
+        throw toDataError(err);
       }
-
-      return { reportId };
     },
 
     /**
      * Lists the signed-in resident's own reports, one bounded page at a time.
-     *
-     * The query is restricted by reporter rather than filtered in the client,
-     * so another resident's record is never fetched in the first place. Pages
-     * continue from the last row's created_at and id, which is deterministic
-     * even when two reports share a timestamp.
      */
     async listMyReports(options = {}) {
       const spec = buildMyReportsQuerySpec(options);
-      let query = supabase()
-        .from("reports")
-        .select(PERSONAL_COLUMNS)
-        .eq("reporter_id", spec.reporterId);
+      const query = {
+        pageSize: spec.limit,
+      };
 
       if (spec.cursor) {
-        // Quoted, because a timestamp contains characters the filter syntax
-        // otherwise treats as separators.
-        const createdAt = `"${spec.cursor.createdAt}"`;
-
-        query = query.or(
-          `created_at.lt.${createdAt},and(created_at.eq.${createdAt},id.lt.${spec.cursor.id})`,
-        );
+        query.cursorCreatedAt = spec.cursor.createdAt;
+        query.cursorId = spec.cursor.id;
       }
 
-      for (const [column, direction] of spec.orderBy) {
-        query = query.order(column, { ascending: direction === "asc" });
-      }
-
-      const rows = unwrap(await query.limit(spec.limit));
-      const last = rows[rows.length - 1];
+      const res = await api().get("/api/app/reports/mine", { query });
 
       return {
-        reports: rows.map(rowToPersonalReport),
-        cursor: last ? { createdAt: last.created_at, id: last.id } : null,
-        hasMore: rows.length === spec.limit,
+        reports: res.reports.map((r) =>
+          toPersonalReport(r.id, {
+            ...r,
+            createdAtMillis: r.createdAtMillis ?? (r.createdAt ? toMillis(r.createdAt) : null),
+          }),
+        ),
+        cursor: res.cursor,
+        hasMore: res.hasMore,
       };
     },
 
     /**
      * Cancels a report instead of deleting it.
-     *
-     * An emergency record that responders may already have acted on must not
-     * vanish, so the row and its event history are retained and only the
-     * incident status changes, through a function that checks the reporter and
-     * the current status together.
      */
     async cancelReport({ reportId }) {
-      unwrap(await supabase().rpc("cancel_report", { report_id: reportId }));
+      await api().post(`/api/app/reports/${reportId}/cancel`);
     },
   };
 }

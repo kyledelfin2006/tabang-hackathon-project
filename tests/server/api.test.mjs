@@ -120,7 +120,8 @@ test("REQ-033: only the hash of a key is stored", async (t) => {
   const stored = await store.findApiClient(id);
 
   assert.equal(stored.keyHash, hashKey(key));
-  assert.ok(!JSON.stringify(stored).includes(key.split("_").pop()));
+  const secret = key.slice(4 + 36 + 1);
+  assert.ok(!JSON.stringify(stored).includes(secret));
 });
 
 test("REQ-033: exceeding the per-client limit gets 429", async (t) => {

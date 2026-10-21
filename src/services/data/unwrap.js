@@ -1,5 +1,5 @@
 // The stable messages the database functions raise; see
-// supabase/migrations/*_functions.sql.
+// migrations/001_initial.sql.
 const FUNCTION_CODES = new Set([
   "not_found",
   "forbidden",
@@ -10,7 +10,7 @@ const FUNCTION_CODES = new Set([
 ]);
 
 /**
- * Turns a Supabase failure into an Error with a stable `code`.
+ * Turns a data or server failure into an Error with a stable `code`.
  *
  * A database function's code is kept as is; anything else keeps the provider's
  * code (for example 42501 for a refused permission). The provider's message is

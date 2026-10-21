@@ -51,8 +51,7 @@ export default function ResidentLayout({ submissionQueue, reportRepository }) {
       }
 
       try {
-        // Loaded on demand: a static import would pull the Supabase SDK into
-        // the entry chunk that every visitor downloads.
+        // Loaded on demand to keep the entry chunk small.
         const repository =
           reportRepository ??
           (

@@ -315,6 +315,24 @@ describe("incident detail route", () => {
     expect(screen.getByText(/near Beside the market/)).toBeInTheDocument();
   });
 
+  it("REQ-010: shows 'Photo unavailable' when a photo fails to load", async () => {
+    const repository = detailRepository(
+      { ...claimedByMe, imagePaths: ["resident-1/report-1/missing.jpg"] },
+      {
+        getPhotoUrls: vi
+          .fn()
+          .mockResolvedValue(["/api/app/files/report-photos/resident-1/report-1/missing.jpg"]),
+      },
+    );
+
+    renderDetail(repository);
+
+    const img = await screen.findByRole("img", { name: "Photo 1 sent with the report" });
+    fireEvent.error(img);
+
+    expect(await screen.findByText("Photo unavailable")).toBeInTheDocument();
+  });
+
   it("renders the history with readable status and role labels", async () => {
     renderDetail(
       detailRepository(openIncident, {

@@ -1,13 +1,5 @@
-import { getSupabaseClient } from "../../config/supabase.js";
+import { getApiClient } from "../http/apiClient.js";
 import { toDataError } from "../data/unwrap.js";
-
-const REPORT_PHOTOS_BUCKET = "report-photos";
-
-const EXTENSIONS = Object.freeze({
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-});
 
 function throwIfAborted(signal) {
   if (signal?.aborted) {
@@ -16,35 +8,39 @@ function throwIfAborted(signal) {
 }
 
 /**
- * Stores one prepared image under {reporterId}/{reportId}/ in the private
- * report-photos bucket and returns its path, never a public link.
+ * Stores one prepared image under {reporterId}/{reportId}/ via the Tabang files API
+ * and returns its path, never a public link.
  *
- * Storage policies only accept a folder that starts with the signed-in user's
- * id, and the bucket refuses anything that is not a small image, so a
- * tampered client cannot write elsewhere. The client cannot report byte
- * progress, so `onProgress` is called with 100 once the file is stored.
+ * The client cannot report continuous byte progress over fetch, so `onProgress`
+ * is called with 100 once the file is stored.
  */
 export function createStorageUploader({ client } = {}) {
-  const supabase = () => client ?? getSupabaseClient();
+  const api = () => client ?? getApiClient();
 
   return {
+    /* eslint-disable-next-line no-unused-vars */
     async upload(file, { reporterId, reportId, onProgress, signal } = {}) {
       throwIfAborted(signal);
 
-      const extension = EXTENSIONS[file.type] ?? "jpg";
-      const path = `${reporterId}/${reportId}/${crypto.randomUUID()}.${extension}`;
-      const { error } = await supabase()
-        .storage.from(REPORT_PHOTOS_BUCKET)
-        .upload(path, file, { contentType: file.type || "image/jpeg" });
+      const contentType = file.type || "image/jpeg";
+      try {
+        const res = await api().post(
+          `/api/app/files/report-photos/${reportId}`,
+          file,
+          {
+            headers: { "Content-Type": contentType },
+            signal,
+          },
+        );
 
-      if (error) {
-        throw toDataError(error);
+        throwIfAborted(signal);
+        onProgress?.(100);
+
+        return { path: res.path };
+      } catch (err) {
+        throwIfAborted(signal);
+        throw toDataError(err);
       }
-
-      throwIfAborted(signal);
-      onProgress?.(100);
-
-      return { path };
     },
   };
 }

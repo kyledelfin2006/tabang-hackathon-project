@@ -2,9 +2,6 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// REQ-040: the provider SDK may be imported in exactly these two files, so
-// changing provider again means rewriting the adapters and nothing else.
-const ALLOWED = new Set(["src/config/supabase.js", "server/supabaseAdmin.mjs"]);
 const SOURCE = /\.(?:js|jsx|mjs)$/;
 
 function sourceFiles(directory) {
@@ -20,11 +17,22 @@ function sourceFiles(directory) {
 }
 
 describe("provider isolation", () => {
-  it("imports @supabase/supabase-js only in the two adapter files", () => {
+  it("imports pg only in server/db.mjs", () => {
     const offenders = [...sourceFiles("src"), ...sourceFiles("server")].filter(
       (file) =>
-        !ALLOWED.has(file) &&
-        /from\s+["']@supabase\/supabase-js["']|import\(\s*["']@supabase\/supabase-js["']/.test(
+        file !== "server/db.mjs" &&
+        /from\s+["']pg["']|import\(\s*["']pg["']|require\(\s*["']pg["']/.test(
+          readFileSync(file, "utf8"),
+        ),
+    );
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("leaves no @supabase/* import behind", () => {
+    const offenders = [...sourceFiles("src"), ...sourceFiles("server")].filter(
+      (file) =>
+        /from\s+["']@supabase\/|import\(\s*["']@supabase\//.test(
           readFileSync(file, "utf8"),
         ),
     );
@@ -33,7 +41,6 @@ describe("provider isolation", () => {
   });
 
   it("leaves no Firebase or Cloudinary import behind", () => {
-    // Tests are skipped: some name these providers on purpose, to scan for them.
     const offenders = [...sourceFiles("src"), ...sourceFiles("server")].filter(
       (file) =>
         !file.startsWith("src/test/") &&

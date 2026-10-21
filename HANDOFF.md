@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T12:09:00+08:00
-State: Phase 4 complete; ready for Phase 5 (Switch the client and remove Supabase)
+Updated: 2026-10-21T15:37:00+08:00
+State: Phase 5 complete; ready for Phase 6 (Render deployment and documentation)
 Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
@@ -60,8 +60,8 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | 1 Local Postgres and the migration runner | Complete | `611ad38908f735cb5e8b4aeb47c9306fc84b9283` |
 | 2 Sign-in, sessions, and password reset | Complete | `20c2812b2b1d86197e6c5987aa118932b13fe387` |
 | 3 App data routes and the Postgres store | Complete | `bd71093f36769baa687c09b32ecf2d19b324fe40` |
-| 4 Files on disk | Complete | Pending commit |
-| 5 Switch the client and remove Supabase | Not started | - |
+| 4 Files on disk | Complete | `855d045fe0dd6ac98103516a264bb90d74d95746` |
+| 5 Switch the client and remove Supabase | Complete | `refactor(client): move the app onto the tabang api and remove supabase` |
 | 6 Render deployment and documentation | Not started | - |
 
 ## FEAT-002 problems and attempts
@@ -79,6 +79,8 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | 2026-10-21 | Added `idleTimeoutMillis: 1000` to pg pool and `after(closePool)` in integration tests | Rely on default 30s timeout vs explicit pool teardown | Allows Node test runner process to exit promptly upon test completion (~1s instead of 30s). |
 | 2026-10-21 | Supported `env.emailAdapter` and `env.limiter` in server handlers | Global monkey-patching or module mocks | Provides clean dependency injection for isolated testing across both in-memory and PostgreSQL test servers. |
 | 2026-10-21 | Supported raw binary Buffer payloads and responses in `testServer` and `appClient` | String-only serialization | Enables testing binary image uploads and streams without corrupting bytes or breaking existing JSON callers. |
+| 2026-10-21 | Formatted `created_at` timestamp with microsecond ISO in Postgres cursor paging | JavaScript Date millisecond string | Javascript Date millisecond truncation dropped trailing microseconds causing pagination overlap at boundary records. |
+| 2026-10-21 | Added sequence counter guard in `authGateway.js` for asynchronous session builds | Timestamp comparison or flag | Ensures asynchronous session builds initiated before `signOut` are dropped if sign-out resolves first. |
 
 ## FEAT-001 approval record
 
