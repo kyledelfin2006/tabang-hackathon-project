@@ -1,262 +1,272 @@
 # Architecture: Tabang
 
 Created: 2026-09-26T16:20:55+08:00
-Updated: 2026-10-17T22:21:39+08:00
-Revision: 2
+Updated: 2026-10-21T10:49:23+08:00
+Revision: 3
 Status: Approved
-Len's chat approval: Approved by Len in chat on 2026-10-17 at about 22:21 +08:00: "alright i approve of the revisions, you may also execute the ingtegration yourself after dinng phase 1"
-Previous revision: Revision 1, approved 2026-09-26, in Git at `d928c56` on `feat-001/integration`
+Len's chat approval: Approved by Len in chat on 2026-10-21 at about 10:49 +08:00: "Alright create a handoff for another AI coding agent to execute. Skip the mandatory hard stops but keep thre required commiting and testing phases"
+Previous revision: Revision 2, approved 2026-10-17, in Git at `f8e08d8` on `feat-001/integration`
 Replaces: [../archive/final-architecture.md](../archive/final-architecture.md), [../archive/firebase-migration-note.md](../archive/firebase-migration-note.md), archived 2026-10-18
 
-## What changed in Revision 2
+## What changed in Revision 3
 
-- The backend provider changes from Firebase (Auth, Firestore, security rules) to Supabase (Auth, Postgres with row-level security, Storage).
-- Cloudinary and the four upload-signing routes are removed; files live in private Supabase Storage buckets.
-- The `firebase-admin` dependency (D-6) is withdrawn before it was ever installed.
-- The single Node host (D-2), the partner API, the canonical signal, the partner projection (D-5), and the DOST seam are unchanged.
+- Len decided on 2026-10-21 to move off Supabase entirely and run Tabang on Render.
+- Supabase Auth, the Supabase data API, and Supabase Storage are replaced by one Render web service, one Render Postgres database, and a Render persistent disk.
+- The browser no longer talks to a database provider; every data call goes to the Node server, which becomes the security boundary (D-20, reverses D-12).
+- Sign-in is Tabang's own: email and password hashed with Node's built-in scrypt, and server-side sessions in an httpOnly cookie (D-21).
+- Files are stored on the persistent disk and served by the server after an authorization check, without signed links (D-22).
+- Password-reset email goes through an HTTP email API called with the built-in `fetch` (D-23).
+- The only new dependency is `pg`, the Postgres driver; `@supabase/supabase-js` and the `supabase` CLI are removed (D-24).
+- The partner API, its contract, the canonical signal, the partner projection (D-5), and the DOST seam are unchanged.
 
 ## Observed facts and assumptions
 
-Observed on 2026-10-03 in the `Project_Tabang` worktrees:
+Observed on 2026-10-21:
 
-- Len cannot access the account that owns the Firebase project, so rules, indexes, and configuration cannot be deployed or changed.
-- FEAT-001 phases A1 (`d928c56`), A2 (`32d17bf`), and C1 (`81b1012`) are committed; A2 and C1 are not yet merged into `feat-001/integration`.
-- Track B's phase B1 is uncommitted and stopped after three unsuccessful attempts at a Firestore rules expression-limit error.
-- The client is a Vite and React 19 SPA using React Router 7 data routers.
-- Firebase is imported in exactly nine source files: `src/config/firebase.js`, `src/services/auth/firebaseAuthGateway.js`, six repositories, and `src/services/uploads/cloudinaryUploader.js` (through the config module).
-- Route components receive repositories and the auth gateway by injection, and tests use fakes of them.
-- Pure domain modules import no framework: `incidentLifecycle.js`, `reportSchemas.js`, `profile.js`, `roles.js`, `dashboardMetrics.js`, `redact.js`.
-- Report ids are generated on the client with `crypto.randomUUID()`.
-- Docker 29.7.2 is installed on the dev machine; the Docker daemon was not running when checked.
+- FEAT-001 plan phases 1 to 8 are committed on `feat-001/integration` (last commit `f8e08d8`) and pushed to `origin`; nothing is merged into `main`.
+- `@supabase/supabase-js` is imported only by `src/config/supabase.js` and `server/supabaseAdmin.mjs`, and the gateway and repository method names are the ports that routes and fakes use.
+- The SQL in `supabase/migrations/` depends on Supabase in three places: `auth.uid()` and `auth.users`, the `anon` and `authenticated` roles in grants and policies, and the `storage` schema.
+- No live updates are used (FEAT-001 non-goal), so nothing depends on Supabase Realtime.
+- Render's free tier, read on render.com/docs/free on 2026-10-21:
+  - A free web service sleeps after 15 minutes without traffic and takes about a minute to wake.
+  - A workspace gets 750 free instance hours a month.
+  - A free web service has no persistent disk, so its files are lost on redeploy, restart, or sleep.
+  - It cannot send outbound traffic on SMTP ports 25, 465, or 587.
+  - A free Postgres database has 1 GB, no backups, and expires 30 days after creation, with a 14-day grace period before it is deleted.
+  - One free database is allowed per workspace.
+- Render's pricing page lists no object storage service and no authentication service.
 
 Assumptions, not verified in this revision:
 
-- The Supabase free plan limits (two projects, about 500 MB of database, 1 GB of file storage, pausing after about a week without activity) are as remembered and must be confirmed on the Supabase pricing page before go-live.
-- Supabase's built-in email sender is restricted and rate limited, so password reset emails to real users need a custom SMTP provider (Q-5).
-- The DOST Signal contract (payload, transport, authentication) is unknown.
-- One server instance is enough for expected load; in-memory rate limiting is acceptable at that scale.
+- No hosted Supabase project was ever created, so there is no data or account to migrate (D-15 continues).
+- Render's paid web service, Postgres, and disk prices are confirmed by Len on render.com/pricing before launch.
+- Render offers a Singapore region for web services and Postgres.
+- Render takes daily snapshots of persistent disks, and paid Postgres plans include backups; both are confirmed before launch.
+- One server instance is enough for expected load, so in-memory rate limiting stays acceptable; a persistent disk also limits the service to one instance.
+
+## Deployment stages (D-25)
+
+| Stage | Web service | Database | Files | Reset email |
+|---|---|---|---|---|
+| Demo, now | Render free | Render free Postgres, recreated before it expires | the service's own filesystem, lost on sleep, restart, or redeploy | HTTP email API if a key is set |
+| Launch | Render paid instance | Render paid Postgres with backups | Render persistent disk | HTTP email API, required |
+
+The code is the same in both stages; only `render.yaml` plan values and environment variables differ.
+In the demo stage a missing photo or ID file is expected, and the app shows "Photo unavailable" instead of a broken image (FEAT-002/REQ-010).
+The demo stage is not for real flood reports.
 
 ## Components, boundaries, and flows
 
 ```
-                 one origin (Node host, D-2)
- Browser SPA ─── GET /, /assets/*, deep links ──► server/static.mjs (dist/ only)
+                   one origin, one Render web service (D-2)
+ Browser SPA ─── GET /, /assets/*, deep links ─────► server/static.mjs (dist/ only)
      │
-     ├── Supabase Auth (email and password) ─────────────┐
-     ├── Supabase data API (row-level security,          ├─► Supabase project
-     │     database functions)                           │    (Postgres, Auth, Storage)
-     └── Supabase Storage (private buckets, signed links)┘         ▲
-                                                                   │ secret key, server only
- Partner systems (DOST Signal, LGU tools)                          │
-     ─── /api/v1/signals, /api/v1/incidents, ───► server/routes/*.mjs ─► server/store.mjs
-         /api/v1/advisories (API key + scopes)        │
-                                                      └─ server/integrations/dostSignal.mjs (adapter seam)
+     └── /api/app/* (session cookie) ──────────────► server/app/*.mjs ──┐
+                                                                         ├─► server/db.mjs ─► Render Postgres
+ Partner systems (DOST Signal, LGU tools)                                │
+     ─── /api/v1/* (API key + scopes) ─────────────► server/routes/*.mjs ┘
+                                                          │
+                                                          ├─ server/files.mjs ─► persistent disk (UPLOAD_DIR)
+                                                          ├─ server/email.mjs ─► HTTP email API
+                                                          └─ server/integrations/dostSignal.mjs
 ```
 
 ### Layers and dependency direction
 
-- Domain (pure, shared by client and server): `src/services/incidents/incidentLifecycle.js`, `src/services/reports/reportSchemas.js`, `src/services/auth/profile.js`, `src/services/auth/roles.js`, `src/services/metrics/dashboardMetrics.js`, `src/services/observability/redact.js`, and the new `src/services/places/aklanPlaces.js`.
-- These modules must not import Supabase, React, browser globals, or Node built-ins; a unit test enforces this by scanning their imports.
-- Domain mappers such as `toIncident` and `toPersonalReport` accept plain values (strings, numbers, millisecond timestamps), never provider objects.
-- Client use cases: `submitReport` and `replayQueuedReports` in `src/services/reports/`, depending only on injected repository, uploader, and queue objects.
-- Client adapters: `src/config/supabase.js` creates the one browser client; `supabaseAuthGateway.js`, the repositories, and `storageUploader.js` receive it and translate rows to the plain shapes the domain expects.
-- The gateway and repository method names are the ports; they stay as they are today so routes, components, and fakes do not change when the provider does.
-- Server adapters: `server/http.mjs`, `server/auth.mjs` (partner API keys only), `server/supabaseAdmin.mjs` (creates the one server client), `server/store.mjs` (small functions the routes call), `server/routes/*.mjs`, `server/integrations/*.mjs`.
-- `@supabase/supabase-js` may be imported only by `src/config/supabase.js` and `server/supabaseAdmin.mjs`; a test fails on any other import.
-- Server routes depend on the domain modules and on `store.mjs`, so handlers are tested with an in-memory store.
-- Database functions raise errors with stable codes (`not_found`, `forbidden`, `already_claimed`, `invalid_transition`, `not_cancellable`); adapters map the codes to plain-language copy and never show a provider message.
+- Domain modules stay pure and shared by client and server: `incidentLifecycle.js`, `reportSchemas.js`, `profile.js`, `roles.js`, `dashboardMetrics.js`, `redact.js`, and `aklanPlaces.js`.
+- Their purity test is unchanged.
+- Client use cases (`submitReport`, `replayQueuedReports`) and their injected ports are unchanged.
+- Client adapters become plain `fetch` calls:
+  - `src/services/http/apiClient.js` sends JSON with credentials and maps the error envelope to the existing data errors.
+  - The auth gateway, the repositories, and the uploader keep their method names and call `/api/app/*` through it.
+  - `src/config/supabase.js`, `supabaseAuthGateway.js`, and `storageUploader.js` are replaced.
+- Server adapters:
+  - `server/db.mjs` creates the one `pg` pool and is the only module that imports `pg`; a test enforces this.
+  - `server/sessions.mjs` handles password hashing, sessions, and cookies.
+  - `server/files.mjs` reads and writes files under `UPLOAD_DIR` only.
+  - `server/email.mjs` sends reset email.
+  - `server/app/*.mjs` holds the app routes, each of which checks the session and role before calling the store.
+  - `server/store.mjs` holds the queries, written on `db.mjs` in place of `supabaseAdmin.mjs`.
+- Routes are tested with the in-memory store, as today, and the store is tested against local Postgres.
+- Database functions keep raising stable error codes (`not_found`, `forbidden`, `already_claimed`, `invalid_transition`, `not_cancellable`, `invalid_request`); the server maps them to the error envelope and the client maps those to plain copy.
 
 ### Database schema
 
-The schema lives in `supabase/migrations/*.sql`, and `supabase db reset` rebuilds it from nothing.
-All tables have row-level security enabled.
-Clients change state only where the table below says "direct"; every other change goes through a database function that checks the caller and writes atomically.
+The schema lives in `db/migrations/*.sql`, applied in filename order and recorded in a `schema_migrations` table.
+`npm run db:reset` rebuilds a local database from nothing, and `npm start` applies pending migrations before it listens (D-26).
+The Revision 2 schema is carried over table by table, with these changes:
 
-| Table | Replaces | Key columns | Client read | Client write |
-|---|---|---|---|---|
-| `profiles` | `users` | `id` (auth user), `display_name`, `email`, `phone`, `barangay` | owner, reviewer | created by a trigger at sign-up; owner updates name, phone, barangay directly |
-| `role_assignments` | `roleAssignments`, custom claims | `user_id`, `role`, `assigned_by`, `assigned_at` | owner, reviewer | none; `decide_application` and `set_role` only |
-| `reports` | `reports` | `id` (client uuid), `reporter_id`, `kind`, `municipality`, `barangay`, `landmark`, `latitude`, `longitude`, `description`, `contact_phone`, `severity`, `need`, `people_affected`, `image_paths`, `public_summary`, `priority`, `verification_status`, `incident_status`, `assigned_responder_ids`, `acknowledged_at`, `resolved_at`, `created_at`, `updated_at` | reporter, responder and above | direct insert of the reporter-supplied columns only; all later changes through functions |
-| `report_events` | `reports/{id}/events` | `report_id`, `type`, `from_status`, `to_status`, `actor_id`, `actor_role`, `note`, `created_at` | reporter, responder and above | none; written by functions with server time |
-| `incident_transitions` | the rules' `allowedNextStatuses` | `from_status`, `to_status` | everyone | none |
-| `public_feed` | `publicFeed` | `id`, `kind`, `summary`, `municipality`, `barangay`, `source`, `signal_id`, `published`, `created_by`, `created_at`, `expires_at` | everyone, published and unexpired rows only; responders see their own | responders insert and update their own with `source = 'tabang'`; reviewers may unpublish any |
-| `hotlines` | `hotlines` | `id`, `organization`, `coverage_area`, `phone_numbers`, `verified`, `verified_at`, `verified_by` | everyone | reviewer and above |
-| `hotline_reviews` | `hotlines/{id}/reviews` | `hotline_id`, `reviewer_id`, `rating`, `comment`, `updated_at` | everyone | owner, one row per hotline |
-| `hotline_directory` (view) | stored `ratingCount`, `ratingTotal` | hotline columns plus `rating_count`, `rating_total` computed from reviews | everyone | not writable |
-| `responder_applications` | `responderApplications` | `applicant_id`, `organization`, `badge_number`, `municipality`, `identity_document_path`, `selfie_path`, `consent_version`, `status`, `submitted_at`, `reviewed_by`, `reviewed_at`, `review_notes` | owner, reviewer | `submit_application` and `decide_application` only |
-| `signals` | `signals` | `source`, `external_id`, canonical signal fields | none | none; server only |
-| `api_clients` | `apiClients` | `id`, `name`, `key_hash`, `scopes`, `status` | none | none; server only |
+| Table | Change from Revision 2 |
+|---|---|
+| `users` | New: `id`, `email` (unique, lower-cased), `password_hash`, `created_at`. Replaces `auth.users`. |
+| `sessions` | New: `token_hash` (SHA-256 of a random 32-byte token), `user_id`, `created_at`, `last_seen_at`, `expires_at`. |
+| `password_resets` | New: `token_hash`, `user_id`, `expires_at`, `used_at`. |
+| `profiles` | `id` references `users`; created in the same transaction as the user at sign-up, so the `handle_new_user` trigger is removed. |
+| every other table | Unchanged columns and constraints; foreign keys to `auth.users` point to `users`. |
+| `hotline_directory` | Unchanged view. |
 
-Field lengths, allowed values, and "both coordinates or neither" are table constraints, so they hold for every writer.
-A client cannot choose `priority`, `verification_status`, `incident_status`, or assignment at creation because it has no insert privilege on those columns and they take their defaults.
-The legacy `floodReports`, `helpRequests`, and `responders` collections are not recreated.
+Row-level security, column grants, and the `anon` and `authenticated` roles are removed (D-20).
+Table constraints stay, so field lengths, allowed values, the 17 Aklan municipalities, and "both coordinates or neither" still hold for every writer.
 
 ### Database functions
 
-| Function | Caller | Effect |
-|---|---|---|
-| `claim_incident(report_id)` | responder and above | Assigns the caller to an unclaimed report, moves it to `acknowledged`, sets `acknowledged_at`, appends an event. |
-| `transition_incident(report_id, to_status, note)` | assigned responder, or reviewer | Applies a move listed in `incident_transitions`, sets `resolved_at` on resolve, appends an event; from `new` it performs a claim. |
-| `verify_incident(report_id, verification_status)` | assigned responder, or reviewer | Sets `verified` or `rejected`, appends an event. |
-| `cancel_report(report_id)` | reporter | Cancels a report that is `new` or `acknowledged`. |
-| `submit_application(...)` | signed-in user | Creates a pending application, or replaces the caller's rejected one. |
-| `decide_application(applicant_id, approve, notes)` | reviewer, never for their own application | Records the decision, clears the evidence paths, and grants `responder` on approval, in one transaction. |
-| `set_role(user_id, role)` | reviewer for `resident` and `responder`, admin for any role, never for oneself | Writes `role_assignments`. |
-| `incident_counts()` | responder and above | Returns exact counts for the dashboard in one call. |
-| `ingest_signal(...)` | server only | Upserts a signal by `source` and `external_id` and its `public_feed` item in one transaction. |
+The Revision 2 functions are kept with the same rules and error codes.
+Each takes the acting user's id as its first argument (`p_actor`) instead of reading `auth.uid()`, and reads that user's role from `role_assignments` itself, so a caller cannot claim a role it does not hold.
+`ingest_signal` and `incident_counts` are unchanged apart from that.
+The transition table is still held twice, in `incident_transitions` and `ALLOWED_TRANSITIONS`, and a test compares them.
 
-The transition table is deliberately held twice: in `incident_transitions` as the boundary and in `ALLOWED_TRANSITIONS` for client messages; a test compares the two.
+### Authentication and sessions (D-21)
 
-### Authentication and roles
+- Email and password; no social login; email confirmation stays off (D-17).
+- Passwords are at least 8 characters and stored only as scrypt hashes with a per-user random salt, using `node:crypto`.
+- Sign-up validates name, phone, and barangay with the existing `validateProfileInput`, then creates the user, profile, and session in one transaction.
+- A session token is 32 random bytes, sent in a cookie named `tabang_session` with `HttpOnly`, `Secure` (except on `http://127.0.0.1` in development), `SameSite=Lax`, and `Path=/`.
+- Only the token's SHA-256 hash is stored.
+- Sessions expire 30 days after sign-in; sign-out deletes the session row.
+- The role is read from `role_assignments` on every request, so a granted or revoked role applies on the next request.
+- `GET /api/app/session` returns the signed-in user's profile and role, or `null`; the client builds its session from it with the existing sequence guard.
+- Failed sign-ins are limited per email and per address (proposed 10 in 15 minutes), in memory, like the partner rate limit.
+- Wrong credentials and unknown emails get the same message and the same response time class (the hash is still computed for unknown emails).
 
-- Supabase Auth with email and password; no social login.
-- Sign-up sends name, phone, and barangay as metadata; a database trigger validates them and creates the `profiles` row, so a profile exists even when the browser closes mid sign-up.
-- Every new account is a resident; a missing `role_assignments` row means resident.
-- `role_assignments` is the only role source; the custom-claim branch is removed.
-- The session is built from one auth state subscription, with a sequence guard so a stale session build cannot overwrite a sign-out.
-- Email confirmation is off during development (D-17, proposed) and is revisited with Q-5 before real users.
+Cross-site requests: every state-changing `/api/app` request must carry an `Origin` header equal to the app's origin and a JSON or image content type, otherwise the server answers 403 `forbidden`.
+Together with `SameSite=Lax`, this is the CSRF defence; there are no CSRF tokens.
 
-### File storage
+### Password reset (D-23)
 
-| Bucket | Visibility | Object path | Upload | Read | Delete |
-|---|---|---|---|---|---|
-| `report-photos` | private | `{reporter_id}/{report_id}/{file}` | the reporter, into their own folder | the reporter, responder and above, through signed links that expire | reviewer and above |
-| `identity-evidence` | private | `{applicant_id}/{file}` | the applicant, into their own folder | the applicant and reviewers, through signed links that expire | reviewers, after a decision |
+- `POST /api/app/password-reset` answers the same for known and unknown emails.
+- For a known email, it stores a hashed single-use token that expires in 30 minutes and emails a link to `/update-password?token=...`.
+- `POST /api/app/password-reset/confirm` checks the token, sets the new password, marks the token used, and deletes all of that user's sessions.
+- `server/email.mjs` sends through one HTTP email API with `fetch` (Resend proposed, Q-5), configured by `EMAIL_API_KEY` and `EMAIL_FROM`.
+- Without `EMAIL_API_KEY`, the server prints the link to its console only when `NODE_ENV` is not `production`; in production it logs that email is not configured and sends nothing.
 
-Buckets enforce an image-only type list and a size limit.
-The browser still validates, resizes, and strips metadata before upload, as it does today.
-Evidence paths are derived from the applicant id, so a failed deletion can be retried by listing the applicant's folder.
+### File storage (D-22)
+
+| Kind | Path under `UPLOAD_DIR` | Upload | Read | Delete |
+|---|---|---|---|---|
+| Report photo | `report-photos/{reporter_id}/{report_id}/{uuid}.{ext}` | the reporter, for their own report | the reporter, responder and above | reviewer and above |
+| Identity evidence | `identity-evidence/{applicant_id}/{uuid}.{ext}` | the applicant | the applicant and reviewers | the server, right after a decision |
+
+- Uploads are `POST` requests with the raw image as the body: JPEG, PNG, or WebP, at most 5 MB, as in Revision 2.
+- The server checks the content type and the file's leading bytes, generates the file name itself, and never uses a client-supplied path.
+- Reads go through `GET /api/app/files/{kind}/...`, which checks the session and the rule above, then streams the file with `Cache-Control: private, no-store` and `X-Content-Type-Options: nosniff`.
+- The browser sends the session cookie with `<img>` requests to the same origin, so no signed links are needed.
+- Every resolved path must stay inside `UPLOAD_DIR`; anything else is 404.
+- A file that is missing on disk answers 404, and the app shows "Photo unavailable".
+- The browser still resizes images and strips their metadata before upload.
+- Deleting evidence after a decision removes the applicant's folder; if that fails, the decision stands and the reviewer sees "evidence deletion pending", as in Revision 2.
 
 ### Trust boundaries
 
 | Boundary | Enforced by |
 |---|---|
-| SPA data access | Row-level security policies, column privileges, table constraints, and database functions in `supabase/migrations` |
-| Files | Storage policies on the two private buckets; signed links for viewing |
-| Partner API | API key (random 32 bytes, stored as SHA-256 hash in `api_clients`), scope check, per-client rate limit |
-| Server-only tables | `signals`, `api_clients`: no policies, so no client can read or write; only the server's secret key reaches them |
-| Supabase secret key | Read from the environment only by `server/supabaseAdmin.mjs`; never in the SPA bundle, Git, logs, or evidence |
-| Partner data exposure | A fixed projection in `server/routes/incidents.mjs` that cannot emit contact numbers, descriptions, coordinates, or reporter ids (D-5) |
-| Static files | `server/static.mjs` serves only resolved paths inside `dist/` |
-| Browser egress | The Content Security Policy allows `'self'` and the configured Supabase origin only |
+| App data access | Session check and role check in every `server/app` route; database functions for state changes with business rules; table constraints |
+| What each role sees | Fixed column lists in `server/store.mjs` queries; contact numbers, descriptions, landmarks, and coordinates only for the reporter and responders and above |
+| Files | `server/files.mjs` path containment and the per-kind read rule |
+| Sessions and passwords | Hashed tokens and scrypt hashes; `HttpOnly`, `Secure`, `SameSite=Lax` cookie; origin check on writes; sign-in limits |
+| Partner API | Unchanged: hashed API keys, scopes, per-client rate limit |
+| Server-only tables | `signals`, `api_clients`, `sessions`, `password_resets`, `users.password_hash`: never returned by any route |
+| Database credentials | `DATABASE_URL` only in the server environment; never in the SPA bundle, Git, logs, or evidence |
+| Partner data exposure | Unchanged fixed projection (D-5) |
+| Static files | Unchanged: only resolved paths inside `dist/` |
+| Browser egress | The Content Security Policy allows `'self'` only; images also allow `blob:` and `data:` for previews |
 
-### API conventions (REQ-032)
+### App API (internal)
 
-- Base path `/api/v1`; breaking changes require `/api/v2`.
-- JSON only; request bodies up to 64 KB for `/signals`, 8 KB elsewhere.
-- Errors: `{ "error": { "code": "invalid_request", "message": "...", "requestId": "..." } }` with codes `invalid_request`, `unauthorized`, `forbidden`, `not_found`, `method_not_allowed`, `rate_limited`, `not_implemented`, `unavailable`, `internal`.
-- Every response carries `X-Request-Id`; timestamps are ISO 8601 with offset.
-- Lists use `limit` (1 to 100, default 25) and an opaque `cursor`; responses include `nextCursor` or `null`.
-- Authentication: partners send `Authorization: Bearer tbk_<key>`; no endpoint accepts app-user tokens, because the SPA no longer calls the server for uploads.
-- The contract lives in `docs/api/openapi.json` (OpenAPI 3.1, JSON so tests can parse it without a dependency).
+`/api/app/*` is for the Tabang SPA only, is not versioned, and is not in `docs/api/openapi.json`.
+It uses the same error envelope, request ids, and cursor paging as `/api/v1`.
 
-### Endpoints
+| Area | Routes |
+|---|---|
+| Session | `GET /api/app/session`, `POST /api/app/sign-up`, `POST /api/app/sign-in`, `POST /api/app/sign-out`, `PATCH /api/app/profile`, `POST /api/app/password-reset`, `POST /api/app/password-reset/confirm`, `POST /api/app/password` |
+| Reports | `POST /api/app/reports`, `GET /api/app/reports/mine`, `POST /api/app/reports/{id}/cancel` |
+| Incidents | `GET /api/app/incidents`, `GET /api/app/incidents/counts`, `GET /api/app/incidents/{id}`, `POST /api/app/incidents/{id}/claim`, `POST /api/app/incidents/{id}/transition`, `POST /api/app/incidents/{id}/verify` |
+| Advisories | `GET /api/app/advisories/mine`, `POST /api/app/advisories`, `POST /api/app/advisories/{id}/unpublish` |
+| Hotlines | `GET /api/app/hotlines`, `PUT /api/app/hotlines/{id}`, `PUT /api/app/hotlines/{id}/review` |
+| Applications | `GET /api/app/applications/mine`, `POST /api/app/applications`, `GET /api/app/applications`, `POST /api/app/applications/{applicantId}/decision` |
+| Files | `POST /api/app/files/report-photos/{reportId}`, `POST /api/app/files/identity-evidence`, `GET /api/app/files/...` |
 
-| Method and path | Auth and scope | Purpose |
-|---|---|---|
-| `GET /api/v1/health` | none | Liveness and version. |
-| `GET /api/v1/advisories` | none, CORS `*` | Published advisories and active signals. |
-| `GET /api/v1/incidents` | partner, `incidents:read` | Partner projection, `since`, `status`, `kind`, `municipality`, cursor. |
-| `GET /api/v1/incidents/{id}` | partner, `incidents:read` | One incident in the partner projection. |
-| `POST /api/v1/signals` | partner, `signals:write` | Canonical hazard signal ingest, idempotent by `source` and `externalId`. |
-| `POST /api/v1/integrations/dost-signal` | partner, `signals:write` | DOST-shaped payload through the adapter; 501 until the contract is known. |
+The route list follows the existing repository methods one to one; the plan may adjust names without changing behavior.
 
-The `/api/uploads/*` routes and their planned `/api/v1/uploads/*` replacements are removed.
+### Partner API, canonical signal, projection, and DOST seam
 
-### Canonical signal (inbound)
+Unchanged from Revision 2: base path `/api/v1`, the endpoints, the error codes, the canonical signal, the partner incident projection (D-5), the DOST adapter seam, and `docs/api/openapi.json`.
+`GET /api/v1/health` additionally reports whether the database answers, returning 503 `unavailable` when it does not (FEAT-002/REQ-014).
 
-```json
-{
-  "source": "dost-signal",
-  "externalId": "TCWS-2026-KRISTINE-014",
-  "type": "tropical-cyclone-wind-signal | rainfall-warning | flood-advisory | other",
-  "level": "1",
-  "headline": "Signal No. 2 raised over Aklan",
-  "body": "optional, up to 2000 characters",
-  "areas": [{ "municipality": "Kalibo", "barangay": "optional" }],
-  "issuedAt": "2026-10-01T08:00:00+08:00",
-  "expiresAt": "2026-10-02T08:00:00+08:00",
-  "url": "optional https link to the official bulletin"
-}
-```
+### Hosting on Render
 
-Municipality names are validated against `aklanPlaces.js`; unknown areas are rejected with `invalid_request`.
-Each accepted signal is stored in `signals` under `source` and `externalId`, with one `public_feed` item with `kind: "advisory"`, `source`, `municipality`, `summary` from `headline`, and `expires_at`.
-
-### Partner incident projection (outbound, D-5)
-
-`id`, `kind`, `incidentStatus`, `verificationStatus`, `severity`, `need`, `peopleAffected`, `municipality`, `barangay`, `createdAt`, `updatedAt`, `acknowledgedAt`, `resolvedAt`.
-
-### DOST Signal adapter seam (REQ-036)
-
-- `server/integrations/dostSignal.mjs` exports `toCanonicalSignal(payload)` and `verifyRequest(headers, rawBody, secret)`.
-- Until D-1's contract is known, `toCanonicalSignal` throws a typed "contract pending" error and the route returns 501.
-- Outbound push to DOST (webhooks or an outbox) is deferred until the contract exists; partners pull from `GET /api/v1/incidents` with `since`.
+- `render.yaml` (a Render Blueprint) declares one Node web service and one Postgres database in the Singapore region.
+- The web service builds with `npm ci && npm run build`, starts with `npm start`, and uses `/api/v1/health` as its health check.
+- `DATABASE_URL` comes from the database's internal connection string.
+- Launch adds a persistent disk mounted at the path in `UPLOAD_DIR` and switches both plans to paid.
+- The app needs no build-time variables any more, because it calls its own origin.
+- Free-stage sleeping: an external uptime check every 10 minutes keeps the service awake, using about 744 of the 750 free hours in a 31-day month; this leaves no hours for a second free service.
 
 ### Local development and tests
 
-- `npx supabase start` runs Postgres, Auth, and Storage in Docker on this machine (D-13); the SPA and the server point at it through `.env`.
-- Policy tests in `tests/policies/` use `node --test` and the real client code against the local stack, signing in as a resident, responder, reviewer, admin, and anonymous visitor.
+- `compose.yaml` runs the official `postgres:17` image in Docker on this machine; `npm run db:start`, `db:stop`, and `db:reset` wrap it and the migration runner.
 - Unit tests keep using fakes and never need Docker.
-- No test touches a hosted Supabase project.
+- The FEAT-001 policy tests become integration tests in `tests/integration/`: they start the real server on a random port against local Postgres and a temporary `UPLOAD_DIR`, and drive it through the real client repositories with a cookie-keeping `fetch`.
+- No test touches a hosted Render service or database.
 
 ## Decisions and trade-offs
 
 | ID | Decision | Alternatives rejected | Reason |
 |---|---|---|---|
-| D-2 | One Node host serves SPA and API. | Static hosting plus a separate API origin. | Unchanged from Revision 1. |
-| D-6 | Withdrawn. | - | `firebase-admin` is no longer needed. |
-| D-9 | Legacy URLs are 301s in the server. | HTML stubs. | Unchanged; implemented in A2. |
-| D-10 | Supabase replaces Firebase for auth and data. | Recovering the Firebase account; PocketBase; Appwrite; Convex. | Len cannot access the Firebase account; Supabase has the closest match to rules-as-boundary and includes storage without billing. |
-| D-11 | Files move to private Supabase Storage buckets; Cloudinary is removed. | Keep Cloudinary and the signing routes. | Removes a secret, a vendor, and four server routes; report photos stop being public. |
-| D-12 | The SPA talks to Supabase directly; policies and database functions are the boundary. | Route all data through the Node API. | Same shape as today; the app keeps working for residents when the Node host is down. |
-| D-13 | Policy tests run against a local Supabase stack in Docker. | A second hosted project. | No network, no shared state, keeps the free project allowance. |
-| D-14 | FEAT-001 is revised in place; A1, A2, and C1 are kept; B1's Firestore rules work is parked on an archive branch. | A separate migration feature first. | One spec, and known rules bugs are not ported before being fixed. |
-| D-15 | No data or account migration; the database starts empty. | Export from Firebase. | The Firebase project is inaccessible and the app is not live. |
-| D-16 | Add `@supabase/supabase-js` (runtime) and `supabase` (dev, the CLI); remove `firebase`, `firebase-tools`, `@firebase/rules-unit-testing`. | Hand-written REST calls. | The official client covers auth, data, and storage; the CLI runs the local stack and migrations. |
-| D-17 | Email confirmation is off during development. | Confirmation on now. | The built-in sender is restricted; revisit with Q-5 before real users. |
-| D-18 | State changes with business rules are database functions, not client-side transactions. | Wide update policies. | Postgres cannot express "old row versus new row" in a policy as Firestore rules did; functions keep the check and the write atomic. |
-| D-19 | Hotline rating aggregates are computed by a view. | Stored counters maintained by the client or a trigger. | Nothing to forge and nothing to keep in sync at this size. |
+| D-2 | One Node host serves SPA and API. | Static hosting plus a separate API origin. | Unchanged; on Render it is one web service. |
+| D-9 | Legacy URLs are 301s in the server. | HTML stubs. | Unchanged. |
+| D-10 | Superseded by D-20 to D-26. | - | Supabase is no longer used. |
+| D-11 | Superseded by D-22. | - | - |
+| D-12 | Reversed by D-20. | - | The browser has no database provider to talk to. |
+| D-13 | Integration tests run against local Postgres in Docker. | A hosted test database. | Same reasons as before; the stack is now one container. |
+| D-15 | No data or account migration; the database starts empty. | Export from Supabase. | No hosted Supabase project was created (assumption to confirm). |
+| D-16 | Superseded by D-24. | - | - |
+| D-17 | Email confirmation stays off. | Confirmation on now. | Revisit with Q-5 before real users. |
+| D-18 | State changes with business rules stay database functions. | Rules only in server code. | Keeps each check and write atomic; the functions and their tests carry over. |
+| D-19 | Hotline rating aggregates stay a view. | Stored counters. | Unchanged. |
+| D-20 | The Node server is the only data boundary; the browser never reaches Postgres. | Keep row-level security with a per-request user setting. | Without Supabase's roles the server connects as the table owner, which bypasses column grants, and Render's role privileges are unverified; checks in one place, proven by integration tests, are simpler and honest. |
+| D-21 | Own sign-in: scrypt hashes and hashed server-side sessions in an httpOnly cookie. | An auth library; an external auth provider. | Uses `node:crypto` only; Len chose this on 2026-10-21. |
+| D-22 | Files on a Render persistent disk, served through an authorization check. | Bytes in Postgres; an S3-style store. | Standard library only; Len chose this on 2026-10-21; no signed-link machinery needed on one origin. |
+| D-23 | Reset email through an HTTP email API with `fetch`. | SMTP; no email. | Works on any Render plan, including free, which blocks SMTP ports; no dependency; Len chose this on 2026-10-21. |
+| D-24 | Add `pg` (runtime); remove `@supabase/supabase-js` and `supabase` (dev). | `postgres` (porsager); a query builder or ORM. | The most widely used Postgres driver; plain SQL keeps the migrations readable; Len authorized one driver on 2026-10-21. |
+| D-25 | Build for the paid stage, demonstrate on the free stage. | Free only; paid from day one. | Len chose this on 2026-10-21. |
+| D-26 | `npm start` applies pending migrations before listening. | Render's pre-deploy command; manual `psql`. | Works on the free plan, and one instance means no race between instances. |
 | - | Keep `node:http` with a small router. | Express or Fastify. | Unchanged. |
-| - | OpenAPI as JSON, hand-written. | YAML plus a parser or a generator. | Unchanged. |
-| - | In-memory rate limiting. | Database or Redis counters. | Unchanged. |
-| - | Policy tests in Node through the real repositories. | pgTAP SQL tests. | REQ-005 needs the real client shape; no second test language. |
+| - | OpenAPI as JSON, hand-written, partner API only. | Documenting the app API too. | The app API is internal and changes with the SPA. |
+| - | In-memory rate limiting. | Database or Redis counters. | One instance. |
 
 Failure modes considered:
 
-- Free project paused after a week without activity: every data call fails until it is resumed from the dashboard; operations documents an external uptime check that calls `GET /api/v1/advisories`, which reads the database.
-- Node host down: the partner API and the SPA shell are unavailable; a browser that already loaded the SPA can still reach Supabase.
-- Secret key leaked: rotate it in the Supabase dashboard and on the host, and rotate partner API keys; the server logs only redacted data.
-- A partner floods `/signals`: per-client rate limit and body size cap; idempotent upsert prevents duplicates.
-- Evidence deletion fails after a decision: the decision stands, the reviewer sees "evidence deletion pending", and the folder can be deleted again.
-- A migration is wrong: `supabase db reset` rebuilds the local database; hosted changes are only ever applied from committed migrations.
-- DOST contract never arrives: the canonical endpoint remains usable by any partner who adopts it.
-- The old Firebase project stays online with its old rules and cannot be changed; no build of this app points at it after the migration (Len action: try account recovery to delete it).
+- Free service asleep: the first visit takes about a minute; the uptime check keeps it awake, and the offline queue keeps a resident's report until the server answers.
+- Free database expires after 30 days: its data is deleted after the 14-day grace period; operations says to create the demo database again, or move to paid, before day 30.
+- Free filesystem loses files: expected in the demo stage; records stay and the app shows "Photo unavailable".
+- Server down: the whole app is unavailable, including the hotline directory; an already open app shows 911 and keeps queued reports (FEAT-001 behavior).
+- Database credentials leaked: rotate the database password in Render, which updates `DATABASE_URL` for the linked service, and redeploy.
+- Session token stolen: it is useless after sign-out or a password reset, and it expires after 30 days; cookies are never readable by scripts.
+- Disk full: uploads fail with a plain message and "Send without photos" still works.
+- A migration is wrong: the server refuses to start, so the previous deploy keeps serving; fix with a new migration.
+- Partner flooding, evidence deletion failures, and the missing DOST contract: unchanged from Revision 2.
 
 ## Open questions and approval
 
-- Q-1: Node host provider and domain.
+- Q-1: Domain; the `onrender.com` address is used until one is chosen.
 - Q-2: DOST contact and contract.
-- Q-4: Len creates the hosted Supabase project (Singapore region proposed) and supplies its URL and keys; needed before deployment, not before implementation.
-- Q-5: SMTP provider for sign-up and password reset emails; needed before real users.
-- Q-6: Whether the old Cloudinary assets and the old Firebase project can be deleted; Len action.
+- Q-5: HTTP email provider (Resend proposed) and sender address; needed for real reset emails, not for implementation.
+- Q-6: Whether the old Cloudinary assets and Firebase project can be deleted; Len action.
+- Q-7: Len creates the Render account and workspace and applies the Blueprint; needed before deployment, not before implementation.
+- Q-8: Paid plan choice and monthly cost before launch.
 
-Approval: Revision 2, including D-15 to D-19, was approved by Len in chat on 2026-10-17 at about 22:21 +08:00.
-Len decided D-10 to D-14 in chat on 2026-10-03.
+Approval: Revision 3, including the proposed D-20 and D-26, was approved by Len in chat on 2026-10-21 at about 10:49 +08:00.
+Len decided the move to Render, the free-then-paid stages, the persistent disk, own sign-in with `pg`, and the HTTP email API in chat earlier on 2026-10-21.
 
 ## Council record
 
-2026-09-26, Revision 1:
+2026-09-26, Revision 1, and 2026-10-03, Revision 2: see Revision 2 in Git at `f8e08d8`.
 
-- Devil's advocate: an API built before the DOST contract may not fit it; mitigated by a canonical schema plus an adapter seam instead of guessing DOST's shape.
-- Simplicity: no framework, no queue service, no outbound push until needed.
-- Security and reliability: the static-file leak and rules gaps are fixed before any API is exposed; partner projection is fixed code, not configuration; keys are hashed and scoped.
-- Architecture: pure domain modules are shared by client and server, and handlers depend on a store interface.
+2026-10-21, Revision 3:
 
-2026-10-03, Revision 2:
-
-- Devil's advocate: the free project pauses when idle and its email sender is restricted, both of which bite a flood app at the worst time; recorded as failure modes and Q-5, to be closed before go-live.
-- Simplicity: storage moves in with the database, which deletes Cloudinary, its secret, the signing module, and four routes; rating aggregates become a view.
-- Security and reliability: every rule that was a Firestore rule must exist again as a policy, constraint, or function and be proven by a test that uses the real client; server-only tables have no policies at all.
-- Architecture: the provider is confined to two files, the gateway and repository method names stay as the ports, and provider error text never crosses into the UI.
-- Revisit when: DOST publishes a contract, traffic needs more than one server instance, the free plan limits are reached, or a data sharing agreement allows richer partner data.
+- Devil's advocate: own sign-in is the riskiest code in the app; it is kept to `node:crypto` primitives, hashed tokens, no password or token in logs, and integration tests for every failure path, and an auth library remains the fallback if review finds it wanting.
+- Devil's advocate: a single server is now a single point of failure for residents as well as partners; accepted at this scale, with the offline queue and 911 copy as the floor.
+- Simplicity: one service, one database, one disk, one driver; same-origin cookies remove signed links and build-time configuration.
+- Security and reliability: every rule that was a policy must exist again as a route check, query column list, constraint, or function, and be proven by an integration test through the real client.
+- Architecture: the gateway and repository method names stay the ports, so routes, components, and fakes change little; `pg` is confined to one module.
+- Revisit when: more than one instance is needed (sessions are already in Postgres, but files and rate limits are not), uploads outgrow a disk, or DOST publishes a contract.

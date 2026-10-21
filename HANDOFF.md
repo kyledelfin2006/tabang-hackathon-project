@@ -1,23 +1,80 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-18T01:23:47+08:00
-State: FEAT-001 plan phases 1 to 8 complete on `feat-001/integration`; stopped for Len (gaps and Len actions below)
-Feature: FEAT-001
+Updated: 2026-10-21T10:49:23+08:00
+State: FEAT-002 (move to Render) approved; ready for another AI coding agent to execute plan Phases 1 to 6 on `feat-002/render`, auto mode without hard stops; no phase started
+Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
 
 - Workspace rules: `../AGENTS.md`
 - Index: [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md)
-- Architecture: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 2, approved
-- Feature: [docs/features/FEAT-001-stabilization-and-integration-api.md](docs/features/FEAT-001-stabilization-and-integration-api.md) Revision 2, approved
-- Plan: [docs/plans/FEAT-001-implementation.md](docs/plans/FEAT-001-implementation.md) Revision 2, approved
+- Architecture: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 3, approved; Revision 2 is in Git at `f8e08d8`
+- Feature: [docs/features/FEAT-002-render-migration.md](docs/features/FEAT-002-render-migration.md) Revision 1, approved
+- Plan: [docs/plans/FEAT-002-implementation.md](docs/plans/FEAT-002-implementation.md) Revision 1, approved; its section 1.1 sets this run's rules and section 4 holds the agent prompt
+- Evidence: `docs/evidence/FEAT-002.md`, created by the agent in Phase 1
+- Completed feature: [docs/features/FEAT-001-stabilization-and-integration-api.md](docs/features/FEAT-001-stabilization-and-integration-api.md) and [docs/plans/FEAT-001-implementation.md](docs/plans/FEAT-001-implementation.md) Revision 2, approved
 - Review evidence: [docs/evidence/2026-09-26-project-review.md](docs/evidence/2026-09-26-project-review.md)
 
 Reread these files and inspect actual Git status before acting; prior chat memory is not authoritative.
 The Revision 1 documents are in Git at `d928c56` on `feat-001/integration`.
 
-## Approval and allowed work
+## FEAT-002 direction and approval
+
+On 2026-10-21 Len said in chat: "Change of plans, well be migrating this project to render instead".
+Asked what Render should replace, Len chose "Render replaces Supabase too" (database, sign-in, and files).
+Len then chose, in chat on 2026-10-21: free stage now and paid at launch (D-25), a Render persistent disk for files (D-22), own sign-in with `pg` as the only new dependency (D-21, D-24), and an HTTP email API for reset email (D-23).
+Those choices set the direction and authorize `pg`.
+On 2026-10-21 at about 10:49 +08:00, after reviewing the summary of the drafts, Len said in chat: "Alright create a handoff for another AI coding agent to execute. Skip the mandatory hard stops but keep thre required commiting and testing phases"
+This approves the drafts as written, including D-20 and D-26, hands execution to another AI coding agent, and waives the hard stops while keeping the per-phase testing and commit gates.
+
+| Document or decision | Revision | State | Len chat approval reference |
+| --- | --- | --- | --- |
+| Architecture | Revision 3 | Approved | 2026-10-21 about 10:49 +08:00 |
+| FEAT-002 | Revision 1 | Approved | 2026-10-21 about 10:49 +08:00 |
+| FEAT-002 plan | Revision 1 | Approved | 2026-10-21 about 10:49 +08:00 |
+| Execution mode | `auto`, no hard stops; testing and commit gates kept | Approved | 2026-10-21 about 10:49 +08:00 |
+| Executor | Another AI coding agent, one agent | Approved | 2026-10-21 about 10:49 +08:00 |
+| D-20 server as the only data boundary | - | Approved | 2026-10-21 about 10:49 +08:00 |
+| D-21 to D-25 | - | Decided in chat | 2026-10-21, before the drafts |
+| D-26 migrations on `npm start` | - | Approved | 2026-10-21 about 10:49 +08:00 |
+| `pg` dependency | `^8.23.1` | Authorized | 2026-10-21, before the drafts |
+
+The approved documents are uncommitted on `feat-002/render` as of 2026-10-21T10:49+08:00; Len commits them, or the executing agent commits them first with `docs(feat-002): approve the render migration and hand off execution`, staging only `HANDOFF.md`, `docs/SPEC_INDEX.md`, `docs/product/ARCHITECTURE.md`, `docs/features/FEAT-002-render-migration.md`, and `docs/plans/FEAT-002-implementation.md`.
+
+## FEAT-002 run rules
+
+Allowed phases: FEAT-002 plan Revision 1 Phases 1 to 6, in order.
+Plan section 1.1 replaces the workspace stop rules for this run:
+
+- No pauses for review, approval, or questions; the three-attempt limit does not stop the run, but every attempt is logged below.
+- Open decisions are made by the agent, closest to the specs and simplest, and logged below.
+- Each phase is committed only after its verification commands pass, and no test is skipped, weakened, or deleted to pass.
+- The run ends early only when a gate cannot pass at all, such as Docker being impossible to start; that work stays uncommitted and this file is updated first.
+- Never push, merge, rebase, reset, deploy, touch hosted services, or add a dependency other than `pg`.
+
+## FEAT-002 progress
+
+| Phase | State | Checkpoint commit |
+| --- | --- | --- |
+| 1 Local Postgres and the migration runner | Not started | - |
+| 2 Sign-in, sessions, and password reset | Not started | - |
+| 3 App data routes and the Postgres store | Not started | - |
+| 4 Files on disk | Not started | - |
+| 5 Switch the client and remove Supabase | Not started | - |
+| 6 Render deployment and documentation | Not started | - |
+
+## FEAT-002 problems and attempts
+
+| Problem | Attempts | Changes tried and observed result | State |
+| --- | --- | --- | --- |
+| None yet. | - | - | - |
+
+## Decisions made by the agent
+
+None yet; the executing agent appends each decision it makes with the date, the options, and the reason, for Len to review.
+
+## FEAT-001 approval record
 
 Revision 1 was approved by Len in chat on 2026-09-26 at about 16:27 +08:00 ("Okay I approve"), with execution mode `hard-stop` and D-5 to D-9.
 On 2026-10-03 Len said in chat that the Firebase account is inaccessible, that the project will switch to Supabase, that time is not a constraint, and that the app is a work in progress and not live.
@@ -68,7 +125,8 @@ Architecture and behavior changes return to Len; this handoff cannot override th
 - Phase 6 is complete with checkpoint `feat(api): add the versioned api foundation and client keys`: `/api/v1` router with the error envelope, request ids, partner key checks, scopes, rate limits, redacted request logs, `GET /api/v1/health`, the OpenAPI document, and `npm run api-clients`.
 - Phase 7 is complete with checkpoint `feat(api): add partner incidents, signals, and the dost seam`: `GET /api/v1/incidents` and `/{id}` in the D-5 projection with cursor paging and `since`, public `GET /api/v1/advisories`, idempotent `POST /api/v1/signals`, the DOST route answering 501, and `npm run seed:hotlines`.
 - Phase 8 is complete with checkpoint `docs: document the supabase deployment and partner api`: README, operations guide, partner API guide, legacy URL map, archived superseded architecture notes, full checks, and a server smoke test.
-- Nothing is pushed or merged into `main`; merging `feat-001/integration` into `main` is Len's action.
+- At Len's request, `feat-001/integration` was pushed to `origin` (`len-build-it/Project_Tabang`) at `f8e08d8`; nothing is merged into `main`.
+- FEAT-002 is expected to replace the Supabase deployment before FEAT-001 is ever deployed; whether to merge `feat-001/integration` first or merge both together is Len's choice.
 
 ## Checks and evidence
 
@@ -76,8 +134,8 @@ All results are in [docs/evidence/FEAT-001.md](docs/evidence/FEAT-001.md), which
 Final run on 2026-10-18: `npm ci`, lint, 240 of 240 unit tests three times, 33 of 33 server tests, 55 of 55 policy tests on a database rebuilt from all migrations, build, `npm run check`, and a server smoke test on port 18123.
 `npm audit --omit=dev --audit-level=high` reports 0 vulnerabilities; the full audit reports 5 findings in development tools only (vitest and its dependencies), not fixed here.
 No browser, hosted-project, or physical-device check has been run; those are listed for Len below.
-The CI `policies` job has not run, because nothing is pushed.
-The Supabase free plan limits and email sender restrictions in the architecture are remembered, not verified.
+The CI result for the pushed `feat-001/integration` branch has not been checked.
+Render's free-tier limits in Architecture Revision 3 were read on render.com/docs/free on 2026-10-21; paid prices, disk snapshots, and Postgres backups are not verified.
 Earlier results are in [docs/evidence/FEAT-001-track-a.md](docs/evidence/FEAT-001-track-a.md), [docs/evidence/FEAT-001-track-c.md](docs/evidence/FEAT-001-track-c.md), and on the archive branch.
 
 ## Blockers and attempts
@@ -106,6 +164,7 @@ Do not reset a count on a new session or silently reinterpret a failed check as 
 
 ## Next action
 
-FEAT-001 is complete as far as this agent can take it; Len decides what happens next.
-Len actions, from plan section 4: review the gaps above and the privacy draft; supply the PSGC file; run the browser scenarios listed in the evidence file; create the hosted Supabase project and follow `docs/operations.md`; choose the host, domain, and SMTP provider; obtain the DOST contract; and merge `feat-001/integration` into `main` when satisfied.
-Any further change to behavior needs a new or revised feature spec and approval.
+The executing agent starts FEAT-002 plan Phase 1 in this worktree on `feat-002/render`, using the prompt in plan section 4, and continues through Phase 6.
+At the end of every phase it updates the progress, problems, and decisions tables above.
+Do not create the hosted Supabase project; FEAT-001's Supabase deployment steps are superseded by FEAT-002.
+The FEAT-001 known gaps above stay open and are not part of FEAT-002.
