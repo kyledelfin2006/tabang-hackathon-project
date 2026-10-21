@@ -106,19 +106,19 @@ Checkpoint message: `feat(auth): add tabang sign-in, sessions, and password rese
 ### Phase 3: App data routes and the Postgres store
 
 Requirements: FEAT-002/REQ-007 (server part), REQ-014, REQ-015
-State: Not started
+State: Complete
 
 Tasks:
 
-- [ ] Rewrite `server/store.mjs` on `server/db.mjs`, keeping the partner functions' names and results; add the app queries with fixed column lists per role.
-- [ ] `server/app/*.mjs` for reports, incidents, advisories, hotlines, and applications, one route per repository method, each checking the session and role first.
-- [ ] Health check queries the database and answers 503 `unavailable` when it fails.
-- [ ] Port the `reports`, `publicFeed`, `hotlines`, `applications`, `store`, and `partnerApi` policy scenarios to `tests/integration/` as HTTP tests against the in-process server.
+- [x] Rewrite `server/store.mjs` on `server/db.mjs`, keeping the partner functions' names and results; add the app queries with fixed column lists per role.
+- [x] `server/app/*.mjs` for reports, incidents, advisories, hotlines, and applications, one route per repository method, each checking the session and role first.
+- [x] Health check queries the database and answers 503 `unavailable` when it fails.
+- [x] Port the `reports`, `publicFeed`, `hotlines`, `applications`, `store`, and `partnerApi` policy scenarios to `tests/integration/` as HTTP tests against the in-process server.
 
 Verification:
 
-- [ ] `npm run test:integration` and `npm run test:server`: pass; `git diff f8e08d8 -- docs/api/openapi.json` shows no change.
-- [ ] `npm run lint` and `npm run test:unit`: pass.
+- [x] `npm run test:integration` and `npm run test:server`: pass; `git diff f8e08d8 -- docs/api/openapi.json` shows no change.
+- [x] `npm run lint` and `npm run test:unit`: pass.
 
 Checkpoint message: `feat(api): serve app data from postgres behind session checks`
 

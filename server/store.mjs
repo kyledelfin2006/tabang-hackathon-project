@@ -45,6 +45,11 @@ function toClient(row) {
 
 export function createPostgresStore() {
   return {
+    async ping() {
+      await query("select 1");
+      return true;
+    },
+
     // -------------------------------------------------------------------------
     // Users, profiles, sessions, and password resets
     // -------------------------------------------------------------------------
@@ -246,6 +251,470 @@ export function createPostgresStore() {
     },
 
     // -------------------------------------------------------------------------
+    // Reports (Resident)
+    // -------------------------------------------------------------------------
+    async createReport({
+      id,
+      reporterId,
+      kind,
+      municipality,
+      barangay,
+      landmark,
+      publicLocationLabel,
+      publicSummary,
+      latitude,
+      longitude,
+      description,
+      contactPhone,
+      severity,
+      need,
+      peopleAffected,
+      imagePaths = [],
+    }) {
+      const sql = `
+        insert into public.reports (
+          id, reporter_id, kind, municipality, barangay, landmark,
+          public_location_label, public_summary, latitude, longitude,
+          description, contact_phone, severity, need, people_affected,
+          image_paths
+        ) values (
+          $1, $2, $3, $4, $5, $6,
+          $7, $8, $9, $10,
+          $11, $12, $13, $14, $15,
+          $16
+        )
+        on conflict (id) do nothing
+        returning id
+      `;
+      const params = [
+        id,
+        reporterId,
+        kind,
+        municipality,
+        barangay,
+        landmark || null,
+        publicLocationLabel,
+        publicSummary,
+        latitude ?? null,
+        longitude ?? null,
+        description,
+        contactPhone,
+        severity ?? null,
+        need ?? null,
+        peopleAffected ?? null,
+        imagePaths,
+      ];
+      const { rows } = await query(sql, params);
+      return { reportId: rows.length > 0 ? rows[0].id : id };
+    },
+
+    async listMyReports(reporterId, { cursor = null, limit = 10 } = {}) {
+      const conditions = ["reporter_id = $1"];
+      const params = [reporterId];
+      let paramIdx = 2;
+
+      if (cursor && cursor.createdAt && cursor.id) {
+        conditions.push(
+          `(created_at < $${paramIdx} or (created_at = $${paramIdx} and id < $${paramIdx + 1}))`,
+        );
+        params.push(cursor.createdAt, cursor.id);
+        paramIdx += 2;
+      }
+
+      const sql = `
+        select id, kind, municipality, barangay, landmark, public_location_label,
+               description, severity, need, people_affected, verification_status,
+               incident_status, created_at
+        from public.reports
+        where ${conditions.join(" and ")}
+        order by created_at desc, id desc
+        limit $${paramIdx}
+      `;
+      params.push(limit);
+
+      const { rows } = await query(sql, params);
+      return rows.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        municipality: r.municipality,
+        barangay: r.barangay,
+        landmark: r.landmark,
+        publicLocationLabel: r.public_location_label,
+        description: r.description,
+        severity: r.severity,
+        need: r.need,
+        peopleAffected: r.people_affected,
+        verificationStatus: r.verification_status,
+        incidentStatus: r.incident_status,
+        createdAt: r.created_at,
+      }));
+    },
+
+    async cancelReport(actorId, reportId) {
+      await query("select public.cancel_report($1, $2)", [actorId, reportId]);
+      return { ok: true };
+    },
+
+    // -------------------------------------------------------------------------
+    // Incidents (Responder)
+    // -------------------------------------------------------------------------
+    async listIncidents({ statuses, kind, cursor = null, limit = 25 } = {}) {
+      const conditions = ["incident_status = any($1)"];
+      const params = [statuses];
+      let paramIdx = 2;
+
+      if (kind && kind !== "all") {
+        conditions.push(`kind = $${paramIdx}`);
+        params.push(kind);
+        paramIdx++;
+      }
+
+      if (cursor && cursor.createdAt && cursor.id) {
+        conditions.push(
+          `(created_at > $${paramIdx} or (created_at = $${paramIdx} and id > $${paramIdx + 1}))`,
+        );
+        params.push(cursor.createdAt, cursor.id);
+        paramIdx += 2;
+      }
+
+      const sql = `
+        select id, kind, incident_status, verification_status, priority,
+               municipality, barangay, landmark, public_location_label,
+               description, contact_phone, latitude, longitude, severity,
+               need, people_affected, image_paths, assigned_responder_ids,
+               created_at, acknowledged_at, reporter_id
+        from public.reports
+        where ${conditions.join(" and ")}
+        order by created_at asc, id asc
+        limit $${paramIdx}
+      `;
+      params.push(limit);
+
+      const { rows } = await query(sql, params);
+      return rows.map((r) => ({
+        id: r.id,
+        reporterId: r.reporter_id,
+        kind: r.kind,
+        incidentStatus: r.incident_status,
+        verificationStatus: r.verification_status,
+        priority: r.priority,
+        municipality: r.municipality,
+        barangay: r.barangay,
+        landmark: r.landmark,
+        publicLocationLabel: r.public_location_label,
+        description: r.description,
+        contactPhone: r.contact_phone,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        severity: r.severity,
+        need: r.need,
+        peopleAffected: r.people_affected,
+        imagePaths: r.image_paths,
+        assignedResponderIds: r.assigned_responder_ids,
+        createdAt: r.created_at,
+        acknowledgedAt: r.acknowledged_at,
+      }));
+    },
+
+    async getIncident(id) {
+      const sql = `
+        select id, kind, incident_status, verification_status, priority,
+               municipality, barangay, landmark, public_location_label,
+               description, contact_phone, latitude, longitude, severity,
+               need, people_affected, image_paths, assigned_responder_ids,
+               created_at, acknowledged_at, reporter_id
+        from public.reports
+        where id = $1
+      `;
+      const { rows } = await query(sql, [id]);
+      if (rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        id: r.id,
+        reporterId: r.reporter_id,
+        kind: r.kind,
+        incidentStatus: r.incident_status,
+        verificationStatus: r.verification_status,
+        priority: r.priority,
+        municipality: r.municipality,
+        barangay: r.barangay,
+        landmark: r.landmark,
+        publicLocationLabel: r.public_location_label,
+        description: r.description,
+        contactPhone: r.contact_phone,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        severity: r.severity,
+        need: r.need,
+        peopleAffected: r.people_affected,
+        imagePaths: r.image_paths,
+        assignedResponderIds: r.assigned_responder_ids,
+        createdAt: r.created_at,
+        acknowledgedAt: r.acknowledged_at,
+      };
+    },
+
+    async getIncidentCounts(actorId) {
+      const { rows } = await query("select * from public.incident_counts($1)", [actorId]);
+      if (rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        openIncidents: r.open_incidents,
+        unclaimed: r.unclaimed,
+        overdue: r.overdue,
+        verified: r.verified,
+        awaitingVerification: r.awaiting_verification,
+        countedAt: r.counted_at,
+      };
+    },
+
+    async listIncidentEvents(incidentId) {
+      const sql = `
+        select id, type, from_status, to_status, actor_id, actor_role, note, created_at
+        from public.report_events
+        where report_id = $1
+        order by created_at asc, id asc
+        limit 100
+      `;
+      const { rows } = await query(sql, [incidentId]);
+      return rows.map((r) => ({
+        id: String(r.id),
+        type: r.type,
+        fromStatus: r.from_status,
+        toStatus: r.to_status,
+        actorId: r.actor_id,
+        actorRole: r.actor_role,
+        note: r.note,
+        createdAt: r.created_at,
+      }));
+    },
+
+    async claimIncident(actorId, incidentId) {
+      await query("select public.claim_incident($1, $2)", [actorId, incidentId]);
+      return { ok: true };
+    },
+
+    async transitionIncident(actorId, incidentId, toStatus, note = "") {
+      await query("select public.transition_incident($1, $2, $3, $4)", [
+        actorId,
+        incidentId,
+        toStatus,
+        note,
+      ]);
+      return { ok: true };
+    },
+
+    async verifyIncident(actorId, incidentId, verificationStatus) {
+      await query("select public.verify_incident($1, $2, $3)", [
+        actorId,
+        incidentId,
+        verificationStatus,
+      ]);
+      return { ok: true };
+    },
+
+    // -------------------------------------------------------------------------
+    // Advisories (Public Feed)
+    // -------------------------------------------------------------------------
+    async listPublicFeed({ limit = 6 } = {}) {
+      const sql = `
+        select id, kind, summary, municipality, barangay, source, published, created_at, expires_at
+        from public.public_feed
+        where published = true and (expires_at is null or expires_at > now())
+        order by created_at desc
+        limit $1
+      `;
+      const { rows } = await query(sql, [limit]);
+      return rows.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        summary: r.summary,
+        municipality: r.municipality,
+        barangay: r.barangay,
+        source: r.source,
+        published: r.published,
+        createdAt: r.created_at,
+        expiresAt: r.expires_at,
+      }));
+    },
+
+    async listOwnAdvisories(actorId, { limit = 20 } = {}) {
+      const sql = `
+        select id, kind, summary, municipality, barangay, source, published, created_at, expires_at
+        from public.public_feed
+        where created_by = $1
+        order by created_at desc
+        limit $2
+      `;
+      const { rows } = await query(sql, [actorId, limit]);
+      return rows.map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        summary: r.summary,
+        municipality: r.municipality,
+        barangay: r.barangay,
+        source: r.source,
+        published: r.published,
+        createdAt: r.created_at,
+        expiresAt: r.expires_at,
+      }));
+    },
+
+    async createAdvisory(actorId, { summary, municipality = null, barangay = null }) {
+      const sql = `
+        insert into public.public_feed (kind, summary, municipality, barangay, created_by, source, published)
+        values ('advisory', $1, $2, $3, $4, 'tabang', true)
+        returning id, created_at
+      `;
+      const { rows } = await query(sql, [summary, municipality || null, barangay || null, actorId]);
+      return rows[0];
+    },
+
+    async unpublishAdvisory(actorId, id) {
+      const sql = `
+        update public.public_feed
+        set published = false
+        where id = $1 and (created_by = $2 or public.is_admin($2))
+        returning id
+      `;
+      const { rows } = await query(sql, [id, actorId]);
+      return rows.length > 0;
+    },
+
+    // -------------------------------------------------------------------------
+    // Hotlines
+    // -------------------------------------------------------------------------
+    async listHotlines({ limit = 50 } = {}) {
+      const sql = `
+        select id, organization, coverage_area, phone_numbers, verified,
+               verified_at, verified_by, rating_count, rating_total
+        from public.hotline_directory
+        order by organization asc
+        limit $1
+      `;
+      const { rows } = await query(sql, [limit]);
+      return rows.map((r) => ({
+        id: r.id,
+        organization: r.organization,
+        coverageArea: r.coverage_area,
+        phoneNumbers: r.phone_numbers,
+        verified: r.verified,
+        verifiedAt: r.verified_at,
+        verifiedBy: r.verified_by,
+        ratingCount: Number(r.rating_count || 0),
+        ratingTotal: Number(r.rating_total || 0),
+      }));
+    },
+
+    async getHotlineReview(hotlineId, userId) {
+      const sql = `
+        select rating, comment
+        from public.hotline_reviews
+        where hotline_id = $1 and reviewer_id = $2
+      `;
+      const { rows } = await query(sql, [hotlineId, userId]);
+      if (rows.length === 0) return null;
+      return { rating: rows[0].rating, comment: rows[0].comment || "" };
+    },
+
+    async upsertHotlineReview(userId, hotlineId, rating, comment = "") {
+      const sql = `
+        insert into public.hotline_reviews (hotline_id, reviewer_id, rating, comment)
+        values ($1, $2, $3, $4)
+        on conflict (hotline_id, reviewer_id) do update
+        set rating = excluded.rating,
+            comment = excluded.comment,
+            updated_at = now()
+        returning hotline_id
+      `;
+      await query(sql, [hotlineId, userId, rating, comment]);
+      return { ok: true };
+    },
+
+    // -------------------------------------------------------------------------
+    // Responder Applications & Review
+    // -------------------------------------------------------------------------
+    async getMyApplication(userId) {
+      const sql = `
+        select status, organization, badge_number, municipality, review_notes, submitted_at
+        from public.responder_applications
+        where applicant_id = $1
+      `;
+      const { rows } = await query(sql, [userId]);
+      if (rows.length === 0) return null;
+      const r = rows[0];
+      return {
+        status: r.status,
+        organization: r.organization,
+        badgeNumber: r.badge_number,
+        municipality: r.municipality,
+        reviewNotes: r.review_notes,
+        submittedAt: r.submitted_at,
+      };
+    },
+
+    async submitApplication(actorId, {
+      organization,
+      badgeNumber,
+      municipality,
+      identityDocumentPath,
+      selfiePath,
+      consentVersion,
+    }) {
+      await query(
+        "select public.submit_application($1, $2, $3, $4, $5, $6, $7)",
+        [
+          actorId,
+          organization,
+          badgeNumber,
+          municipality,
+          identityDocumentPath,
+          selfiePath,
+          consentVersion,
+        ],
+      );
+      return { ok: true };
+    },
+
+    async listPendingApplications({ limit = 20 } = {}) {
+      const sql = `
+        select a.applicant_id, a.organization, a.badge_number, a.municipality,
+               a.consent_version, a.identity_document_path, a.selfie_path,
+               a.submitted_at,
+               p.display_name, p.email
+        from public.responder_applications a
+        left join public.profiles p on p.id = a.applicant_id
+        where a.status = 'pending'
+        order by a.submitted_at asc
+        limit $1
+      `;
+      const { rows } = await query(sql, [limit]);
+      return rows.map((r) => ({
+        id: r.applicant_id,
+        applicantId: r.applicant_id,
+        applicantName: r.display_name || "",
+        applicantEmail: r.email || "",
+        organization: r.organization,
+        badgeNumber: r.badge_number,
+        municipality: r.municipality,
+        consentVersion: r.consent_version,
+        identityDocumentPath: r.identity_document_path,
+        selfiePath: r.selfie_path,
+        submittedAt: r.submitted_at,
+      }));
+    },
+
+    async decideApplication(actorId, applicantId, approve, notes = "") {
+      await query("select public.decide_application($1, $2, $3, $4)", [
+        actorId,
+        applicantId,
+        approve,
+        notes,
+      ]);
+      return { ok: true };
+    },
+
+    // -------------------------------------------------------------------------
     // Partner API
     // -------------------------------------------------------------------------
     async findApiClient(id) {
@@ -400,6 +869,13 @@ export function createSupabaseStore(client) {
     "id, kind, incident_status, verification_status, severity, need, people_affected, municipality, barangay, created_at, updated_at, acknowledged_at, resolved_at";
 
   return {
+    async ping() {
+      const row = check(
+        await client.from("api_clients").select("id").limit(1),
+      );
+      return Boolean(row);
+    },
+
     async findApiClient(id) {
       const row = check(
         await client.from("api_clients").select("*").eq("id", id).maybeSingle(),

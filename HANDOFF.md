@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T11:37:00+08:00
-State: Phase 2 complete; ready for Phase 3 (App data routes and the Postgres store)
+Updated: 2026-10-21T11:52:00+08:00
+State: Phase 3 complete; ready for Phase 4 (Files on disk)
 Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
@@ -58,8 +58,8 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | Phase | State | Checkpoint commit |
 | --- | --- | --- |
 | 1 Local Postgres and the migration runner | Complete | `611ad38908f735cb5e8b4aeb47c9306fc84b9283` |
-| 2 Sign-in, sessions, and password reset | Complete | Pending commit |
-| 3 App data routes and the Postgres store | Not started | - |
+| 2 Sign-in, sessions, and password reset | Complete | `20c2812b2b1d86197e6c5987aa118932b13fe387` |
+| 3 App data routes and the Postgres store | Complete | Pending commit |
 | 4 Files on disk | Not started | - |
 | 5 Switch the client and remove Supabase | Not started | - |
 | 6 Render deployment and documentation | Not started | - |
