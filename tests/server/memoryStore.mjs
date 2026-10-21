@@ -235,6 +235,11 @@ export function createMemoryStore(options = {}) {
       return { reportId: id };
     },
 
+    async getReportReporterId(reportId) {
+      const row = incidents.find((r) => r.id === reportId);
+      return row ? (row.reporterId || row.reporter_id || null) : null;
+    },
+
     async listMyReports(reporterId, { cursor = null, limit = 10 } = {}) {
       return incidents
         .filter((r) => r.reporterId === reporterId)

@@ -1,7 +1,7 @@
 # Verification: FEAT-002
 
 Created: 2026-10-21T11:18:00+08:00
-Updated: 2026-10-21T11:51:00+08:00
+Updated: 2026-10-21T12:08:00+08:00
 
 Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, Docker 29.7.2, Docker Compose 5.4.0, worktree `../Project_Tabang-integration` on `feat-002/render`, local untracked `.env` never staged.
 
@@ -24,3 +24,7 @@ Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, D
 | Phase 3 | `npm run test:server` | node --test server suite | Passed under stated conditions: 40 of 40 tests pass. | 2026-10-21T11:49:58+08:00 | Health check with DB ping verified. |
 | Phase 3 | `npm run lint` | ESLint across `src`, `server`, `scripts`, `tests` | Passed under stated conditions: exit 0, no errors or warnings. | 2026-10-21T11:50:31+08:00 | Clean. |
 | Phase 3 | `npm run test:unit` | vitest unit suite | Passed under stated conditions: 24 files, 240 of 240 tests pass. | 2026-10-21T11:50:49+08:00 | 0 regressions. |
+| Phase 4, REQ-009 | `npm run test:server` | node --test server suite, 44 tests | Passed under stated conditions: 44 of 44 tests pass, including `files.test.mjs` testing magic bytes for JPEG/PNG/WebP, safe path segments, 5 MB cap, and evidence folder deletion. | 2026-10-21T12:07:25+08:00 | Duration 894ms. |
+| Phase 4, REQ-009 | `npm run test:integration` | Local Postgres container running, temporary UPLOAD_DIR, 34 tests in `tests/integration/` | Passed under stated conditions: 34 of 34 tests pass, including `files.test.mjs` testing report photo and evidence privacy, report upload ownership, refusal of wrong bytes and oversized files, traversal protection, applicant evidence deletion on decision, missing file honesty, and cache-control headers. | 2026-10-21T12:07:18+08:00 | Duration 4.75s. |
+| Phase 4 | `npm run lint` | ESLint across `src`, `server`, `scripts`, `tests` | Passed under stated conditions: exit 0, no errors or warnings. | 2026-10-21T12:07:57+08:00 | Clean. |
+| Phase 4 | `npm run test:unit` | vitest unit suite | Passed under stated conditions: 24 files, 240 of 240 tests pass. | 2026-10-21T12:08:15+08:00 | 0 regressions. |

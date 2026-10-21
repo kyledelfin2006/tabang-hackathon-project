@@ -6,6 +6,7 @@ import {
 import { toReviewItem } from "../../src/services/responders/reviewRepository.js";
 import { mapDatabaseError, requireRole, requireSession } from "./auth.mjs";
 import { ApiError } from "../http.mjs";
+import { deleteEvidenceFolder } from "../files.mjs";
 
 export const APPLICATION_ROUTES = [
   {
@@ -99,14 +100,15 @@ export const APPLICATION_ROUTES = [
   {
     method: "POST",
     path: "/api/app/applications/{applicantId}/decision",
-    handler: async ({ req, params, body, store }) => {
+    handler: async ({ req, params, body, store, env }) => {
       const session = await requireRole(req, store, ["reviewer", "admin"]);
       const approve = Boolean(body?.approve);
       const notes = typeof body?.notes === "string" ? body.notes : "";
 
       try {
         await store.decideApplication(session.user.id, params.applicantId, approve, notes);
-        return { status: 200, body: { ok: true } };
+        const evidenceDeleted = deleteEvidenceFolder(params.applicantId, { env });
+        return { status: 200, body: { ok: true, evidenceDeleted } };
       } catch (err) {
         throw mapDatabaseError(err);
       }

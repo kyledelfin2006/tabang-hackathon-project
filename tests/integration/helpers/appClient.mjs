@@ -11,10 +11,15 @@ export function createApiClient(server, { origin = "http://example.test", cookie
     }
     if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
       if (!reqHeaders.origin) reqHeaders.origin = origin;
-      if (!reqHeaders["content-type"]) reqHeaders["content-type"] = "application/json";
+      if (!reqHeaders["content-type"] && !Buffer.isBuffer(body)) {
+        reqHeaders["content-type"] = "application/json";
+      }
     }
 
-    const payload = body !== null && typeof body === "object" ? JSON.stringify(body) : body;
+    const payload =
+      body !== null && typeof body === "object" && !Buffer.isBuffer(body)
+        ? JSON.stringify(body)
+        : body;
     const res = await server.request(path, { method, headers: reqHeaders, body: payload });
 
     // Track Set-Cookie if returned
@@ -31,7 +36,7 @@ export function createApiClient(server, { origin = "http://example.test", cookie
 
     let json;
     try {
-      json = res.body ? JSON.parse(res.body) : null;
+      json = typeof res.body === "string" ? JSON.parse(res.body) : null;
     } catch {
       json = res.body;
     }
@@ -41,6 +46,7 @@ export function createApiClient(server, { origin = "http://example.test", cookie
       headers: res.headers,
       body: json,
       rawBody: res.body,
+      buffer: res.buffer,
     };
   }
 

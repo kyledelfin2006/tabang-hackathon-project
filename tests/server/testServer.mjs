@@ -34,10 +34,18 @@ export async function startTestServer(t, files = {}, options = {}) {
         const req = httpRequest(
           { hostname: "127.0.0.1", port, path, method, headers, agent: false },
           (res) => {
-            let body = "";
-            res.setEncoding("utf8");
-            res.on("data", (chunk) => (body += chunk));
-            res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body }));
+            const chunks = [];
+            res.on("data", (chunk) => chunks.push(chunk));
+            res.on("end", () => {
+              const buffer = Buffer.concat(chunks);
+              const isBinary = (res.headers["content-type"] || "").startsWith("image/");
+              resolve({
+                status: res.statusCode,
+                headers: res.headers,
+                body: isBinary ? buffer.toString("binary") : buffer.toString("utf8"),
+                buffer,
+              });
+            });
           },
         );
 

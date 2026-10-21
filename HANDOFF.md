@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T11:52:00+08:00
-State: Phase 3 complete; ready for Phase 4 (Files on disk)
+Updated: 2026-10-21T12:09:00+08:00
+State: Phase 4 complete; ready for Phase 5 (Switch the client and remove Supabase)
 Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
@@ -59,8 +59,8 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | --- | --- | --- |
 | 1 Local Postgres and the migration runner | Complete | `611ad38908f735cb5e8b4aeb47c9306fc84b9283` |
 | 2 Sign-in, sessions, and password reset | Complete | `20c2812b2b1d86197e6c5987aa118932b13fe387` |
-| 3 App data routes and the Postgres store | Complete | Pending commit |
-| 4 Files on disk | Not started | - |
+| 3 App data routes and the Postgres store | Complete | `bd71093f36769baa687c09b32ecf2d19b324fe40` |
+| 4 Files on disk | Complete | Pending commit |
 | 5 Switch the client and remove Supabase | Not started | - |
 | 6 Render deployment and documentation | Not started | - |
 
@@ -78,6 +78,7 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | 2026-10-21 | Added `--test-concurrency=1` to `test:integration` | Concurrency vs sequential file execution | Sequential execution avoids race conditions between migration reset and function tests against the single local database. |
 | 2026-10-21 | Added `idleTimeoutMillis: 1000` to pg pool and `after(closePool)` in integration tests | Rely on default 30s timeout vs explicit pool teardown | Allows Node test runner process to exit promptly upon test completion (~1s instead of 30s). |
 | 2026-10-21 | Supported `env.emailAdapter` and `env.limiter` in server handlers | Global monkey-patching or module mocks | Provides clean dependency injection for isolated testing across both in-memory and PostgreSQL test servers. |
+| 2026-10-21 | Supported raw binary Buffer payloads and responses in `testServer` and `appClient` | String-only serialization | Enables testing binary image uploads and streams without corrupting bytes or breaking existing JSON callers. |
 
 ## FEAT-001 approval record
 

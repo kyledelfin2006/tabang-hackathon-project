@@ -54,6 +54,37 @@ function readJson(req, maxBytes) {
   });
 }
 
+function readBuffer(req, maxBytes) {
+  return new Promise((resolve, reject) => {
+    let size = 0;
+    const chunks = [];
+
+    req.on("data", (chunk) => {
+      size += chunk.length;
+
+      if (size > maxBytes) {
+        reject(new ApiError(413, "invalid_request", "The request body is too large."));
+        if (size > maxBytes * 8) {
+          req.destroy();
+        }
+        return;
+      }
+
+      chunks.push(chunk);
+    });
+
+    req.on("end", () => {
+      if (size > maxBytes) {
+        return;
+      }
+
+      resolve(Buffer.concat(chunks));
+    });
+
+    req.on("error", reject);
+  });
+}
+
 function matchPath(pattern, pathname) {
   const patternParts = pattern.split("/");
   const pathParts = pathname.split("/");
@@ -113,7 +144,10 @@ export function createAppApiHandler({
         throw new ApiError(404, "not_found", "There is no such API route.");
       }
 
-      const match = candidates.find(({ route }) => route.method === req.method);
+      const match = candidates.find(
+        ({ route }) =>
+          route.method === req.method || (req.method === "HEAD" && route.method === "GET"),
+      );
 
       if (!match) {
         res.setHeader("Allow", candidates.map(({ route }) => route.method).join(", "));
@@ -141,6 +175,8 @@ export function createAppApiHandler({
           }
 
           body = await readJson(req, route.maxBodyBytes ?? DEFAULT_MAX_BODY_BYTES);
+        } else {
+          body = await readBuffer(req, route.maxBodyBytes ?? 5 * 1024 * 1024);
         }
       }
 
@@ -156,6 +192,24 @@ export function createAppApiHandler({
       });
 
       status = result.status ?? 200;
+
+      if (result.stream) {
+        res.writeHead(status, result.headers ?? {});
+        if (req.method === "HEAD") {
+          res.end();
+        } else {
+          result.stream.on("error", (err) => {
+            if (!res.headersSent) {
+              fail(err);
+            } else {
+              res.destroy();
+            }
+          });
+          result.stream.pipe(res);
+        }
+        return;
+      }
+
       send(res, status, req.method === "HEAD" ? undefined : result.body, result.headers);
     } catch (error) {
       fail(error);

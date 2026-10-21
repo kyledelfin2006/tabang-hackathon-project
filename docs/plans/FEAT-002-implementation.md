@@ -125,18 +125,18 @@ Checkpoint message: `feat(api): serve app data from postgres behind session chec
 ### Phase 4: Files on disk
 
 Requirements: FEAT-002/REQ-009
-State: Not started
+State: Complete
 
 Tasks:
 
-- [ ] `server/files.mjs`: write, stream, and delete under `UPLOAD_DIR` with path containment, type and leading-byte checks, and a 5 MB cap.
-- [ ] Upload and read routes in `server/app/files.mjs`; `decide_application` callers delete the applicant's evidence folder and report `evidenceDeleted`.
-- [ ] Port the `storage` policy scenarios to `tests/integration/files.test.mjs`, adding the path traversal and wrong-bytes cases.
+- [x] `server/files.mjs`: write, stream, and delete under `UPLOAD_DIR` with path containment, type and leading-byte checks, and a 5 MB cap.
+- [x] Upload and read routes in `server/app/files.mjs`; `decide_application` callers delete the applicant's evidence folder and report `evidenceDeleted`.
+- [x] Port the `storage` policy scenarios to `tests/integration/files.test.mjs`, adding the path traversal and wrong-bytes cases.
 
 Verification:
 
-- [ ] `npm run test:integration` and `npm run test:server`: pass.
-- [ ] `npm run lint` and `npm run test:unit`: pass.
+- [x] `npm run test:integration` and `npm run test:server`: pass.
+- [x] `npm run lint` and `npm run test:unit`: pass.
 
 Checkpoint message: `feat(files): store report photos and evidence on disk behind authorization`
 

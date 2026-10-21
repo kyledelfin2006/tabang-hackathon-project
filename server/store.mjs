@@ -308,6 +308,13 @@ export function createPostgresStore() {
       return { reportId: rows.length > 0 ? rows[0].id : id };
     },
 
+    async getReportReporterId(reportId) {
+      const { rows } = await query(`select reporter_id from public.reports where id = $1`, [
+        reportId,
+      ]);
+      return rows.length > 0 ? rows[0].reporter_id : null;
+    },
+
     async listMyReports(reporterId, { cursor = null, limit = 10 } = {}) {
       const conditions = ["reporter_id = $1"];
       const params = [reporterId];
