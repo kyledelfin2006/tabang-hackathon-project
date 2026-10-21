@@ -85,21 +85,21 @@ Checkpoint message: `feat(db): port the schema to plain postgres with a migratio
 ### Phase 2: Sign-in, sessions, and password reset
 
 Requirements: FEAT-002/REQ-003, REQ-004, REQ-005, REQ-006, REQ-008
-State: Not started
+State: Complete
 
 Tasks:
 
-- [ ] `server/sessions.mjs`: scrypt hash and verify, session create, look up, and delete, cookie read and write, token hashing.
-- [ ] `server/app/origin.mjs`: refuse state-changing requests without the app origin (`APP_ORIGIN`, defaulting to the request's own origin in development) or with a wrong content type.
-- [ ] `server/email.mjs`: `sendPasswordReset({to, link})` through one HTTP email API with `fetch`; console fallback only outside production; injectable for tests.
-- [ ] `server/app/session.mjs`: the session routes in the architecture, using `validateProfileInput`; in-memory sign-in limit of 10 failures per 15 minutes per email and per address.
-- [ ] Mount `/api/app` in `server/index.mjs` with the same error envelope, request ids, and body limits as `/api/v1`.
-- [ ] Tests in `tests/server/` with the in-memory store, and `tests/integration/accounts.test.mjs` against Postgres, covering every criterion of REQ-003 to REQ-006 and REQ-008.
+- [x] `server/sessions.mjs`: scrypt hash and verify, session create, look up, and delete, cookie read and write, token hashing.
+- [x] `server/app/origin.mjs`: refuse state-changing requests without the app origin (`APP_ORIGIN`, defaulting to the request's own origin in development) or with a wrong content type.
+- [x] `server/email.mjs`: `sendPasswordReset({to, link})` through one HTTP email API with `fetch`; console fallback only outside production; injectable for tests.
+- [x] `server/app/session.mjs`: the session routes in the architecture, using `validateProfileInput`; in-memory sign-in limit of 10 failures per 15 minutes per email and per address.
+- [x] Mount `/api/app` in `server/index.mjs` with the same error envelope, request ids, and body limits as `/api/v1`.
+- [x] Tests in `tests/server/` with the in-memory store, and `tests/integration/accounts.test.mjs` against Postgres, covering every criterion of REQ-003 to REQ-006 and REQ-008.
 
 Verification:
 
-- [ ] `npm run test:server` and `npm run test:integration`: pass.
-- [ ] `npm run lint` and `npm run test:unit`: pass.
+- [x] `npm run test:server` and `npm run test:integration`: pass.
+- [x] `npm run lint` and `npm run test:unit`: pass.
 
 Checkpoint message: `feat(auth): add tabang sign-in, sessions, and password reset`
 

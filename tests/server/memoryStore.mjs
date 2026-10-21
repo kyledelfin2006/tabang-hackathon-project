@@ -20,12 +20,155 @@ export function createMemoryStore() {
   const incidents = [];
   const feed = [];
   const signals = new Map();
+  const users = new Map();
+  const profiles = new Map();
+  const roles = new Map();
+  const sessions = new Map();
+  const passwordResets = new Map();
 
   return {
     clients,
     incidents,
     feed,
     signals,
+    users,
+    profiles,
+    roles,
+    sessions,
+    passwordResets,
+
+    // Users, profiles, sessions, and password resets
+    async findUserByEmail(email) {
+      const lower = String(email || "").trim().toLowerCase();
+      const user = [...users.values()].find((u) => u.email === lower);
+      if (!user) return null;
+      const profile = profiles.get(user.id) || null;
+      const role = roles.get(user.id)?.role || "resident";
+      return {
+        id: user.id,
+        email: user.email,
+        passwordHash: user.passwordHash,
+        role,
+        profile,
+      };
+    },
+
+    async findUserById(id) {
+      const user = users.get(id);
+      if (!user) return null;
+      const profile = profiles.get(user.id) || null;
+      const role = roles.get(user.id)?.role || "resident";
+      return {
+        id: user.id,
+        email: user.email,
+        passwordHash: user.passwordHash,
+        role,
+        profile,
+      };
+    },
+
+    async createUserWithProfile({ email, passwordHash, displayName, phone, barangay }) {
+      const id = randomUUID();
+      const lower = String(email || "").trim().toLowerCase();
+      const user = { id, email: lower, passwordHash, createdAt: new Date().toISOString() };
+      users.set(id, user);
+
+      const profile = {
+        displayName,
+        email: lower,
+        phone,
+        barangay,
+      };
+      profiles.set(id, profile);
+      roles.set(id, { userId: id, role: "resident" });
+
+      return user;
+    },
+
+    async createSession({ userId, tokenHash, expiresAt }) {
+      sessions.set(tokenHash, {
+        tokenHash,
+        userId,
+        createdAt: new Date().toISOString(),
+        lastSeenAt: new Date().toISOString(),
+        expiresAt: expiresAt instanceof Date ? expiresAt.toISOString() : expiresAt,
+      });
+    },
+
+    async findSessionByTokenHash(tokenHash) {
+      const s = sessions.get(tokenHash);
+      if (!s) return null;
+      if (Date.parse(s.expiresAt) <= Date.now()) {
+        sessions.delete(tokenHash);
+        return null;
+      }
+      const user = users.get(s.userId);
+      if (!user) return null;
+      const profile = profiles.get(s.userId) || null;
+      const role = roles.get(s.userId)?.role || "resident";
+      return {
+        user: { id: user.id, email: user.email },
+        role,
+        profile,
+      };
+    },
+
+    async deleteSession(tokenHash) {
+      sessions.delete(tokenHash);
+    },
+
+    async deleteAllUserSessions(userId) {
+      for (const [th, s] of sessions.entries()) {
+        if (s.userId === userId) {
+          sessions.delete(th);
+        }
+      }
+    },
+
+    async updateProfile(userId, { displayName, phone, barangay }) {
+      const p = profiles.get(userId);
+      if (p) {
+        Object.assign(p, { displayName, phone, barangay });
+      }
+      return p;
+    },
+
+    async createPasswordReset({ userId, tokenHash, expiresAt }) {
+      passwordResets.set(tokenHash, {
+        tokenHash,
+        userId,
+        expiresAt: expiresAt instanceof Date ? expiresAt.toISOString() : expiresAt,
+        usedAt: null,
+      });
+    },
+
+    async findPasswordReset(tokenHash) {
+      const r = passwordResets.get(tokenHash);
+      return r || null;
+    },
+
+    async usePasswordReset(tokenHash, newPasswordHash, userId) {
+      const r = passwordResets.get(tokenHash);
+      if (r) {
+        r.usedAt = new Date().toISOString();
+      }
+      const u = users.get(userId);
+      if (u) {
+        u.passwordHash = newPasswordHash;
+      }
+      for (const [th, s] of sessions.entries()) {
+        if (s.userId === userId) {
+          sessions.delete(th);
+        }
+      }
+    },
+
+    async updateUserPassword(userId, newPasswordHash) {
+      const u = users.get(userId);
+      if (u) {
+        u.passwordHash = newPasswordHash;
+      }
+    },
 
     async listPartnerIncidents({ statuses, kind, municipality, since, after, limit }) {
       return incidents

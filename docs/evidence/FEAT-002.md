@@ -1,7 +1,7 @@
 # Verification: FEAT-002
 
 Created: 2026-10-21T11:18:00+08:00
-Updated: 2026-10-21T11:18:00+08:00
+Updated: 2026-10-21T11:36:00+08:00
 
 Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, Docker 29.7.2, Docker Compose 5.4.0, worktree `../Project_Tabang-integration` on `feat-002/render`, local untracked `.env` never staged.
 
@@ -15,3 +15,7 @@ Environment for every row unless stated: Windows 11 dev machine, Node 24.14.0, D
 | Phase 1 | `npm run test:unit` | vitest unit suite | Passed under stated conditions: 24 files, 240 of 240 tests pass. | 2026-10-21T11:16:35+08:00 | Unchanged behavior. |
 | Phase 1 | `npm run test:server` | node --test server suite | Passed under stated conditions: 33 of 33 tests pass. | 2026-10-21T11:16:35+08:00 | Unchanged behavior. |
 | Phase 1 | `npm run db:stop` | Docker Compose stack | Passed under stated conditions: container and network removed cleanly. | 2026-10-21T11:17:00+08:00 | Stack stopped after checks. |
+| Phase 2, REQ-003, REQ-004, REQ-005, REQ-008 | `npm run test:server` | In-memory store, 40 tests in `tests/server/` | Passed under stated conditions: 40 of 40 tests pass, including new session routes, rate limiting, csrf origin/content-type checks, and password reset. | 2026-10-21T11:34:58+08:00 | Verified with `tests/server/session.test.mjs`. |
+| Phase 2, REQ-003 to REQ-006, REQ-008 | `npm run test:integration` | Local Postgres container running, 16 tests in `tests/integration/` | Passed under stated conditions: 16 of 16 tests pass, including `accounts.test.mjs` covering sign-up, scrypt password hashing, session cookies, rate limiting, password reset token single use and revocation of active sessions, immediate role reflection, and cross-site write prevention. | 2026-10-21T11:34:51+08:00 | Duration 1.65s. |
+| Phase 2 | `npm run lint` | ESLint across `src`, `server`, `scripts`, `tests` | Passed under stated conditions: exit 0, no errors or warnings. | 2026-10-21T11:35:07+08:00 | Clean. |
+| Phase 2 | `npm run test:unit` | vitest unit suite | Passed under stated conditions: 24 files, 240 of 240 tests pass. | 2026-10-21T11:35:24+08:00 | 0 regressions. |

@@ -1,8 +1,8 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T11:18:00+08:00
-State: Phase 1 complete; ready for Phase 2 (Sign-in, sessions, and password reset)
+Updated: 2026-10-21T11:37:00+08:00
+State: Phase 2 complete; ready for Phase 3 (App data routes and the Postgres store)
 Feature: FEAT-002; FEAT-001 is complete
 
 ## Read first
@@ -57,8 +57,8 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 
 | Phase | State | Checkpoint commit |
 | --- | --- | --- |
-| 1 Local Postgres and the migration runner | Complete | Pending commit |
-| 2 Sign-in, sessions, and password reset | Not started | - |
+| 1 Local Postgres and the migration runner | Complete | `611ad38908f735cb5e8b4aeb47c9306fc84b9283` |
+| 2 Sign-in, sessions, and password reset | Complete | Pending commit |
 | 3 App data routes and the Postgres store | Not started | - |
 | 4 Files on disk | Not started | - |
 | 5 Switch the client and remove Supabase | Not started | - |
@@ -69,6 +69,7 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | Problem | Attempts | Changes tried and observed result | State |
 | --- | --- | --- | --- |
 | Concurrent integration tests collided on dropping public schema | 1, resolved | Added `--test-concurrency=1` to `test:integration` and added before/after hooks for migrations and pool closure. | Resolved |
+| Docker backend process was stopped | 1, resolved | Launched `com.docker.backend.exe` as background daemon. Docker daemon and compose containers operational. | Resolved |
 
 ## Decisions made by the agent
 
@@ -76,6 +77,7 @@ Plan section 1.1 replaces the workspace stop rules for this run:
 | --- | --- | --- | --- |
 | 2026-10-21 | Added `--test-concurrency=1` to `test:integration` | Concurrency vs sequential file execution | Sequential execution avoids race conditions between migration reset and function tests against the single local database. |
 | 2026-10-21 | Added `idleTimeoutMillis: 1000` to pg pool and `after(closePool)` in integration tests | Rely on default 30s timeout vs explicit pool teardown | Allows Node test runner process to exit promptly upon test completion (~1s instead of 30s). |
+| 2026-10-21 | Supported `env.emailAdapter` and `env.limiter` in server handlers | Global monkey-patching or module mocks | Provides clean dependency injection for isolated testing across both in-memory and PostgreSQL test servers. |
 
 ## FEAT-001 approval record
 

@@ -1,16 +1,22 @@
 import { createServer } from "node:http";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { createAppApiHandler } from "./app/http.mjs";
+import { APP_ROUTES } from "./app/routes.mjs";
 import { createApiHandler } from "./http.mjs";
 import { logToStdout } from "./log.mjs";
 import { buildSecurityHeaders } from "./securityHeaders.mjs";
 import { redirectLegacyUrl } from "./legacyRedirects.mjs";
 import { API_ROUTES } from "./routes/index.mjs";
 import { parseRequestTarget, serveStatic } from "./static.mjs";
-import { createSupabaseStore } from "./store.mjs";
+import { createPostgresStore, createSupabaseStore } from "./store.mjs";
 import { createSupabaseAdmin } from "./supabaseAdmin.mjs";
 
 function defaultStore(env) {
+  if (env.DATABASE_URL) {
+    return createPostgresStore();
+  }
+
   const admin = createSupabaseAdmin(env);
 
   return admin ? createSupabaseStore(admin) : null;
@@ -21,6 +27,7 @@ export function createAppServer({
   env = process.env,
   store = defaultStore(env),
   routes = API_ROUTES,
+  appRoutes = APP_ROUTES,
   log = logToStdout,
   now,
 } = {}) {
@@ -28,6 +35,7 @@ export function createAppServer({
     supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL,
   });
   const handleApi = createApiHandler({ routes, store, env, log, now });
+  const handleAppApi = createAppApiHandler({ routes: appRoutes, store, env, log, now });
 
   return createServer((req, res) => {
     for (const [name, value] of Object.entries(securityHeaders)) {
@@ -43,6 +51,11 @@ export function createAppServer({
     }
 
     const { pathname, search } = parsed;
+
+    if (pathname === "/api/app" || pathname.startsWith("/api/app/")) {
+      handleAppApi(req, res, { pathname, search });
+      return;
+    }
 
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       handleApi(req, res, { pathname, search });
