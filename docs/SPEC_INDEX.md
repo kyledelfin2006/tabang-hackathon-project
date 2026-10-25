@@ -12,6 +12,7 @@ Updated: 2026-10-25
 | Feature | FEAT-002 | [features/FEAT-002-render-migration.md](features/FEAT-002-render-migration.md) | 1 | Historical implementation baseline; Render target decision superseded by PLAN-2 | Replaces FEAT-001/REQ-005, REQ-010 (CSP part), REQ-040 to REQ-043 |
 | Plan | FEAT-002 | [plans/FEAT-002-implementation.md](plans/FEAT-002-implementation.md) | 1 | Historical; implementation complete, hosted Render deploy was pending | - |
 | Plan | PLAN-2 | [plans/plan2.md](plans/plan2.md) | 1 | Implementation in progress; local app checks pass, DB verification and hosted cutover pending | Supersedes FEAT-002's Render target decision |
+| Plan | PLAN-3 | [plans/plan3.md](plans/plan3.md) | 1 | In progress; code fixes applied, local app checks pass, database and staging deployment gates pending | - |
 | Operations | OPS | [operations.md](operations.md) | - | Current instructions describe the existing Render runtime; update during PLAN-2 cutover | [archive/supabase-operations.md](archive/supabase-operations.md), archived 2026-10-21 |
 | Reference | API | [api/README.md](api/README.md), [api/openapi.json](api/openapi.json) | v1 | Current | - |
 | Reference | URLS | [legacy-url-map.md](legacy-url-map.md) | - | Current; A2 merged in plan phase 1 | - |

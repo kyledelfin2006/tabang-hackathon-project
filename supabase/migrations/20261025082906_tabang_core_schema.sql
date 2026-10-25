@@ -45,6 +45,13 @@ create schema if not exists private;
 revoke all on schema private from public, anon;
 grant usage on schema private to authenticated;
 
+create table public.role_assignments (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  role text not null check (role in ('resident', 'responder', 'reviewer', 'admin')),
+  assigned_by uuid references auth.users (id) on delete set null,
+  assigned_at timestamptz not null default now()
+);
+
 create function private.app_role()
 returns text
 language sql
@@ -69,13 +76,6 @@ create table public.profiles (
   barangay text not null check (char_length(barangay) between 1 and 80),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
-);
-
-create table public.role_assignments (
-  user_id uuid primary key references auth.users (id) on delete cascade,
-  role text not null check (role in ('resident', 'responder', 'reviewer', 'admin')),
-  assigned_by uuid references auth.users (id) on delete set null,
-  assigned_at timestamptz not null default now()
 );
 
 -- A missing role_assignments row means resident. This public wrapper invokes

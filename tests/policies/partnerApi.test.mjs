@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { generateApiKey } from "../../server/auth.mjs";
 import { createAppServer } from "../../server/index.mjs";
-import { createSupabaseStore } from "../../server/store.mjs";
+import { createSupabaseStore } from "../../server/supabaseStore.mjs";
 import { adminClient, createUser, fileReport } from "./helpers/clients.mjs";
 import { loadLocalEnv } from "./helpers/env.mjs";
 

@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { createAuthGateway } from "../../src/services/auth/supabaseAuthGateway.js";
+import { createAuthGateway } from "../../src/services/auth/authGateway.js";
 import { describeAuthError, GENERIC_CREDENTIAL_MESSAGE } from "../../src/services/auth/authErrors.js";
 import { createAdvisoryRepository } from "../../src/services/advisories/advisoryRepository.js";
 import { createIncidentRepository } from "../../src/services/incidents/incidentRepository.js";

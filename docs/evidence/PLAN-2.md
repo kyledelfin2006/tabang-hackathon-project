@@ -15,14 +15,14 @@ State: Local Supabase integration implemented; local database verification and h
 
 ## Verification
 
-`npm run check` passed on 2026-10-25:
+`npm run check` passed on 2026-10-25 after PLAN-3 corrected the reported migration ordering and policy-test adapter imports:
 
 - Lint, secret scan, and contrast checks passed.
 - 24 unit test files passed (241 tests).
 - 44 server tests passed.
 - Production Vite build passed using local placeholder public Supabase configuration; `.env.local` containing those placeholders was removed afterward.
 
-The local Supabase stack could not be started. Docker Desktop was unavailable to the process: `docker info` / `docker ps` returned a Docker engine permission error, while `supabase start` and `supabase status` remained blocked waiting on the engine and were stopped. Therefore `supabase db reset` and `test:policies` have not run, and the migrations and RLS/Storage policies are not yet verified against a live local Postgres instance.
+The local Supabase stack could not be started from this environment. Docker access returned a permission error for `npipe:////./pipe/dockerDesktopLinuxEngine`; `npm run supabase:start` remained blocked on that pipe and was stopped. Therefore `npm run supabase:reset` and `npm run test:policies` have not run locally, and the migrations and RLS/Storage policies are not yet verified against a live local Postgres instance. Exact-head CI is pending for PR #8. No Supabase project is connected to the session, so no hosted migration was applied.
 
 ## Gates still open
 

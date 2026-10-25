@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { authenticateClient, generateApiKey } from "../../server/auth.mjs";
-import { createSupabaseStore } from "../../server/store.mjs";
+import { createSupabaseStore } from "../../server/supabaseStore.mjs";
 import { adminClient } from "./helpers/clients.mjs";
 
 // The server's real store against the local database: provisioning, key
