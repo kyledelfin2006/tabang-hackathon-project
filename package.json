@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ./node_modules/vite/bin/vite.js",
-    "build": "node ./node_modules/vite/bin/vite.js build",
+    "build": "npm run check:env && node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
     "lint": "node ./node_modules/eslint/bin/eslint.js src server scripts tests vite.config.js eslint.config.js",
     "format": "prettier --write .",
@@ -16,6 +16,13 @@
     "check": "npm run lint && npm run scan:secrets && npm run check:contrast && npm run test:unit && npm run test:server && npm run build",
     "test:server": "node --test \"tests/server/**/*.test.mjs\"",
     "check:contrast": "node ./scripts/a11y/check-contrast.mjs",
+    "check:env": "node scripts/build/check-env.mjs",
+    "test:policies": "node --test --test-concurrency=1 \"tests/policies/**/*.test.mjs\"",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:reset": "supabase db reset --local",
+    "supabase:status": "supabase status",
+    "supabase:push:dry-run": "supabase db push --dry-run --linked",
     "db:start": "docker compose up -d --wait",
     "db:stop": "docker compose down",
     "db:migrate": "node --env-file-if-exists=.env server/db/migrate.mjs",
@@ -25,6 +32,7 @@
     "seed:hotlines": "node --env-file-if-exists=.env scripts/seed-hotlines.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "pg": "^8.23.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -41,6 +49,7 @@
     "globals": "^17.11.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
+    "supabase": "2.121.0",
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
   }

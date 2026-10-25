@@ -220,18 +220,15 @@ describe("submission idempotency", () => {
   function repositoryAnswering(error) {
     const inserted = [];
     const client = {
-      post: async (path, body) => {
-        if (error) {
-          const err = new Error(error.message || "failed");
-          err.code = error.code;
-          throw err;
-        }
-        inserted.push({
-          id: body.id,
-          image_paths: (body.images || []).map((img) => img.path),
-          ...body.values,
-        });
-        return { reportId: body.id };
+      from: () => ({
+        insert: async (row) => {
+          inserted.push(row);
+          return { data: null, error };
+        },
+      }),
+      rpc: async () => ({ data: null, error: null }),
+      storage: {
+        from: () => ({ createSignedUrls: async () => ({ data: [], error: null }) }),
       },
     };
 

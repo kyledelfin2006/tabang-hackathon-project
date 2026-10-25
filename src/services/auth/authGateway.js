@@ -1,181 +1,172 @@
-import { getApiClient } from "../http/apiClient.js";
+import { getSupabaseClient } from "../../config/supabase.js";
 import { normalizeProfileRecord } from "./profile.js";
 import { ROLES, normalizeRole } from "./roles.js";
 
 // Where the emailed reset link lands; the page there sets the new password.
 export const PASSWORD_UPDATE_PATH = "/update-password";
 
-function toSessionUser(rawUser, profile) {
-  if (!rawUser) return null;
+function toSessionUser(user, profile) {
   return Object.freeze({
-    uid: rawUser.uid || rawUser.id,
-    email: rawUser.email ?? "",
-    displayName: profile?.displayName || rawUser.displayName || "",
-    emailVerified: rawUser.emailVerified ?? true,
+    uid: user.id,
+    email: user.email ?? "",
+    displayName: profile?.displayName || (user.user_metadata?.display_name ?? ""),
+    emailVerified: Boolean(user.email_confirmed_at),
   });
 }
 
-function parseSessionPayload(data) {
-  if (!data || !data.user) {
-    return null;
-  }
+/**
+ * Resolves the trusted role for a signed-in user.
+ *
+ * role_assignments is the only role source, and no client can write it. A
+ * missing row means resident, and so does a failed read: an error must never
+ * escalate access.
+ */
+async function resolveRole(client, uid) {
+  const { data, error } = await client
+    .from("role_assignments")
+    .select("role")
+    .eq("user_id", uid)
+    .maybeSingle();
 
-  const role = normalizeRole(data.role ?? ROLES.resident);
-  const profile = data.profile
-    ? normalizeProfileRecord({
-        displayName: data.profile.displayName || data.profile.display_name || "",
-        email: data.profile.email || data.user.email || "",
-        phone: data.profile.phone || "",
-        barangay: data.profile.barangay || "",
-      })
-    : null;
+  return error || !data ? ROLES.resident : normalizeRole(data.role);
+}
 
-  return Object.freeze({
-    user: toSessionUser(data.user, profile),
-    role,
-    profile,
-  });
+async function readProfile(client, uid) {
+  const { data, error } = await client
+    .from("profiles")
+    .select("display_name, email, phone, barangay")
+    .eq("id", uid)
+    .maybeSingle();
+
+  return error || !data
+    ? null
+    : normalizeProfileRecord({
+        displayName: data.display_name,
+        email: data.email,
+        phone: data.phone,
+        barangay: data.barangay,
+      });
 }
 
 export function createAuthGateway({ client } = {}) {
-  const api = () => client ?? getApiClient();
-  const listeners = new Set();
-  const pendingListeners = new Set();
-  let currentSession = null;
-  let hasLoaded = false;
-  let sessionSeq = 0;
+  const supabase = () => client ?? getSupabaseClient();
 
-  function notifyPending() {
-    for (const pending of pendingListeners) {
-      try {
-        pending();
-      } catch {
-        // Ignore pending listener errors
-      }
-    }
-  }
+  async function buildSession(user) {
+    const [role, profile] = await Promise.all([
+      resolveRole(supabase(), user.id),
+      readProfile(supabase(), user.id),
+    ]);
 
-  async function refreshSession() {
-    const seq = ++sessionSeq;
-    notifyPending();
-    let session = null;
-    try {
-      const data = await api().get("/api/app/session");
-      session = parseSessionPayload(data);
-    } catch {
-      // Failed to load session; remains null
-    }
-
-    if (seq !== sessionSeq) {
-      // A later event (e.g. signOut) superceded this fetch; drop the stale build
-      return currentSession;
-    }
-
-    hasLoaded = true;
-    currentSession = session;
-    for (const listener of listeners) {
-      try {
-        listener(currentSession);
-      } catch {
-        // Ignore listener exceptions
-      }
-    }
-    return currentSession;
+    return { user: toSessionUser(user, profile), role, profile };
   }
 
   return {
     /**
      * Calls `listener` with each built session, or null when signed out.
+     *
+     * `onPending` fires when a different user signs in, before their session
+     * is built, so the app can stay in its loading state instead of briefly
+     * showing the sign-in form again. A sequence number drops any build that
+     * finishes after a newer change, so a slow build can never overwrite a
+     * sign-out.
      */
     observeSession(listener, { onPending } = {}) {
-      listeners.add(listener);
-      if (onPending) {
-        pendingListeners.add(onPending);
-      }
+      let cancelled = false;
+      let sequence = 0;
+      let currentUserId;
 
-      if (!hasLoaded) {
-        onPending?.();
-        refreshSession();
-      } else {
-        setTimeout(() => {
-          if (listeners.has(listener)) {
-            listener(currentSession);
+      const {
+        data: { subscription },
+      } = supabase().auth.onAuthStateChange((_event, session) => {
+        const user = session?.user ?? null;
+        const ticket = ++sequence;
+
+        if (user && user.id !== currentUserId) {
+          onPending?.();
+        }
+
+        currentUserId = user?.id ?? null;
+
+        // Supabase forbids awaiting other client calls inside this callback,
+        // so the session is built on the next tick instead.
+        setTimeout(async () => {
+          const next = user ? await buildSession(user) : null;
+
+          if (!cancelled && ticket === sequence) {
+            listener(next);
           }
         }, 0);
-      }
+      });
 
       return () => {
-        listeners.delete(listener);
-        if (onPending) {
-          pendingListeners.delete(onPending);
-        }
+        cancelled = true;
+        subscription.unsubscribe();
       };
     },
 
     async signIn({ email, password }) {
-      notifyPending();
-      await api().post("/api/app/sign-in", { email, password });
-      await refreshSession();
+      const { error } = await supabase().auth.signInWithPassword({ email, password });
+
+      if (error) {
+        throw error;
+      }
     },
 
+    /**
+     * Registration only ever creates a resident. The profile is written by a
+     * database trigger from this metadata, in the same transaction as the
+     * account, so closing the browser mid sign-up cannot leave an account
+     * without one.
+     */
     async register({ email, password, displayName, phone, barangay }) {
-      notifyPending();
-      await api().post("/api/app/sign-up", {
+      const { error } = await supabase().auth.signUp({
         email,
         password,
-        confirmPassword: password,
-        displayName,
-        phone,
-        barangay,
+        options: { data: { display_name: displayName, phone, barangay } },
       });
-      await refreshSession();
+
+      if (error) {
+        throw error;
+      }
     },
 
     async updateOwnProfile(uid, { displayName, phone, barangay }) {
-      await api().patch("/api/app/profile", {
-        displayName,
-        phone,
-        barangay,
-      });
-      await refreshSession();
+      const { error } = await supabase()
+        .from("profiles")
+        .update({ display_name: displayName, phone, barangay })
+        .eq("id", uid);
+
+      if (error) {
+        throw error;
+      }
     },
 
     async sendPasswordReset(email) {
-      await api().post("/api/app/password-reset", { email });
+      const { error } = await supabase().auth.resetPasswordForEmail(email, {
+        redirectTo:
+          typeof window === "undefined"
+            ? undefined
+            : `${window.location.origin}${PASSWORD_UPDATE_PATH}`,
+      });
+
+      if (error) {
+        throw error;
+      }
     },
 
-    async updatePassword(password, { token } = {}) {
-      if (token) {
-        await api().post("/api/app/password-reset/confirm", { token, password });
-      } else {
-        let urlToken = null;
-        if (typeof window !== "undefined" && window.location?.search) {
-          const params = new URLSearchParams(window.location.search);
-          urlToken = params.get("token");
-        }
+    async updatePassword(password) {
+      const { error } = await supabase().auth.updateUser({ password });
 
-        if (urlToken) {
-          await api().post("/api/app/password-reset/confirm", { token: urlToken, password });
-        } else {
-          await api().post("/api/app/password", { password });
-        }
+      if (error) {
+        throw error;
       }
     },
 
     async signOut() {
-      sessionSeq++;
-      currentSession = null;
-      hasLoaded = true;
-      try {
-        await api().post("/api/app/sign-out");
-      } finally {
-        for (const listener of listeners) {
-          try {
-            listener(null);
-          } catch {
-            // Ignore listener exceptions
-          }
-        }
+      const { error } = await supabase().auth.signOut();
+
+      if (error) {
+        throw error;
       }
     },
   };

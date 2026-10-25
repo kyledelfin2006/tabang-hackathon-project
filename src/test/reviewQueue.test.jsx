@@ -37,21 +37,30 @@ function renderQueue(repository) {
   );
 }
 
-// The decision, role grant, and file deletion happen on the server;
-// tests/integration/appApplications.test.mjs covers them. These tests cover
-// what the repository does around that call.
+// The database records the decision before private evidence is removed.
 describe("decision and evidence deletion", () => {
   function repositoryWith({ decisionError = null, evidenceDeleted = true } = {}) {
     const calls = [];
     const client = {
-      post: async (path, body) => {
-        calls.push(["post", path, body]);
-        if (decisionError) {
-          const err = new Error(decisionError.message || "forbidden");
-          err.code = decisionError.code || "forbidden";
-          throw err;
-        }
-        return { ok: true, evidenceDeleted };
+      rpc: async (name, args) => {
+        calls.push(["rpc", name, args]);
+        return {
+          data: null,
+          error: decisionError
+            ? { message: decisionError.message || "forbidden", code: decisionError.code || "P0001" }
+            : null,
+        };
+      },
+      storage: {
+        from: (bucket) => ({
+          remove: async (paths) => {
+            calls.push(["remove", bucket, paths]);
+            return {
+              data: evidenceDeleted ? paths.map((name) => ({ name })) : [],
+              error: null,
+            };
+          },
+        }),
       },
     };
 
@@ -69,11 +78,12 @@ describe("decision and evidence deletion", () => {
 
     expect(outcome).toEqual({ evidenceDeleted: true });
     expect(calls).toEqual([
-      [
-        "post",
-        "/api/app/applications/resident-9/decision",
-        { approve: true, notes: "Badge verified with the office." },
-      ],
+      ["rpc", "decide_application", {
+        applicant_id: "resident-9",
+        approve: true,
+        notes: "Badge verified with the office.",
+      }],
+      ["remove", "identity-evidence", ["resident-9/id.jpg", "resident-9/selfie.jpg"]],
     ]);
   });
 

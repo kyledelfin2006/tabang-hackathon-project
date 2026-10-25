@@ -1,5 +1,5 @@
-import { getApiClient } from "../http/apiClient.js";
-import { toMillis } from "../data/unwrap.js";
+import { getSupabaseClient } from "../../config/supabase.js";
+import { toMillis, unwrap } from "../data/unwrap.js";
 
 export const HOTLINE_PAGE_SIZE = 50;
 export const MAX_COMMENT_LENGTH = 300;
@@ -84,34 +84,50 @@ function rowToHotline(row, now) {
     row.id,
     {
       organization: row.organization,
-      coverageArea: row.coverageArea || row.coverage_area,
-      phoneNumbers: row.phoneNumbers || row.phone_numbers,
+      coverageArea: row.coverage_area,
+      phoneNumbers: row.phone_numbers,
       verified: row.verified,
-      verifiedAtMillis: row.verifiedAtMillis ?? toMillis(row.verified_at || row.verifiedAt),
-      verifiedBy: row.verifiedBy || row.verified_by,
-      ratingCount: row.ratingCount ?? row.rating_count,
-      ratingTotal: row.ratingTotal ?? row.rating_total,
+      verifiedAtMillis: toMillis(row.verified_at),
+      verifiedBy: row.verified_by,
+      ratingCount: row.rating_count,
+      ratingTotal: row.rating_total,
     },
     now,
   );
 }
 
 export function createHotlineRepository({ client, now = () => Date.now() } = {}) {
-  const api = () => client ?? getApiClient();
+  const supabase = () => client ?? getSupabaseClient();
 
   return {
     /**
      * One directory, read by residents and responders alike.
+     *
+     * The legacy pages each hardcoded their own copy of the numbers, so the
+     * two views could disagree about what to call in an emergency.
      */
     async listHotlines() {
-      const rows = await api().get("/api/app/hotlines");
+      const rows = unwrap(
+        await supabase()
+          .from("hotline_directory")
+          .select("*")
+          .order("organization", { ascending: true })
+          .limit(HOTLINE_PAGE_SIZE),
+      );
       const clock = now();
 
       return rows.map((row) => rowToHotline(row, clock));
     },
 
-    async getMyReview({ hotlineId }) {
-      const row = await api().get(`/api/app/hotlines/${hotlineId}/review`);
+    async getMyReview({ hotlineId, uid }) {
+      const row = unwrap(
+        await supabase()
+          .from("hotline_reviews")
+          .select("rating, comment")
+          .eq("hotline_id", hotlineId)
+          .eq("reviewer_id", uid)
+          .maybeSingle(),
+      );
 
       return row
         ? Object.freeze({ rating: row.rating ?? null, comment: row.comment ?? "" })
@@ -120,9 +136,19 @@ export function createHotlineRepository({ client, now = () => Date.now() } = {})
 
     /**
      * Records one review per account per hotline.
+     *
+     * The review is keyed by the hotline and the signed-in account, so a second
+     * submission replaces the previous one rather than stacking. Totals are
+     * computed from the stored reviews by the hotline_directory view, so there
+     * is nothing for a client to forge: the legacy page generated vote counts
+     * with Math.random and kept them in memory.
      */
     async submitReview({ hotlineId, rating, comment }) {
-      await api().put(`/api/app/hotlines/${hotlineId}/review`, { rating, comment });
+      unwrap(
+        await supabase()
+          .from("hotline_reviews")
+          .upsert({ hotline_id: hotlineId, rating, comment }),
+      );
     },
   };
 }

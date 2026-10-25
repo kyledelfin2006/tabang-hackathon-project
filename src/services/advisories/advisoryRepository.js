@@ -1,5 +1,5 @@
-import { getApiClient } from "../http/apiClient.js";
-import { toMillis } from "../data/unwrap.js";
+import { getSupabaseClient } from "../../config/supabase.js";
+import { toMillis, unwrap } from "../data/unwrap.js";
 
 export const ADVISORY_PAGE_SIZE = 6;
 
@@ -41,48 +41,81 @@ export function toPublicAdvisory(id, raw = {}) {
   });
 }
 
+const FEED_COLUMNS =
+  "id, kind, summary, municipality, barangay, source, published, created_at, expires_at";
+
 function rowToAdvisory(row) {
   return toPublicAdvisory(row.id, {
     ...row,
-    createdAtMillis: row.createdAtMillis ?? toMillis(row.created_at || row.createdAt),
-    expiresAtMillis: row.expiresAtMillis ?? toMillis(row.expires_at || row.expiresAt),
+    createdAtMillis: toMillis(row.created_at),
+    expiresAtMillis: toMillis(row.expires_at),
   });
 }
 
 export function createAdvisoryRepository({ client } = {}) {
-  const api = () => client ?? getApiClient();
+  const supabase = () => client ?? getSupabaseClient();
 
   return {
     /**
-     * Reads at most ADVISORY_PAGE_SIZE sanitized items.
+     * Reads at most ADVISORY_PAGE_SIZE sanitized items. The legacy homepage
+     * fetched every report to build an image carousel; this query is bounded
+     * and reads only the public feed. Expired items are already hidden by the
+     * database; the published filter also hides an author's own drafts.
      */
     async listRecentAdvisories({ pageSize = ADVISORY_PAGE_SIZE } = {}) {
-      const rows = await api().get("/api/app/advisories", { query: { pageSize } });
+      const boundedSize = Math.min(Math.max(1, pageSize), ADVISORY_PAGE_SIZE);
+      const rows = unwrap(
+        await supabase()
+          .from("public_feed")
+          .select(FEED_COLUMNS)
+          .eq("published", true)
+          .order("created_at", { ascending: false })
+          .limit(boundedSize),
+      );
+
       return rows.map(rowToAdvisory);
     },
 
     /** The signed-in responder's own advisories, published or not. */
-    /* eslint-disable-next-line no-unused-vars */
     async listOwnAdvisories(actorId) {
-      const rows = await api().get("/api/app/advisories/mine");
+      const rows = unwrap(
+        await supabase()
+          .from("public_feed")
+          .select(FEED_COLUMNS)
+          .eq("created_by", actorId)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      );
+
       return rows.map((row) =>
         Object.freeze({ ...rowToAdvisory(row), published: row.published }),
       );
     },
 
     /**
-     * Publishes an advisory as the signed-in responder.
+     * Publishes an advisory as the signed-in responder. The author and the
+     * "tabang" source are set by the database, so they cannot be chosen here.
      */
     async publishAdvisory({ summary, municipality, barangay }) {
-      await api().post("/api/app/advisories", {
-        summary,
-        municipality: municipality || null,
-        barangay: barangay || null,
-      });
+      unwrap(
+        await supabase()
+          .from("public_feed")
+          .insert({
+            kind: "advisory",
+            summary,
+            municipality: municipality || null,
+            barangay: barangay || null,
+          }),
+      );
     },
 
     async unpublishAdvisory(id) {
-      await api().post(`/api/app/advisories/${id}/unpublish`);
+      unwrap(
+        await supabase()
+          .from("public_feed")
+          .update({ published: false })
+          .eq("id", id),
+      );
     },
   };
 }

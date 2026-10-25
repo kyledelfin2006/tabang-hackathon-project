@@ -1,5 +1,7 @@
-import { getApiClient } from "../http/apiClient.js";
-import { toMillis } from "../data/unwrap.js";
+import { getSupabaseClient } from "../../config/supabase.js";
+import { toDataError, toMillis, unwrap } from "../data/unwrap.js";
+
+const EVIDENCE_BUCKET = "identity-evidence";
 
 export const CONSENT_VERSION = "2026-04-privacy-and-terms";
 
@@ -68,51 +70,83 @@ export function toApplicationView(raw) {
 }
 
 export function createApplicationRepository({ client } = {}) {
-  const api = () => client ?? getApiClient();
+  const supabase = () => client ?? getSupabaseClient();
 
   return {
-    /* eslint-disable-next-line no-unused-vars */
     async getMyApplication(uid) {
-      const row = await api().get("/api/app/applications/mine");
+      const row = unwrap(
+        await supabase()
+          .from("responder_applications")
+          .select("status, organization, badge_number, municipality, review_notes, submitted_at")
+          .eq("applicant_id", uid)
+          .maybeSingle(),
+      );
 
       return row
         ? toApplicationView({
             status: row.status,
             organization: row.organization,
-            badgeNumber: row.badgeNumber || row.badge_number,
+            badgeNumber: row.badge_number,
             municipality: row.municipality,
-            reviewNotes: row.reviewNotes || row.review_notes,
-            submittedAtMillis: row.submittedAtMillis ?? toMillis(row.submitted_at || row.submittedAt),
+            reviewNotes: row.review_notes,
+            submittedAtMillis: toMillis(row.submitted_at),
           })
         : null;
     },
 
     /**
      * Submits an application in the pending state.
+     *
+     * Applying grants nothing. Responder access comes only from a reviewer's
+     * decision, which writes role_assignments inside the database, so this is
+     * a request rather than a credential. The function sets the status and
+     * clears any earlier review itself; the client cannot choose either.
      */
     async submitApplication({ values, evidence }) {
-      await api().post("/api/app/applications", { values, evidence });
+      unwrap(
+        await supabase().rpc("submit_application", {
+          organization: values.organization,
+          badge_number: values.badgeNumber,
+          municipality: values.municipality,
+          identity_document_path: evidence.identityDocumentPath,
+          selfie_path: evidence.selfiePath,
+          consent_version: CONSENT_VERSION,
+        }),
+      );
     },
 
     /**
-     * Stores identity evidence in the private identity-evidence folder.
+     * Stores identity evidence in the private identity-evidence bucket, under
+     * the applicant's own folder. These files never share a bucket with report
+     * photos, so an ID document cannot end up readable by responders.
      */
     async uploadEvidence(file, { onProgress, signal } = {}) {
+      const {
+        data: { session },
+      } = await supabase().auth.getSession();
+      const uid = session?.user?.id;
+
+      if (!uid) {
+        throw new Error("Sign in before uploading identity documents.");
+      }
+
       if (signal?.aborted) {
         throw new Error("The upload was cancelled.");
       }
 
-      const res = await api().post("/api/app/files/identity-evidence", file, {
-        headers: { "Content-Type": file.type || "image/jpeg" },
-      });
+      const extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      const path = `${uid}/${crypto.randomUUID()}.${extension}`;
+      const { error } = await supabase()
+        .storage.from(EVIDENCE_BUCKET)
+        .upload(path, file, { contentType: file.type || "image/jpeg" });
 
-      if (signal?.aborted) {
-        throw new Error("The upload was cancelled.");
+      if (error) {
+        throw toDataError(error);
       }
 
       onProgress?.(100);
 
-      return { path: res.path };
+      return { path };
     },
   };
 }
