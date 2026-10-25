@@ -1,25 +1,35 @@
 # Current handoff
 
 Created: 2026-09-26T16:25:25+08:00
-Updated: 2026-10-21T15:49:00+08:00
-State: Phase 6 complete; FEAT-002 implementation complete, pending Len's hosted deploy
-Feature: FEAT-002; FEAT-001 is complete
+Updated: 2026-10-25
+State: FEAT-002 remains the current Render-oriented implementation; hosted Render deploy is pending. Its target decision is superseded by PLAN-2. Supabase return and cutover have not been implemented.
+Feature: PLAN-2 (authorized target); FEAT-002 is the current implementation baseline; FEAT-001 is complete
 
 ## Read first
 
 - Workspace rules: `../AGENTS.md`
 - Index: [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md)
-- Architecture: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 3, approved; Revision 2 is in Git at `f8e08d8`
-- Feature: [docs/features/FEAT-002-render-migration.md](docs/features/FEAT-002-render-migration.md) Revision 1, approved
+- Plan 1: [docs/plans/plan1.md](docs/plans/plan1.md), approved 2026-10-25; measured codebase pruning
+- Plan 2: [docs/plans/plan2.md](docs/plans/plan2.md), approved 2026-10-25; Supabase return and cutover
+- Architecture baseline: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 3 describes the current Render-oriented implementation; PLAN-2 supersedes its target-provider decision
+- Historical feature: [docs/features/FEAT-002-render-migration.md](docs/features/FEAT-002-render-migration.md) Revision 1; Render implementation baseline, target decision superseded
 - Plan: [docs/plans/FEAT-002-implementation.md](docs/plans/FEAT-002-implementation.md) Revision 1, approved; its section 1.1 sets this run's rules and section 4 holds the agent prompt
 - Evidence: `docs/evidence/FEAT-002.md`, created by the agent in Phase 1
 - Completed feature: [docs/features/FEAT-001-stabilization-and-integration-api.md](docs/features/FEAT-001-stabilization-and-integration-api.md) and [docs/plans/FEAT-001-implementation.md](docs/plans/FEAT-001-implementation.md) Revision 2, approved
 - Review evidence: [docs/evidence/2026-09-26-project-review.md](docs/evidence/2026-09-26-project-review.md)
 
+## PLAN-2 direction and approval
+
+On 2026-10-25, Len approved the measured cleanup followed by a return to Supabase. Supabase Auth, Postgres with RLS and database functions, and private Storage become the target for app authentication, data, and files. The Node host remains for static serving and the `/api/v1` partner API. PLAN-2 preserves discovered Render data and files, preserves compatible account IDs and profiles, and requires existing users to reset passwords because the current password hashes use `scrypt`.
+
+The hosted project is planned for Singapore. Hosted schema changes and cutover remain pending local and staging verification and user review. No hosted Supabase or Render resource has been changed by this documentation update.
+
 Reread these files and inspect actual Git status before acting; prior chat memory is not authoritative.
 The Revision 1 documents are in Git at `d928c56` on `feat-001/integration`.
 
-## FEAT-002 direction and approval
+## Historical FEAT-002 direction and approval
+
+> The direction, approval, and run rules recorded below apply to FEAT-002's completed historical execution. PLAN-2 supersedes its target-provider decision; FEAT-002 restrictions do not govern PLAN-1 or PLAN-2.
 
 On 2026-10-21 Len said in chat: "Change of plans, well be migrating this project to render instead".
 Asked what Render should replace, Len chose "Render replaces Supabase too" (database, sign-in, and files).
@@ -42,7 +52,7 @@ This approves the drafts as written, including D-20 and D-26, hands execution to
 
 The approved documents are uncommitted on `feat-002/render` as of 2026-10-21T10:49+08:00; Len commits them, or the executing agent commits them first with `docs(feat-002): approve the render migration and hand off execution`, staging only `HANDOFF.md`, `docs/SPEC_INDEX.md`, `docs/product/ARCHITECTURE.md`, `docs/features/FEAT-002-render-migration.md`, and `docs/plans/FEAT-002-implementation.md`.
 
-## FEAT-002 run rules
+## Historical FEAT-002 run rules
 
 Allowed phases: FEAT-002 plan Revision 1 Phases 1 to 6, in order.
 Plan section 1.1 replaces the workspace stop rules for this run:

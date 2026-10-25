@@ -7,6 +7,8 @@ Status: Approved
 Len's chat approval: Approved by Len in chat on 2026-10-21 at about 10:49 +08:00: "Alright create a handoff for another AI coding agent to execute. Skip the mandatory hard stops but keep thre required commiting and testing phases"
 Architecture: [../product/ARCHITECTURE.md](../product/ARCHITECTURE.md) Revision 3, approved
 
+> **Supersession note (2026-10-25):** [PLAN-2](../plans/plan2.md) supersedes FEAT-002's Render target-provider decision and authorizes returning app authentication, data, and private files to Supabase. This document remains the historical record of the current Render implementation and its verification. The Render source is retained until PLAN-2 cutover acceptance.
+
 ## Purpose and success
 
 Len decided on 2026-10-21 to run Tabang on Render instead of Supabase.
