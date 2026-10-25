@@ -1,9 +1,9 @@
 # Plan 2: Return Tabang to Supabase
 
 Created: 2026-10-25  
-Status: Approved for implementation  
+Status: Implementation in progress; local application checks pass, while local database verification and hosted cutover remain pending
 Supersedes: The Render target decision in [FEAT-002](../features/FEAT-002-render-migration.md) and Architecture Revision 3's target-provider decision. FEAT-002 remains the record of the current Render implementation and its historical verification.  
-Prerequisite: Complete or reconcile [Plan 1: Measured Codebase Pruning](plan1.md).
+Prerequisite: [PLAN-1 cleanup complete](../evidence/PLAN-1.md); its planning file was removed after completion at the user's request.
 
 ## Goal and target shape
 

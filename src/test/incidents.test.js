@@ -187,17 +187,11 @@ describe("incident rows", () => {
   });
 });
 
-// The app API decides; these check only that its answers reach
-// the screens as the error types the screens already recognise.
-function clientAnswering(code) {
+function clientAnswering(code, data = null, signedUrls = []) {
   return {
-    post: async () => {
-      if (code) {
-        const err = new Error(code);
-        err.code = code;
-        throw err;
-      }
-      return { ok: true };
+    rpc: async () => ({ data, error: code ? { message: code, code: "P0001" } : null }),
+    storage: {
+      from: () => ({ createSignedUrls: async () => ({ data: signedUrls, error: null }) }),
     },
   };
 }
@@ -216,28 +210,28 @@ describe("incident actions", () => {
   it("verifies through the database function", async () => {
     const calls = [];
     const repository = createIncidentRepository({
-      client: { post: async (path, body) => (calls.push([path, body]), { ok: true }) },
+      client: {
+        rpc: async (name, args) => (calls.push([name, args]), { data: null, error: null }),
+      },
     });
 
     await repository.verifyIncident({ incidentId: "report-1", verificationStatus: "verified" });
 
     expect(calls).toEqual([
-      ["/api/app/incidents/report-1/verify", { verificationStatus: "verified" }],
+      ["verify_incident", { report_id: "report-1", verification_status: "verified" }],
     ]);
   });
 
   it("maps exact counts from the database", async () => {
     const repository = createIncidentRepository({
-      client: {
-        get: async () => ({
-          openIncidents: 30,
-          unclaimed: 4,
-          overdue: 2,
-          verified: 11,
-          awaitingVerification: 19,
-          countedAtMillis: Date.parse("2026-10-18T00:00:00+00:00"),
-        }),
-      },
+      client: clientAnswering(null, [{
+        open_incidents: 30,
+        unclaimed: 4,
+        overdue: 2,
+        verified: 11,
+        awaiting_verification: 19,
+        counted_at: "2026-10-18T00:00:00+00:00",
+      }]),
     });
 
     expect(await repository.countIncidents()).toEqual({
@@ -251,12 +245,17 @@ describe("incident actions", () => {
   });
 
   it("returns photo links in order and null for one that is empty", async () => {
-    const repository = createIncidentRepository();
+    const repository = createIncidentRepository({
+      client: clientAnswering(null, null, [
+        { path: "r/p/a.jpg", signedUrl: "https://storage.test/a.jpg" },
+        { path: "r/p/b.jpg", signedUrl: "https://storage.test/b.jpg" },
+      ]),
+    });
 
     expect(await repository.getPhotoUrls(["r/p/a.jpg", null, "r/p/b.jpg"])).toEqual([
-      "/api/app/files/report-photos/r/p/a.jpg",
+      "https://storage.test/a.jpg",
       null,
-      "/api/app/files/report-photos/r/p/b.jpg",
+      "https://storage.test/b.jpg",
     ]);
     expect(await repository.getPhotoUrls([])).toEqual([]);
   });
@@ -264,13 +263,15 @@ describe("incident actions", () => {
   it("passes the incident, status, and note to the transition endpoint", async () => {
     const calls = [];
     const repository = createIncidentRepository({
-      client: { post: async (path, body) => (calls.push([path, body]), { ok: true }) },
+      client: {
+        rpc: async (name, args) => (calls.push([name, args]), { data: null, error: null }),
+      },
     });
 
     await repository.transitionIncident({ incidentId: "report-1", toStatus: "dispatched", note: "Boat sent." });
 
     expect(calls).toEqual([
-      ["/api/app/incidents/report-1/transition", { toStatus: "dispatched", note: "Boat sent." }],
+      ["transition_incident", { report_id: "report-1", to_status: "dispatched", note: "Boat sent." }],
     ]);
   });
 });

@@ -10,8 +10,10 @@ import { redirectLegacyUrl } from "./legacyRedirects.mjs";
 import { API_ROUTES } from "./routes/index.mjs";
 import { parseRequestTarget, serveStatic } from "./static.mjs";
 import { createPostgresStore } from "./store.mjs";
+import { createSupabaseStore } from "./supabaseStore.mjs";
+import { createSupabaseAdmin } from "./supabaseAdmin.mjs";
 
-function defaultStore(env) {
+function defaultAppStore(env) {
   if (env.DATABASE_URL) {
     return createPostgresStore();
   }
@@ -19,17 +21,32 @@ function defaultStore(env) {
   return null;
 }
 
+function defaultPartnerStore(env) {
+  const admin = createSupabaseAdmin(env);
+
+  return admin ? createSupabaseStore(admin) : null;
+}
+
 export function createAppServer({
   distRoot = resolve("dist"),
   env = process.env,
-  store = defaultStore(env),
+  store = defaultAppStore(env),
+  partnerStore = defaultPartnerStore(env) ?? store,
   routes = API_ROUTES,
   appRoutes = APP_ROUTES,
   log = logToStdout,
   now,
 } = {}) {
-  const securityHeaders = buildSecurityHeaders();
-  const handleApi = createApiHandler({ routes, store, env, log, now });
+  const securityHeaders = buildSecurityHeaders({
+    supabaseUrl: env.SUPABASE_URL || env.VITE_SUPABASE_URL,
+  });
+  const handleApi = createApiHandler({
+    routes,
+    store: partnerStore,
+    env,
+    log,
+    now,
+  });
   const handleAppApi = createAppApiHandler({ routes: appRoutes, store, env, log, now });
 
   return createServer((req, res) => {

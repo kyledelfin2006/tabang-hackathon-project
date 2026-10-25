@@ -96,14 +96,16 @@ describe("rating submission", () => {
     const writes = [];
     const repository = createHotlineRepository({
       client: {
-        put: async (path, body) => (writes.push([path, body]), { ok: true }),
+        from: (table) => ({
+          upsert: async (row) => (writes.push([table, row]), { data: null, error: null }),
+        }),
       },
     });
 
     await repository.submitReview({ hotlineId: "a", rating: 4, comment: "Answered quickly." });
 
     expect(writes).toEqual([
-      ["/api/app/hotlines/a/review", { rating: 4, comment: "Answered quickly." }],
+      ["hotline_reviews", { hotline_id: "a", rating: 4, comment: "Answered quickly." }],
     ]);
   });
 });

@@ -59,22 +59,19 @@ describe("application validation", () => {
   });
 });
 
-// The files API confines the files; see
-// tests/integration/files.test.mjs.
+// Storage upload details; the policy suite verifies the bucket boundary.
 describe("identity evidence upload", () => {
   function repositoryFor(session) {
     const uploads = [];
     const client = {
-      post: async (path, file, options) => {
-        if (!session) {
-          const err = new Error("Sign in to continue.");
-          err.code = "unauthorized";
-          err.status = 401;
-          throw err;
-        }
-        const returnedPath = `${session.user.id}/${crypto.randomUUID()}.png`;
-        uploads.push({ path, file, options, returnedPath });
-        return { path: returnedPath };
+      auth: { getSession: async () => ({ data: { session } }) },
+      storage: {
+        from: (bucket) => ({
+          upload: async (path, file, options) => {
+            uploads.push({ bucket, path, file, options });
+            return { data: { path }, error: null };
+          },
+        }),
       },
     };
 
@@ -88,8 +85,10 @@ describe("identity evidence upload", () => {
     const result = await repository.uploadEvidence(file);
 
     expect(uploads).toHaveLength(1);
-    expect(uploads[0].path).toBe("/api/app/files/identity-evidence");
-    expect(result.path).toMatch(/^resident-1\/[0-9a-f-]+\.png$/);
+    expect(uploads[0].bucket).toBe("identity-evidence");
+    expect(uploads[0].path).toMatch(/^resident-1\/[0-9a-f-]+\.png$/);
+    expect(uploads[0].options.contentType).toBe("image/png");
+    expect(result.path).toBe(uploads[0].path);
   });
 
   it("refuses to upload without a signed-in account", async () => {
