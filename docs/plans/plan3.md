@@ -1,7 +1,7 @@
 # Plan 3: Fix and deploy the Supabase integration
 
 Created: 2026-10-25
-Status: Approved; implementation in progress
+Status: Code and exact-head CI verified; staging deployment pending project connection
 Target: Existing non-production Supabase staging project; project ref must be connected before deployment
 
 ## Goal
@@ -23,6 +23,12 @@ Repair the migration and policy-test failures reported on PR #8, verify the full
 - `npm run check` and exact-head PR CI pass.
 - Staging records the intended migration and the post-deploy schema/advisory checks succeed.
 - PLAN-2 evidence records real results; PR #8 contains the fix.
+
+## Execution record
+
+- `$env:CI=true; npm run check` passed locally: 24 unit files (241 tests) and 44 server tests passed, along with lint, secret scan, contrast, and production build.
+- Exact-head CI passed on commit `a122c5ac567f6e079956d62a28fca79f2a4488f3`; Supabase reset succeeded and all 55 policy/repository tests passed.
+- Local Docker access is blocked by named-pipe permissions. The Supabase connector currently exposes no projects, so staging deployment has not occurred.
 
 ## Limits
 

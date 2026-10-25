@@ -1,7 +1,7 @@
 # PLAN-2 implementation evidence
 
 Updated: 2026-10-25  
-State: Local Supabase integration implemented; local database verification and hosted migration gates remain open.
+State: Local Supabase integration and exact-head CI database policy verification pass; hosted migration gates remain open.
 
 ## Implemented
 
@@ -22,13 +22,15 @@ State: Local Supabase integration implemented; local database verification and h
 - 44 server tests passed.
 - Production Vite build passed using local placeholder public Supabase configuration; `.env.local` containing those placeholders was removed afterward.
 
-The local Supabase stack could not be started from this environment. Docker access returned a permission error for `npipe:////./pipe/dockerDesktopLinuxEngine`; `npm run supabase:start` remained blocked on that pipe and was stopped. Therefore `npm run supabase:reset` and `npm run test:policies` have not run locally, and the migrations and RLS/Storage policies are not yet verified against a live local Postgres instance. Exact-head CI is pending for PR #8. No Supabase project is connected to the session, so no hosted migration was applied.
+The local Supabase stack could not be started from this environment. Docker access returned a permission error for `npipe:////./pipe/dockerDesktopLinuxEngine`; `npm run supabase:start` remained blocked on that pipe and was stopped. Therefore `npm run supabase:reset` and `npm run test:policies` were not run locally. GitHub CI verification is recorded below. No Supabase project is connected to the session, so no hosted migration was applied.
+
+Exact-head CI passed for PR #8 at commit `a122c5ac567f6e079956d62a28fca79f2a4488f3` on 2026-10-25. The `check` job passed. The `policies` job started the Supabase stack, reset the local database from migrations, exported local settings, and passed all 55 policy/repository tests. This verifies the migration and corrected adapter imports in CI despite the local Docker limitation above. No hosted Supabase project is connected to the session, so no hosted migration was applied.
 
 ## Gates still open
 
-1. Make Docker available, run `supabase start`, `supabase db reset`, and `npm run test:policies`; fix any migration or policy failures and rerun the full check.
+1. Connect the intended Singapore staging project and verify its project ref, region, and migration history before applying the reviewed migrations.
 2. Inventory Render database rows and uploaded files using authorized source credentials. No hosted credentials were present in this workspace, so data presence is still unknown. Export and rehearse import for any data/files found; retain backups outside Git.
-3. Set up the Singapore staging project, review the generated migration plan with `supabase db push --dry-run`, import and reconcile source records and private objects, and verify password reset and app/partner flows.
+3. Review the generated migration plan with `supabase db push --dry-run`, import and reconcile source records and private objects, and verify password reset and app/partner flows.
 4. Complete user review and the maintenance-window cutover only after staging checks pass. Reconcile writes before any rollback after Supabase accepts production writes.
 5. Remove the custom Render app auth, `/api/app/*`, disk file endpoints, `pg` app store/migration path, and Render database/disk configuration only after the replacement is verified. Preserve the Node host and `/api/v1` partner API.
 
