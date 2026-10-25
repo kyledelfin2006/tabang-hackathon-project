@@ -2,15 +2,18 @@
 
 Created: 2026-09-26T16:25:25+08:00
 Updated: 2026-10-25
-State: FEAT-002 remains the current Render-oriented implementation; hosted Render deploy is pending. Its target decision is superseded by PLAN-2. Supabase return and cutover have not been implemented.
+State: PLAN-3 corrected the migration ordering and policy-test imports; exact-head PR #8 CI passes, including all 55 database policy tests. The Supabase staging schema is deployed to `Tabang` (`fokgjznjfhhqstddkaes`, Singapore). The connector-generated migration versions still need supported CLI repair and a clean dry run. Local Docker access remains blocked; Render inventory and production cutover remain pending.
 Feature: PLAN-2 (authorized target); FEAT-002 is the current implementation baseline; FEAT-001 is complete
 
 ## Read first
 
 - Workspace rules: `../AGENTS.md`
 - Index: [docs/SPEC_INDEX.md](docs/SPEC_INDEX.md)
-- Plan 1: [docs/plans/plan1.md](docs/plans/plan1.md), approved 2026-10-25; measured codebase pruning
+- PLAN-1 record: [docs/evidence/PLAN-1.md](docs/evidence/PLAN-1.md); pruning pass complete, no standalone dead code confirmed, plan file removed at the user's request
 - Plan 2: [docs/plans/plan2.md](docs/plans/plan2.md), approved 2026-10-25; Supabase return and cutover
+- Plan 3: [docs/plans/plan3.md](docs/plans/plan3.md), approved 2026-10-25; fix migration and policy-test failures, then deploy to staging
+- PLAN-3 implementation record: PR #8 on `codex/supabase-integration`; exact-head CI passes and the staging schema is live, with CLI migration-history synchronization still open
+- PLAN-2 evidence: [docs/evidence/PLAN-2.md](docs/evidence/PLAN-2.md); local integration progress, checks, and remaining gates
 - Architecture baseline: [docs/product/ARCHITECTURE.md](docs/product/ARCHITECTURE.md) Revision 3 describes the current Render-oriented implementation; PLAN-2 supersedes its target-provider decision
 - Historical feature: [docs/features/FEAT-002-render-migration.md](docs/features/FEAT-002-render-migration.md) Revision 1; Render implementation baseline, target decision superseded
 - Plan: [docs/plans/FEAT-002-implementation.md](docs/plans/FEAT-002-implementation.md) Revision 1, approved; its section 1.1 sets this run's rules and section 4 holds the agent prompt
@@ -22,7 +25,7 @@ Feature: PLAN-2 (authorized target); FEAT-002 is the current implementation base
 
 On 2026-10-25, Len approved the measured cleanup followed by a return to Supabase. Supabase Auth, Postgres with RLS and database functions, and private Storage become the target for app authentication, data, and files. The Node host remains for static serving and the `/api/v1` partner API. PLAN-2 preserves discovered Render data and files, preserves compatible account IDs and profiles, and requires existing users to reset passwords because the current password hashes use `scrypt`.
 
-The hosted project is planned for Singapore. Hosted schema changes and cutover remain pending local and staging verification and user review. No hosted Supabase or Render resource has been changed by this documentation update.
+The staging project is `Tabang` (`fokgjznjfhhqstddkaes`) in Singapore. PLAN-3 corrects the migration ordering and policy-test imports reported on PR #8. `npm run check` and exact-head CI pass, including the CI database reset and 55 policy tests. All three schema migrations are deployed and their objects were verified; the Supabase CLI migration ledger still needs supported repair because the connector assigned application-time version IDs. Local Docker access remains blocked by named-pipe permissions. Render source data has not been inventoried because no hosted credentials are configured; no Render resource was changed and no production cutover occurred. See [PLAN-2 evidence](docs/evidence/PLAN-2.md).
 
 Reread these files and inspect actual Git status before acting; prior chat memory is not authoritative.
 The Revision 1 documents are in Git at `d928c56` on `feat-001/integration`.

@@ -17,7 +17,7 @@ const SETUP_FAILURE_MESSAGE =
   "Sign-in is not configured correctly on this site. This is a fault on our side and retrying will not help. Please report it.";
 
 /**
- * Converts an auth error into a user-facing message.
+ * Converts a Supabase auth error into a user-facing message.
  *
  * Every credential-related failure collapses into one message so the UI never
  * reveals whether an arbitrary email address is registered.
@@ -46,16 +46,13 @@ export function describeAuthError(error) {
       return "Choose a longer, less predictable password.";
     case "same_password":
       return "Choose a password you have not used for this account before.";
-    case "rate_limit_exceeded":
-      return "Too many attempts. Wait 15 minutes and try again.";
-    case "token_expired":
-      return "This link has expired. Ask for a new one.";
     case "over_request_rate_limit":
     case "over_email_send_rate_limit":
       return "Too many attempts. Wait a few minutes before trying again.";
 
     /*
-     * Setup faults. They mean the project is misconfigured, and
+     * Setup faults. They mean the project is misconfigured (sign-ups or the
+     * email provider are switched off, or the build has no configuration), and
      * no amount of retrying by the person will fix them.
      */
     case "signup_disabled":
@@ -71,7 +68,7 @@ export function describeAuthError(error) {
  * The error code, for the console only.
  *
  * Users get plain language; whoever is debugging needs the code. This is safe
- * to log: auth codes carry no personal data, no email address, and no
+ * to log: Supabase auth codes carry no personal data, no email address, and no
  * token.
  */
 export function describeAuthErrorForDiagnostics(error) {
